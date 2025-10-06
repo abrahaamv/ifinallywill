@@ -31,11 +31,11 @@ platform/
 ├── packages/
 │   ├── shared/              # Shared utilities and types
 │   ├── ui/                  # Shared component library (Button, Input, etc.)
-│   ├── db/                  # Drizzle schemas + migrations
-│   ├── auth/                # Lucia authentication utilities
+│   ├── db/                  # Drizzle schemas + migrations + RLS policies
+│   ├── auth/                # Auth.js (NextAuth.js) authentication utilities
 │   ├── api-contract/        # tRPC router definitions
 │   ├── api/                 # Fastify backend API server
-│   ├── realtime/            # SSE + Redis pub/sub server
+│   ├── realtime/            # WebSocket + Redis Streams server
 │   ├── ai-core/             # AI service abstractions (vision, voice, chat)
 │   └── knowledge/           # RAG system + embeddings
 │
@@ -100,7 +100,8 @@ platform/
 ## ⚙️ Backend Stack
 
 ### HTTP Server
-- **Fastify 5** - Fastest Node.js framework ✅
+- **Fastify 5.3.2+** - Fastest Node.js framework ✅
+  - **CRITICAL**: Minimum 5.3.2 for CVE-2025-32442 patch (content-type parsing bypass)
   - **3x faster than Express** (65K vs 20K req/sec)
   - Schema-based validation
   - Excellent TypeScript support
@@ -143,12 +144,13 @@ platform/
 ## 🗄️ Database Stack
 
 ### Primary Database
-- **PostgreSQL 16** - Relational database
+- **PostgreSQL 16+** - Relational database
+  - **CRITICAL**: Minimum 17.3/16.7/15.11/14.16/13.19 for CVE-2025-1094 patch (SQL injection actively exploited)
   - ACID compliance
   - JSON support (JSONB)
   - Full-text search
   - Partitioning
-  - Row-level security
+  - **Row-level security (RLS)** - MANDATORY for multi-tenant isolation
 
 ### Vector Search
 - **pgvector** - PostgreSQL extension
@@ -159,6 +161,8 @@ platform/
 
 ### ORM
 - **Drizzle ORM** - Type-safe database toolkit ✅
+  - **⚠️ CRITICAL**: Drizzle has NO automatic tenant filtering - catastrophic data leakage risk
+  - **REQUIRED**: Implement RLS policies or tenant wrapper for ALL queries
   - **100x faster than Prisma** (benchmarks)
   - SQL-first approach
   - No code generation lag
@@ -179,19 +183,23 @@ platform/
 ```
 
 ### Caching & Queue
-- **Redis 7** - In-memory data store
-  - **SSE pub/sub** (critical for text chat)
+- **Redis 7.4.2+** - In-memory data store
+  - **CRITICAL**: Minimum 7.4.2+ (or 7.2.7+) for RCE vulnerability patches (CVSS 7.0-8.8)
+  - **4 Critical CVEs**: CVE-2024-55656, CVE-2024-46981, CVE-2024-51737, CVE-2024-51480
+  - **Redis Streams** (critical for WebSocket broadcasting)
+  - Consumer groups for message distribution
   - Session storage
   - Rate limiting
   - Caching AI responses
   - Job queues (Bull MQ)
 
-**Why Redis is required**:
+**Why Redis Streams is required**:
 ```
-1. SSE pub/sub - Broadcast messages across multiple API instances
-2. Session storage - Fast <1ms reads
-3. Rate limiting - Per-tenant limits
-4. Caching - Reduce database load
+1. WebSocket broadcasting - Distribute messages across multiple API instances
+2. Consumer groups - Horizontal scaling with reliable message delivery
+3. Session storage - Fast <1ms reads
+4. Rate limiting - Per-tenant limits
+5. Caching - Reduce database load
 ```
 
 ---
@@ -199,41 +207,43 @@ platform/
 ## 🔄 Real-Time Communication
 
 ### Text Chat (Cost-Optimized)
-- **Server-Sent Events (SSE)** - Unidirectional streaming
-  - Native browser API (no library needed)
+- **WebSocket** - Bidirectional streaming
+  - Native browser API (WebSocket standard)
   - Built-in auto-reconnect
-  - HTTP/2 compatible
+  - **Sticky session support** (load balancer affinity required)
   - 98% browser support
-  - **No WebSocket overhead**
+  - Enables typing indicators, read receipts, presence tracking
 
 **Cost**: $0.00001 per hour (negligible)
 
+**Sticky Sessions Required**: Load balancer must route client to same server instance
+
 ### Voice + Screen Sharing
-- **LiveKit Cloud** - WebRTC infrastructure
+- **LiveKit Cloud Enterprise** - WebRTC infrastructure
+  - **⚠️ BUDGET ALERT**: Enterprise plan REQUIRED ($5K-10K+/month minimum)
+  - Build/Scale plans insufficient (cold starts, limited agents)
   - 99.99% uptime SLA
   - Sub-100ms global latency
   - Full desktop capture
   - Multi-participant rooms
-  - AI agent support
+  - AI agent support (40-100 worker pool required)
   - DataChannel for messages
 
-**Cost**: $0.50-2.00 per hour (only when active)
+**Cost**: $0.50-2.00 per hour (only when active) + Enterprise base fee
 
-### Why SSE + LiveKit
+### Why WebSocket + LiveKit
 ```
-SSE Advantages:
-✅ Simpler than WebSocket libraries
-✅ Native browser support (EventSource API)
+WebSocket Advantages:
+✅ Bidirectional communication (native support for typing, presence, etc.)
+✅ Native browser support (WebSocket API)
 ✅ Auto-reconnect built-in
 ✅ HTTP/2 compatible
-✅ No sticky sessions needed
-✅ 90% cost savings vs always-on connections
+✅ Lower latency than HTTP polling
+✅ Enables real-time features without complexity
 
-Optional future enhancements (may require bidirectional WebSocket):
-- Typing indicators
-- Read receipts
-- Online presence tracking
-- Admin dashboard with live updates
+Requirements:
+⚠️  Sticky sessions (load balancer configuration)
+⚠️  Redis Streams for multi-instance message distribution
 ```
 
 ---
@@ -490,19 +500,19 @@ Per-session cost:              $0.11-0.15
 ### Confirmed Choices ✅
 1. **Monorepo**: Turborepo (intelligent caching)
 2. **Frontend**: Vite + React + Tailwind (pure)
-3. **Backend**: Fastify (3x faster than Express)
-4. **Database**: PostgreSQL + pgvector + Drizzle ORM
-5. **Real-time**: SSE (text) + LiveKit (meetings)
-6. **Redis**: Required (SSE pub/sub, caching)
+3. **Backend**: Fastify 5.3.2+ (3x faster than Express + security patches)
+4. **Database**: PostgreSQL 16+ + pgvector + Drizzle ORM + RLS policies
+5. **Real-time**: WebSocket (text) + LiveKit Enterprise (meetings)
+6. **Redis**: Required (7.4.2+ for security, Streams for WebSocket, caching)
 7. **AI Vision**: Gemini Flash + Claude Sonnet
 8. **AI Voice**: Deepgram + GPT-4o + ElevenLabs
 9. **RAG**: Voyage Multimodal-3 + hybrid search
 10. **Hosting**: Railway (startup) → Fly.io (scale)
 
 ### Real-Time Communication Stack
-- **SSE**: Sufficient for text chat and notifications
-- **LiveKit**: Handles all meeting/video features
-- **Future**: Bidirectional features can be added if needed (typing indicators, read receipts, presence)
+- **WebSocket**: Bidirectional text chat with sticky sessions
+- **LiveKit Enterprise**: All meeting/video features ($5K-10K+/month budget required)
+- **Redis Streams**: Multi-instance message distribution with consumer groups
 
 ---
 

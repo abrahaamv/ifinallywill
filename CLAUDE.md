@@ -4,11 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Enterprise AI Assistant Platform** - Multi-modal real-time AI interaction system with cost-optimized provider architecture (80% cost reduction). Built as a Turborepo monorepo with pnpm workspaces, focusing on type safety and enterprise-grade quality.
+**Enterprise AI Assistant Platform** - Multi-modal real-time AI interaction system with cost-optimized provider architecture (75-85% cost reduction validated). Built as a Turborepo monorepo with pnpm workspaces, focusing on type safety and enterprise-grade quality.
 
 **Current Status**: Foundation ready (Phase 1 complete). Database, auth, and implementation phases pending.
 
-**Tech Stack**: React 18 + Vite 6 (frontend), Fastify 5 + tRPC v11 (backend), Drizzle ORM + PostgreSQL, Redis pub/sub, LiveKit (WebRTC), Python LiveKit agent
+**Tech Stack**: React 18 + Vite 6 (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, LiveKit (WebRTC), Python LiveKit agent
+
+> **🚨 SECURITY CRITICAL**: Before starting development, security patches required:
+> - **Redis**: Upgrade to 7.4.2+ (or 7.2.7+) - 4 RCE vulnerabilities (CVSS 7.0-8.8)
+> - **PostgreSQL**: Upgrade to 17.3/16.7/15.11/14.16/13.19 - SQL injection actively exploited
+> - **Fastify**: Ensure 5.3.2+ - Content-type parsing bypass
+> - **Timeline**: 7-day patch window from project start
+>
+> **💰 BUDGET ALERT**: LiveKit Enterprise plan required ($5K-10K+/month minimum)
+> - Build/Scale plans insufficient for production (cold starts, limited agents)
+> - Required for 40-100 worker pool (4 cores + 8GB RAM each)
+> - Budget approval needed before Phase 5 implementation
 
 > **📌 IMPORTANT: Multi-App Architecture**
 >
@@ -86,9 +97,9 @@ platform/
 │   └── widget-sdk/       # @platform/widget-sdk - Embeddable widget
 ├── packages/
 │   ├── api/              # @platform/api - Fastify + tRPC server
-│   ├── realtime/         # @platform/realtime - SSE + Redis pub/sub
+│   ├── realtime/         # @platform/realtime - WebSocket + Redis Streams
 │   ├── db/               # @platform/db - Drizzle ORM schemas
-│   ├── auth/             # @platform/auth - Lucia v4 authentication
+│   ├── auth/             # @platform/auth - Auth.js (NextAuth.js) authentication
 │   ├── api-contract/     # @platform/api-contract - tRPC router definitions
 │   ├── ai-core/          # @platform/ai-core - AI provider abstractions
 │   ├── knowledge/        # @platform/knowledge - RAG system
@@ -107,7 +118,9 @@ platform/
 **2. Multi-Tenant Architecture**
 - Tenant context derived from authenticated sessions
 - Database row-level tenant isolation via `tenant_id`
-- Separate tenant contexts in Drizzle queries
+- **⚠️ CRITICAL**: Drizzle ORM has NO automatic tenant filtering - catastrophic data leakage risk
+- PostgreSQL Row-Level Security (RLS) with `FORCE ROW LEVEL SECURITY` required
+- Tenant wrapper or Nile integration mandatory for all queries
 - LiveKit room names encode tenant information
 
 **3. Cost-Optimized AI Routing**
@@ -117,8 +130,9 @@ platform/
 - Provider abstraction layer in `packages/ai-core`
 
 **4. Real-time Communication Stack**
-- **SSE (Server-Sent Events)**: Chat messages via `packages/realtime`
-- **Redis Pub/Sub**: Multi-instance message broadcasting
+- **WebSocket**: Bidirectional chat messages via `packages/realtime`
+- **Redis Streams**: Multi-instance message broadcasting with consumer groups
+- **Sticky Sessions**: Load balancer configuration for WebSocket persistence
 - **LiveKit**: WebRTC video/audio/screen sharing
 - **Python Agent**: Multi-modal AI processing (voice, vision, text)
 
@@ -130,14 +144,14 @@ platform/
 
 ### Database Architecture (Drizzle ORM)
 
-**PostgreSQL 16** with Drizzle ORM.
+**PostgreSQL 16+** (minimum 17.3/16.7/15.11) with Drizzle ORM.
 
 **Status**: Phase 1 complete - Database schema implementation pending (Phase 2).
 
 **Planned Schema** (to be implemented in `packages/db/src/schema/`):
-- `tenants.ts` - Multi-tenant isolation
+- `tenants.ts` - Multi-tenant isolation with RLS policies
 - `users.ts` - User accounts
-- `lucia-sessions.ts` - Lucia auth sessions
+- `auth-sessions.ts` - Auth.js session storage
 - `widgets.ts` - Widget configurations
 - `meetings.ts` - LiveKit meeting rooms
 - `sessions.ts` - AI conversation sessions
@@ -146,26 +160,39 @@ platform/
 - `knowledge-chunks.ts` - Vector embeddings
 - `cost-events.ts` - Usage tracking for billing
 
+**Connection Pooling**: PgBouncer required (50-100 connections) for multi-tenant session management
+
 **Migrations**: `pnpm db:push` (Drizzle Kit push mode) - Available after Phase 2 schema implementation
 
-### Authentication (Lucia v4)
+### Authentication (Auth.js)
+
+**Auth.js (NextAuth.js)** - Industry standard, SOC 2 certified, 3.8M weekly downloads
 
 - Session-based auth with secure cookies
-- Argon2id password hashing
-- Drizzle adapter for session storage
+- OAuth providers: Google, Microsoft (minimum)
+- Drizzle adapter for session storage (`auth-sessions` table)
+- PKCE flow for security hardening
 - Integration in `packages/auth`
+
+**Why Auth.js**: Lucia v4 deprecated March 2025, converted to "learning resource only" with no npm package
 
 ## Implementation Roadmap
 
 **Follow `docs/guides/roadmap.md` for sequential implementation phases:**
 
+**Timeline**: 15-17 weeks (Auth.js pivot adds 2-3 weeks)
+
 1. ✅ **Phase 1**: Project scaffolding (COMPLETE)
-2. **Phase 2**: Database + Auth (Weeks 2) - NEXT
-3. **Phase 3**: Backend APIs (Weeks 3-4)
-4. **Phase 4**: Frontend App (Weeks 5-6)
-5. **Phase 5**: AI Integration (Weeks 7-8)
-6. **Phase 6**: Real-time Features (Weeks 9-10)
-7. **Phase 7**: Widget SDK (Weeks 11-12)
+2. **Phase 2**: Security + Database + Auth (Weeks 2-4) - NEXT
+   - Week 1: Security patching (Redis, PostgreSQL, Fastify)
+   - Week 2-3: Database schema with RLS policies
+   - Week 3-4: Auth.js integration + testing
+3. **Phase 3**: Backend APIs (Weeks 5-7)
+4. **Phase 4**: Frontend App (Weeks 8-10)
+5. **Phase 5**: AI Integration + LiveKit (Weeks 11-13)
+   - LiveKit Enterprise budget approval required
+6. **Phase 6**: Real-time Features (Weeks 14-15)
+7. **Phase 7**: Widget SDK + Polish (Weeks 16-17)
 
 **Validation after each phase**: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
 
@@ -268,7 +295,13 @@ Each package defines dependencies in its own `package.json`:
 - Use `@platform/*` for internal packages
 - Shared dependencies in root `package.json` (TypeScript, Biome, Turbo)
 - Frontend apps use Vite 6 + React 18
-- Backend uses Fastify 5 + tRPC v11
+- Backend uses Fastify 5.3.2+ + tRPC v11
+
+**Minimum Versions** (security patches):
+- **Redis**: 7.4.2+ (or 7.2.7+ for older major version)
+- **PostgreSQL**: 17.3 / 16.7 / 15.11 / 14.16 / 13.19
+- **Fastify**: 5.3.2+
+- **Auth.js**: Latest stable version
 
 ### Build Order
 
@@ -288,7 +321,13 @@ Turborepo handles build dependencies automatically. Key patterns:
 
 ### LiveKit Agent Integration (Phase 5 - Pending)
 
-**Implementation Status**: Not yet implemented (planned for Phase 5)
+**Implementation Status**: Not yet implemented (planned for Weeks 11-13)
+
+**💰 BUDGET REQUIREMENT**: LiveKit Enterprise plan mandatory
+- **Minimum Cost**: $5K-10K+/month ($60K-120K+/year)
+- **Infrastructure**: 40-100 worker pool (4 cores + 8GB RAM each)
+- **Why Required**: Build/Scale plans have cold starts, limited agents (production insufficient)
+- **Budget Approval**: Required BEFORE Phase 5 implementation
 
 **Implementation Guide**: See `docs/reference/livekit-agent-implementation.md` for production implementation plan
 
@@ -302,14 +341,15 @@ The production Python agent will integrate with the TypeScript backend:
    - Query knowledge base via RAG endpoints
 
 2. **LiveKit Agent Features**:
-   - 1 FPS screen capture (95% cost optimization)
+   - 1 FPS screen capture (96% cost reduction vs 30 FPS)
    - Multi-modal AI (voice, vision, text)
    - Temporal frame context for vision analysis
 
 3. **Requirements** (when implemented):
    - Python 3.11+ virtual environment
    - Backend API running
-   - LiveKit Cloud credentials
+   - LiveKit Cloud Enterprise credentials
+   - Budget approval confirmation
 
 ## Common Workflows
 
