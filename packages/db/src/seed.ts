@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import { db } from './client';
 import * as schema from './schema/index';
 
@@ -6,7 +7,14 @@ export async function seed() {
   console.log('🌱 Seeding database...');
 
   try {
-    // Create demo tenant
+    // Set a placeholder tenant ID to satisfy RLS policies during seeding
+    // This is required because FORCE RLS is enabled on all tables
+    // Use SET SESSION (not SET LOCAL) since we're not in an explicit transaction
+    const placeholderTenantId = '00000000-0000-0000-0000-000000000000';
+    await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${placeholderTenantId}'`));
+    console.log('✅ Set placeholder tenant context');
+
+    // Create demo tenant (INSERT policy allows this without tenant context)
     const tenantResult = await db
       .insert(schema.tenants)
       .values({
@@ -27,6 +35,10 @@ export async function seed() {
     }
 
     console.log('✅ Created tenant:', tenant.id);
+
+    // Update session variable to the actual tenant ID for subsequent inserts
+    await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${tenant.id}'`));
+    console.log('✅ Updated tenant context to:', tenant.id);
 
     // Create demo user
     // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)

@@ -39,70 +39,224 @@ ALTER TABLE ai_personalities FORCE ROW LEVEL SECURITY;
 -- ==================== CREATE RLS POLICIES ====================
 -- All policies use current_setting('app.current_tenant_id') to filter by tenant
 -- This session variable MUST be set by middleware before any database query
+--
+-- Note: We create separate policies for SELECT/UPDATE/DELETE (USING) and INSERT (WITH CHECK)
+-- to allow flexibility in access control and support seeding/admin operations
 
--- Tenants table: users can only see their own tenant
-CREATE POLICY tenant_isolation_policy ON tenants
-  USING (id = current_setting('app.current_tenant_id')::uuid);
+-- ==================== TENANTS TABLE ====================
+-- SELECT/UPDATE/DELETE: users can only see their own tenant
+CREATE POLICY tenant_select_policy ON tenants
+  FOR SELECT
+  USING (id = current_setting('app.current_tenant_id', true)::uuid);
 
--- Users table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON users
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY tenant_update_delete_policy ON tenants
+  FOR ALL
+  USING (id = current_setting('app.current_tenant_id', true)::uuid);
 
--- Accounts table: via user relationship
-CREATE POLICY tenant_isolation_policy ON accounts
+-- INSERT: Allow creating new tenants (for admin operations and seeding)
+-- In production, this should be restricted to admin role
+CREATE POLICY tenant_insert_policy ON tenants
+  FOR INSERT
+  WITH CHECK (true);
+
+-- ==================== USERS TABLE ====================
+-- SELECT/UPDATE/DELETE: filter by tenant_id
+CREATE POLICY user_select_policy ON users
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY user_update_delete_policy ON users
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- INSERT: Allow creating users within current tenant context
+CREATE POLICY user_insert_policy ON users
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== ACCOUNTS TABLE ====================
+-- SELECT/UPDATE/DELETE: via user relationship
+CREATE POLICY account_select_policy ON accounts
+  FOR SELECT
   USING (user_id IN (
-    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
   ));
 
--- Auth sessions table: via user relationship
-CREATE POLICY tenant_isolation_policy ON auth_sessions
+CREATE POLICY account_update_delete_policy ON accounts
+  FOR ALL
   USING (user_id IN (
-    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
   ));
 
--- Widgets table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON widgets
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+-- INSERT: Allow creating accounts for users in current tenant
+CREATE POLICY account_insert_policy ON accounts
+  FOR INSERT
+  WITH CHECK (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Meetings table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON meetings
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+-- ==================== AUTH SESSIONS TABLE ====================
+-- SELECT/UPDATE/DELETE: via user relationship
+CREATE POLICY auth_session_select_policy ON auth_sessions
+  FOR SELECT
+  USING (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Sessions table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON sessions
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY auth_session_update_delete_policy ON auth_sessions
+  FOR ALL
+  USING (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Messages table: via session relationship
-CREATE POLICY tenant_isolation_policy ON messages
+-- INSERT: Allow creating sessions for users in current tenant
+CREATE POLICY auth_session_insert_policy ON auth_sessions
+  FOR INSERT
+  WITH CHECK (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
+
+-- ==================== WIDGETS TABLE ====================
+CREATE POLICY widget_select_policy ON widgets
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY widget_update_delete_policy ON widgets
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY widget_insert_policy ON widgets
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== MEETINGS TABLE ====================
+CREATE POLICY meeting_select_policy ON meetings
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY meeting_update_delete_policy ON meetings
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY meeting_insert_policy ON meetings
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== SESSIONS TABLE ====================
+CREATE POLICY session_select_policy ON sessions
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY session_update_delete_policy ON sessions
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY session_insert_policy ON sessions
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== MESSAGES TABLE ====================
+CREATE POLICY message_select_policy ON messages
+  FOR SELECT
   USING (session_id IN (
-    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
   ));
 
--- Knowledge documents table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON knowledge_documents
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY message_update_delete_policy ON messages
+  FOR ALL
+  USING (session_id IN (
+    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Knowledge chunks table: via document relationship
-CREATE POLICY tenant_isolation_policy ON knowledge_chunks
+CREATE POLICY message_insert_policy ON messages
+  FOR INSERT
+  WITH CHECK (session_id IN (
+    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
+
+-- ==================== KNOWLEDGE DOCUMENTS TABLE ====================
+CREATE POLICY knowledge_doc_select_policy ON knowledge_documents
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY knowledge_doc_update_delete_policy ON knowledge_documents
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY knowledge_doc_insert_policy ON knowledge_documents
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== KNOWLEDGE CHUNKS TABLE ====================
+CREATE POLICY knowledge_chunk_select_policy ON knowledge_chunks
+  FOR SELECT
   USING (document_id IN (
-    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
   ));
 
--- Cost events table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON cost_events
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY knowledge_chunk_update_delete_policy ON knowledge_chunks
+  FOR ALL
+  USING (document_id IN (
+    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Cost summaries table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON cost_summaries
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY knowledge_chunk_insert_policy ON knowledge_chunks
+  FOR INSERT
+  WITH CHECK (document_id IN (
+    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id', true)::uuid
+  ));
 
--- Budget alerts table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON budget_alerts
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+-- ==================== COST EVENTS TABLE ====================
+CREATE POLICY cost_event_select_policy ON cost_events
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
 
--- AI personalities table: filter by tenant_id
-CREATE POLICY tenant_isolation_policy ON ai_personalities
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+CREATE POLICY cost_event_update_delete_policy ON cost_events
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY cost_event_insert_policy ON cost_events
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== COST SUMMARIES TABLE ====================
+CREATE POLICY cost_summary_select_policy ON cost_summaries
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY cost_summary_update_delete_policy ON cost_summaries
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY cost_summary_insert_policy ON cost_summaries
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== BUDGET ALERTS TABLE ====================
+CREATE POLICY budget_alert_select_policy ON budget_alerts
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY budget_alert_update_delete_policy ON budget_alerts
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY budget_alert_insert_policy ON budget_alerts
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+-- ==================== AI PERSONALITIES TABLE ====================
+CREATE POLICY ai_personality_select_policy ON ai_personalities
+  FOR SELECT
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY ai_personality_update_delete_policy ON ai_personalities
+  FOR ALL
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
+
+CREATE POLICY ai_personality_insert_policy ON ai_personalities
+  FOR INSERT
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
 
 -- ==================== VERIFICATION QUERIES ====================
 -- Use these to verify RLS policies are working correctly:
