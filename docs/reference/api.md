@@ -47,14 +47,14 @@ export type AppRouter = typeof appRouter;
 ```typescript
 // packages/api-contract/src/context.ts
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import type { Session, User } from 'lucia';
-import { lucia } from '@platform/auth';
+import type { Session } from 'next-auth';
+import { auth } from '@platform/auth/config';
 import { db } from '@platform/database';
+import { sql } from 'drizzle-orm';
 
 export interface Context {
-  // Authentication
+  // Authentication (Auth.js / NextAuth.js)
   session: Session | null;
-  user: User | null;
 
   // Multi-tenancy
   tenantId: string | null;
@@ -71,21 +71,13 @@ export interface Context {
 export async function createContext({
   req,
 }: FetchCreateContextFnOptions): Promise<Context> {
-  const sessionId = lucia.readSessionCookie(req.headers.get('Cookie') ?? '');
+  // Get session from Auth.js
+  const session = await auth();
 
-  let session: Session | null = null;
-  let user: User | null = null;
-
-  if (sessionId) {
-    const result = await lucia.validateSession(sessionId);
-    session = result.session;
-    user = result.user;
-  }
-
-  // Extract tenant from user or API key
+  // Extract tenant from session or API key
   let tenantId: string | null = null;
-  if (user) {
-    tenantId = user.tenantId;
+  if (session?.user) {
+    tenantId = session.user.tenantId ?? null;
   } else {
     // Check for API key in header
     const apiKey = req.headers.get('X-API-Key');
@@ -97,9 +89,15 @@ export async function createContext({
     }
   }
 
+  // CRITICAL: Set tenant context for RLS policies
+  if (tenantId) {
+    await db.execute(
+      sql`SET LOCAL app.current_tenant_id = ${tenantId}`
+    );
+  }
+
   return {
     session,
-    user,
     tenantId,
     db,
     req,
@@ -129,7 +127,7 @@ export const publicProcedure = t.procedure;
 
 // Authenticated procedure (requires user session)
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.session || !ctx.user) {
+  if (!ctx.session?.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
@@ -137,7 +135,6 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     ctx: {
       ...ctx,
       session: ctx.session,
-      user: ctx.user,
     },
   });
 });
@@ -166,53 +163,82 @@ export const tenantProcedure = t.procedure.use(async ({ ctx, next }) => {
 
 ### Schema Definitions
 
+> **Authentication Flow**: Auth.js (NextAuth.js) handles OAuth flows via `/api/auth/*` endpoints. The tRPC auth router manages account operations and tenant setup.
+
 ```typescript
 // packages/api-contract/src/routers/auth.ts
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, publicProcedure, protectedProcedure } from '../trpc';
-import { lucia } from '@platform/auth';
-import { Argon2id } from 'oslo/password';
+import { signOut } from '@platform/auth/config';
 
 // Input schemas
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
+const createTenantSchema = z.object({
   tenantName: z.string().min(1).max(100),
+  plan: z.enum(['starter', 'growth', 'business', 'enterprise']).default('starter'),
 });
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+const updateProfileSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  image: z.string().url().optional(),
 });
 
 // Output schemas
-const authResponseSchema = z.object({
-  user: z.object({
-    id: z.string(),
-    email: z.string(),
-    tenantId: z.string(),
-  }),
-  sessionToken: z.string(),
+const userResponseSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string().nullable(),
+  image: z.string().nullable(),
+  tenantId: z.string(),
+  role: z.string(),
 });
 
 export const authRouter = router({
-  // Register new tenant + user
-  register: publicProcedure
-    .input(registerSchema)
-    .output(authResponseSchema)
-    .mutation(async ({ input, ctx }) => {
-      const { email, password, tenantName } = input;
+  // Get current user session
+  // Auth.js provides session, this endpoint enriches with tenant data
+  me: protectedProcedure
+    .output(userResponseSchema)
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
 
-      // Check if user exists
-      const existingUser = await ctx.db.query.users.findFirst({
-        where: (users, { eq }) => eq(users.email, email),
+      const user = await ctx.db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId),
       });
 
-      if (existingUser) {
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        image: user.image,
+        tenantId: user.tenantId,
+        role: user.role,
+      };
+    }),
+
+  // Create tenant after OAuth sign-in
+  // Called by onboarding flow if user doesn't have tenant
+  createTenant: protectedProcedure
+    .input(createTenantSchema)
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+      const { tenantName, plan } = input;
+
+      // Check if user already has tenant
+      const existingUser = await ctx.db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, userId),
+      });
+
+      if (existingUser?.tenantId) {
         throw new TRPCError({
           code: 'CONFLICT',
-          message: 'Email already registered',
+          message: 'User already belongs to a tenant',
         });
       }
 
@@ -220,99 +246,51 @@ export const authRouter = router({
       const [tenant] = await ctx.db.insert(schema.tenants).values({
         name: tenantName,
         apiKey: generateApiKey(), // Custom function
-        plan: 'starter',
+        plan,
       }).returning();
 
-      // Hash password
-      const hashedPassword = await new Argon2id().hash(password);
-
-      // Create user
-      const [user] = await ctx.db.insert(schema.users).values({
-        email,
-        passwordHash: hashedPassword,
-        tenantId: tenant.id,
-        role: 'owner',
-      }).returning();
-
-      // Create session
-      const session = await lucia.createSession(user.id, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
+      // Update user with tenant association
+      await ctx.db.update(schema.users)
+        .set({
           tenantId: tenant.id,
-        },
-        sessionToken: session.id,
-      };
+          role: 'owner', // First user is owner
+        })
+        .where(eq(schema.users.id, userId));
+
+      return { tenant };
     }),
 
-  // Login
-  login: publicProcedure
-    .input(loginSchema)
-    .output(authResponseSchema)
+  // Update user profile
+  updateProfile: protectedProcedure
+    .input(updateProfileSchema)
     .mutation(async ({ input, ctx }) => {
-      const { email, password } = input;
+      const userId = ctx.session.user.id;
 
-      const user = await ctx.db.query.users.findFirst({
-        where: (users, { eq }) => eq(users.email, email),
-      });
+      await ctx.db.update(schema.users)
+        .set(input)
+        .where(eq(schema.users.id, userId));
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid email or password',
-        });
-      }
-
-      const validPassword = await new Argon2id().verify(
-        user.passwordHash,
-        password
-      );
-
-      if (!validPassword) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid email or password',
-        });
-      }
-
-      const session = await lucia.createSession(user.id, {});
-
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
-          tenantId: user.tenantId,
-        },
-        sessionToken: session.id,
-      };
-    }),
-
-  // Logout
-  logout: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      await lucia.invalidateSession(ctx.session.id);
       return { success: true };
     }),
 
-  // Get current user
-  me: protectedProcedure
-    .query(async ({ ctx }) => {
-      return {
-        id: ctx.user.id,
-        email: ctx.user.email,
-        tenantId: ctx.user.tenantId,
-        role: ctx.user.role,
-      };
+  // Sign out (revoke session)
+  signOut: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      await signOut();
+      return { success: true };
     }),
 });
 ```
 
+**Auth.js OAuth Flow** (handled automatically):
+- **Sign In**: `http://localhost:3001/api/auth/signin` → Google OAuth
+- **Callback**: `http://localhost:3001/api/auth/callback/google`
+- **Session**: `http://localhost:3001/api/auth/session` (JSON endpoint)
+- **Sign Out**: `http://localhost:3001/api/auth/signout`
+
 ---
 
-## 💬 Chat Router (SSE Text Chat)
+## 💬 Chat Router (WebSocket Text Chat)
 
 ### Schema Definitions
 

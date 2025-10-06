@@ -12,8 +12,8 @@ This document explains **how all components integrate together** in the AI Assis
 ┌─────────────────────────────────────────────────────────────┐
 │                        Frontend (React)                      │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ tRPC Client  │  │ SSE Client   │  │ LiveKit      │      │
-│  │ (HTTP/JSON)  │  │ (EventSource)│  │ (WebRTC)     │      │
+│  │ tRPC Client  │  │ WebSocket    │  │ LiveKit      │      │
+│  │ (HTTP/JSON)  │  │ (WS Client)  │  │ (WebRTC)     │      │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
 └─────────┼──────────────────┼──────────────────┼─────────────┘
           │                  │                  │
@@ -31,7 +31,7 @@ This document explains **how all components integrate together** in the AI Assis
                              ↓
                       ┌─────────────┐
                       │    Redis    │
-                      │  (Pub/Sub)  │
+                      │  (Streams)  │
                       └─────────────┘
                              ↓
                       ┌─────────────┐
@@ -44,25 +44,45 @@ This document explains **how all components integrate together** in the AI Assis
 
 ## 1️⃣ **Authentication Flow**
 
-### Registration & Login
+### OAuth Sign-In (Auth.js / NextAuth.js)
+
+> **Authentication**: Auth.js handles all OAuth flows via `/api/auth/*` endpoints. After sign-in, users create a tenant via tRPC.
 
 ```typescript
-// FRONTEND: apps/dashboard/src/components/auth/RegisterForm.tsx
+// FRONTEND: apps/dashboard/src/components/auth/SignInButton.tsx
+import { signIn } from 'next-auth/react';
+
+function SignInButton() {
+  const handleGoogleSignIn = async () => {
+    // Step 1: Initiate Google OAuth flow
+    await signIn('google', {
+      callbackUrl: '/onboarding', // Redirect to tenant creation
+    });
+  };
+
+  return (
+    <button onClick={handleGoogleSignIn}>
+      Sign in with Google
+    </button>
+  );
+}
+```
+
+```typescript
+// FRONTEND: Tenant creation after OAuth sign-in
 import { trpc } from '@/utils/trpc';
 
-function RegisterForm() {
-  const registerMutation = trpc.auth.register.useMutation();
+function OnboardingForm() {
+  const createTenantMutation = trpc.auth.createTenant.useMutation();
 
-  const handleSubmit = async (data: RegisterInput) => {
-    // Step 1: Call tRPC mutation
-    const result = await registerMutation.mutateAsync({
-      email: data.email,
-      password: data.password,
-      tenantName: data.companyName,
+  const handleSubmit = async (data: { tenantName: string }) => {
+    // Step 1: Create tenant (user already authenticated via OAuth)
+    await createTenantMutation.mutateAsync({
+      tenantName: data.tenantName,
+      plan: 'starter',
     });
 
-    // Step 2: Session cookie automatically set by server
-    // Step 3: Redirect to dashboard
+    // Step 2: Redirect to dashboard
     router.push('/dashboard');
   };
 }
@@ -71,11 +91,11 @@ function RegisterForm() {
 ```typescript
 // BACKEND: packages/api-contract/src/routers/auth.ts
 export const authRouter = router({
-  register: publicProcedure
-    .input(registerSchema)
+  createTenant: protectedProcedure
+    .input(createTenantSchema)
     .mutation(async ({ ctx, input }) => {
-      // Step 1: Hash password with Argon2id
-      const passwordHash = await hash(input.password);
+      // Step 1: Get user from Auth.js session
+      const userId = ctx.session.user.id;
 
       // Step 2: Create tenant
       const [tenant] = await ctx.db
@@ -83,24 +103,13 @@ export const authRouter = router({
         .values({ name: input.tenantName })
         .returning();
 
-      // Step 3: Create user
-      const [user] = await ctx.db
-        .insert(users)
-        .values({
-          email: input.email,
-          passwordHash,
-          tenantId: tenant.id,
-        })
-        .returning();
+      // Step 3: Associate user with tenant
+      await ctx.db
+        .update(users)
+        .set({ tenantId: tenant.id, role: 'owner' })
+        .where(eq(users.id, userId));
 
-      // Step 4: Create session with Lucia
-      const session = await lucia.createSession(user.id, {});
-
-      // Step 5: Set session cookie
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      ctx.res.headers['Set-Cookie'] = sessionCookie.serialize();
-
-      return { user, tenant };
+      return { tenant };
     }),
 });
 ```
@@ -225,7 +234,9 @@ function WidgetsPage() {
 
 ---
 
-## 3️⃣ **Server-Sent Events (SSE) Chat Flow**
+## 3️⃣ **WebSocket Chat Flow (with Redis Streams)**
+
+> **Real-time Architecture**: WebSocket for bidirectional communication + Redis Streams for multi-instance message broadcasting with consumer groups for horizontal scaling.
 
 ### Client Connection
 
@@ -612,18 +623,17 @@ export const knowledgeRouter = router({
 
 The platform uses a **cost-optimized real-time stack**:
 
-1. **SSE (Server-Sent Events)** - Text chat and notifications (covered in Section 3)
+1. **WebSocket + Redis Streams** - Bidirectional text chat and notifications (covered in Section 3)
 2. **LiveKit** - Video/audio meetings and screen sharing (covered in Section 4)
 
-### WebSocket NOT Required for MVP
+### Real-Time Stack Benefits
 
-**Why SSE + LiveKit**:
-- ✅ Simpler than WebSocket libraries
-- ✅ Native browser support (EventSource API)
-- ✅ Auto-reconnect built-in
-- ✅ HTTP/2 compatible
-- ✅ No sticky sessions needed
-- ✅ 90% cost savings vs always-on connections
+**Why WebSocket + Redis Streams + LiveKit**:
+- ✅ Bidirectional communication (WebSocket)
+- ✅ Multi-instance scaling (Redis Streams consumer groups)
+- ✅ Reliable message delivery (Redis persistence)
+- ✅ Sticky sessions for WebSocket load balancing
+- ✅ 90% cost savings vs always-on video connections
 
 **Optional future enhancements** (if bidirectional communication needed):
 - Typing indicators
@@ -631,7 +641,7 @@ The platform uses a **cost-optimized real-time stack**:
 - Online presence tracking
 - Live admin dashboard updates
 
-**Current Implementation**: All real-time features use SSE (Section 3) for text and LiveKit (Section 4) for meetings.
+**Current Implementation**: All real-time features use WebSocket + Redis Streams (Section 3) for text chat and LiveKit (Section 4) for meetings.
 
 ---
 
@@ -808,7 +818,7 @@ To verify all integrations are working:
 
 1. **Authentication**: Register → Login → Session Cookie → Protected Routes ✅
 2. **tRPC**: Frontend Query → API Procedure → Database → Response ✅
-3. **SSE**: Connect → Send Message → Redis Pub/Sub → Receive ✅
+3. **WebSocket**: Connect → Send Message → Redis Streams → Receive ✅
 4. **LiveKit**: Get Token → Connect → Video Stream ✅
 5. **AI**: Send Prompt → Provider → Response → Cost Tracking ✅
 6. **Multi-Tenancy**: All queries filtered by tenant_id ✅

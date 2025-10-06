@@ -4,26 +4,35 @@
 
 This document provides the **step-by-step build order** for implementing the entire AI Assistant Platform from scratch. Follow this roadmap sequentially to ensure proper dependency management and validation at each phase.
 
-**Total Timeline**: 8-12 weeks for complete implementation
+**Total Timeline**: 15-17 weeks for complete implementation (Auth.js pivot adds 2-3 weeks)
+
+> **🚨 CRITICAL - START HERE**: Security patching REQUIRED before any development
+> - 7-day patch window from project start
+> - Redis 7.4.2+, PostgreSQL 17.3/16.7/15.11, Fastify 5.3.2+
+> - See Week 1 Day 1-2 below
 
 ---
 
 ## 📊 **Overview - 7 Implementation Phases**
 
 ```
-Phase 1: Project Scaffolding (Week 1)
+Phase 1: Project Scaffolding (Week 1) ✅ COMPLETE
     ↓
-Phase 2: Database + Auth Foundation (Week 2)
+Phase 2: Security + Database + Auth (Weeks 2-4)
+    Week 1: Security patching (CRITICAL)
+    Week 2-3: Database schema + RLS policies
+    Week 3-4: Auth.js integration + testing
     ↓
-Phase 3: Backend APIs (Weeks 3-4)
+Phase 3: Backend APIs (Weeks 5-7)
     ↓
-Phase 4: Frontend Application (Weeks 5-6)
+Phase 4: Frontend Application (Weeks 8-10)
     ↓
-Phase 5: AI Integration (Weeks 7-8)
+Phase 5: AI Integration + LiveKit (Weeks 11-13)
+    LiveKit Enterprise budget approval required
     ↓
-Phase 6: Real-time Features (Weeks 9-10)
+Phase 6: Real-time Features (Weeks 14-15)
     ↓
-Phase 7: Widget SDK (Weeks 11-12)
+Phase 7: Widget SDK + Polish (Weeks 16-17)
 ```
 
 ---
@@ -117,7 +126,7 @@ packages/
   auth/             # Authentication
   api-contract/     # tRPC routers
   api/              # Fastify backend server
-  realtime/         # SSE + Redis pub/sub
+  realtime/         # WebSocket + Redis Streams
   ai-core/          # AI providers
   knowledge/        # RAG system
   ui/               # Shared component library
@@ -136,21 +145,34 @@ pnpm typecheck  # Should pass with empty files
 
 ---
 
-## Phase 2️⃣: Database + Auth Foundation (Week 2)
+## Phase 2️⃣: Security + Database + Auth Foundation (Weeks 2-4)
 
-**Goal**: Implement database schemas and authentication system
+**🚨 Week 1 (Days 1-2): SECURITY PATCHING - MANDATORY FIRST STEP**
 
-### Step 2.1: Set Up Drizzle ORM
+See detailed security patching requirements above. DO NOT proceed until:
+- ✅ Redis upgraded to 7.4.2+ (4 RCE vulnerabilities patched)
+- ✅ PostgreSQL upgraded to 17.3/16.7/15.11+ (SQL injection patched)
+- ✅ Fastify upgraded to 5.3.2+ (parsing bypass patched)
+
+---
+
+**Week 2-3 Goal**: Implement database schemas with multi-tenant security
+
+### Step 2.1: Set Up Drizzle ORM + Row-Level Security
 
 **Package**: `packages/db`
 
+**⚠️ CRITICAL**: Drizzle has NO automatic tenant filtering - implement RLS policies
+
 **Files to Create**:
-- `src/schema/tenants.ts` - Tenants table
-- `src/schema/users.ts` - Users table
-- `src/schema/lucia-sessions.ts` - Lucia sessions table
+- `src/schema/tenants.ts` - Tenants table with RLS policies
+- `src/schema/users.ts` - Users table with RLS policies
+- `src/schema/auth-sessions.ts` - Auth.js sessions table
 - `src/schema/index.ts` - Export all schemas
+- `src/tenant-context.ts` - Tenant wrapper for all queries (MANDATORY)
 - `src/index.ts` - Database connection and export
 - `drizzle.config.ts` - Drizzle Kit configuration
+- `migrations/001_enable_rls.sql` - Enable RLS on all tables
 
 **Dependencies**:
 ```json
@@ -174,12 +196,15 @@ pnpm db:migrate   # Run migration
 psql postgresql://... -c "\dt"  # Verify tables created
 ```
 
-### Step 2.2: Implement Lucia Auth
+### Step 2.2: Implement Auth.js (NextAuth.js)
 
 **Package**: `packages/auth`
 
+**Week 3-4 Goal**: Implement Auth.js with OAuth providers
+
 **Files to Create**:
-- `src/lucia.ts` - Lucia configuration
+- `src/auth.config.ts` - Auth.js configuration
+- `src/providers.ts` - OAuth providers (Google, Microsoft minimum)
 - `src/index.ts` - Export lucia instance
 - `src/types.ts` - Session and user types
 
@@ -277,7 +302,7 @@ pnpm typecheck  # Verify types compile
 
 **Files to Create** (in `packages/api-contract/src/routers/`):
 1. `auth.ts` - register, login, logout, getSession
-2. `chat.ts` - subscribe (SSE), sendMessage
+2. `chat.ts` - WebSocket connection, sendMessage
 3. `livekit.ts` - getToken, renewToken, getAgentToken
 4. `widgets.ts` - CRUD operations
 5. `meetings.ts` - create, join, end
@@ -305,7 +330,7 @@ pnpm test  # Unit tests for each router
 - `src/plugins/cors.ts` - CORS configuration
 - `src/plugins/helmet.ts` - Security headers
 - `src/plugins/rate-limit.ts` - Rate limiting
-- `src/plugins/sse.ts` - SSE connection manager
+- `src/plugins/websocket.ts` - WebSocket connection manager + sticky sessions
 - `src/plugins/error-handler.ts` - Global error handling
 - `src/routes/health.ts` - Health check endpoint
 - `src/routes/trpc.ts` - tRPC adapter
@@ -656,7 +681,7 @@ curl -X POST http://localhost:3001/trpc/ai.chat \
 
 ### Step 6.3: Additional Real-Time Features (Future)
 
-**Note**: The MVP uses **SSE for text chat** and **LiveKit for meetings**. No additional WebSocket library required for initial launch.
+**Note**: The MVP uses **WebSocket for text chat** and **LiveKit Enterprise for meetings**. Sticky sessions required for WebSocket load balancing.
 
 **Optional future enhancements** (if bidirectional communication needed):
 - Typing indicators
@@ -664,7 +689,9 @@ curl -X POST http://localhost:3001/trpc/ai.chat \
 - Online presence tracking
 - Live admin dashboard updates
 
-**Current Stack**: SSE (text) + LiveKit (meetings) = 90% cost savings vs always-on connections.
+**Current Stack**: WebSocket (text) + LiveKit Enterprise (meetings) = 90% cost savings vs always-on connections.
+
+**Budget Alert**: LiveKit Enterprise plan REQUIRED ($5K-10K+/month minimum).
 
 ---
 
@@ -686,7 +713,7 @@ curl -X POST http://localhost:3001/trpc/ai.chat \
 **Features**:
 - ShadowDOM style isolation
 - Global API (`window.AIAssistantWidget`)
-- SSE chat integration
+- WebSocket chat integration
 - Responsive design
 
 **Validation**:
@@ -802,7 +829,7 @@ pnpm deploy:cdn
 - ✅ RAG system accurate
 
 ### Phase 6: Real-time
-- ✅ SSE chat real-time
+- ✅ WebSocket chat real-time with sticky sessions
 - ✅ LiveKit video working
 - ✅ Token renewal automatic
 - ✅ Multi-instance Redis pub/sub

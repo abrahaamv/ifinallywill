@@ -381,21 +381,34 @@ temp/
 
 ```bash
 ###################
+# 🚨 SECURITY CRITICAL - Minimum Versions Required
+###################
+# PostgreSQL: 16.7+ / 17.3+ / 15.11+ / 14.16+ / 13.19+ (CVE-2025-1094 SQL injection)
+# Redis: 7.4.2+ or 7.2.7+ (4 RCE vulnerabilities, CVSS 7.0-8.8)
+# Fastify: 5.3.2+ (CVE-2025-32442 content-type parsing bypass)
+# See docs/getting-started/quick-start.md for patching instructions
+
+###################
 # Database
 ###################
 DATABASE_URL=postgresql://platform:platform_dev_password@localhost:5432/platform
+# Production: Use connection pooling (PgBouncer) with transaction mode for RLS
 
 ###################
-# Redis
+# Redis (Streams for WebSocket Broadcasting)
 ###################
 REDIS_URL=redis://localhost:6379
+# Production: Redis Streams required for multi-instance WebSocket message distribution
+# Consumer groups handle horizontal scaling with reliable delivery
 
 ###################
-# LiveKit
+# LiveKit (Enterprise Plan REQUIRED for Production)
 ###################
-LIVEKIT_URL=ws://localhost:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
+LIVEKIT_URL=wss://your-livekit-instance.livekit.cloud
+LIVEKIT_API_KEY=your-api-key
+LIVEKIT_API_SECRET=your-api-secret
+# 🚨 BUDGET ALERT: Enterprise plan $5K-$10K+/month minimum
+# Build/Scale plans unsuitable (cold starts, limited agents)
 
 ###################
 # AI Providers
@@ -412,9 +425,30 @@ ELEVENLABS_API_KEY=...
 VOYAGE_API_KEY=...
 
 ###################
-# Authentication
+# Authentication (Auth.js / NextAuth.js)
 ###################
-SESSION_SECRET=change-this-to-random-32-char-string
+# Auth.js replaces deprecated Lucia v4 (March 2025)
+NEXTAUTH_URL=http://localhost:3001
+NEXTAUTH_SECRET=change-this-to-random-32-char-string-min-32-chars
+
+# OAuth Providers (Google REQUIRED, Microsoft optional)
+GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+
+# Microsoft OAuth (Enterprise customers)
+MICROSOFT_CLIENT_ID=your-azure-app-client-id
+MICROSOFT_CLIENT_SECRET=your-azure-app-client-secret
+MICROSOFT_TENANT_ID=your-azure-tenant-id
+
+###################
+# WebSocket Configuration
+###################
+# WebSocket replaces SSE for bidirectional real-time chat
+# Sticky sessions REQUIRED for load balancing
+WEBSOCKET_PORT=3002
+WEBSOCKET_PATH=/ws
+WEBSOCKET_PING_INTERVAL=30000
+WEBSOCKET_PING_TIMEOUT=10000
 
 ###################
 # Server
@@ -440,6 +474,11 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:5174,http://localhost:5175,ht
 SENTRY_DSN=
 AXIOM_TOKEN=
 AXIOM_ORG_ID=
+
+# LLM Observability (Langfuse recommended)
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
+LANGFUSE_HOST=https://cloud.langfuse.com
 
 ###################
 # CDN (Production)
@@ -525,6 +564,8 @@ export default defineConfig({
 
 ## 🔐 **Authentication Configuration**
 
+**Auth.js (NextAuth.js)** replaces deprecated Lucia v4 (March 2025)
+
 ### `packages/auth/package.json`
 
 ```json
@@ -533,19 +574,28 @@ export default defineConfig({
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./config": "./src/auth-config.ts"
   },
   "dependencies": {
-    "lucia": "^3.2.0",
-    "@lucia-auth/adapter-drizzle": "^1.1.0",
-    "@node-rs/argon2": "^1.8.0",
-    "@platform/database": "workspace:*"
+    "next-auth": "5.0.0-beta.25",
+    "@auth-js/drizzle-adapter": "1.7.1",
+    "bcryptjs": "2.4.3",
+    "@platform/db": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.5.0"
+    "@types/node": "22.10.5",
+    "@types/bcryptjs": "2.4.6"
   }
 }
 ```
+
+**Why Auth.js**:
+- Lucia v4 deprecated March 2025, converted to "learning resource only"
+- Auth.js is SOC 2 certified, 3.8M weekly downloads
+- Industry standard OAuth integration (Google, Microsoft, GitHub, etc.)
+- PKCE flow for enhanced security
+- Extensive ecosystem and long-term support
 
 ---
 

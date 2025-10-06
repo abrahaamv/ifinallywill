@@ -6,37 +6,191 @@
 
 **Defense in Depth**: Multiple security layers - network → application → data → code
 
+> **🚨 SECURITY CRITICAL**: All critical vulnerabilities MUST be patched within 7-day window
+> - **Redis 7.4.2+**: 4 RCE vulnerabilities (CVSS 7.0-8.8)
+> - **PostgreSQL 16.7+**: SQL injection actively exploited
+> - **Fastify 5.3.2+**: Content-type parsing bypass
+> - **Row-Level Security**: MANDATORY for multi-tenant data isolation
+
+---
+
+## 🚨 Critical Security Vulnerabilities
+
+### Redis RCE Vulnerabilities (CRITICAL)
+
+**Affected Versions**: < 7.4.2 (or < 7.2.7)
+
+**CVEs**:
+- **CVE-2024-55656** (RedisBloom): CVSS 8.8 - Remote Code Execution
+- **CVE-2024-46981** (Lua scripting): CVSS 7.0 - RCE via malicious Lua scripts
+- **CVE-2024-51737**, **CVE-2024-51480**: Additional RCE vectors
+
+**Mitigation**:
+```bash
+# Update Docker Compose to use Redis 7.4.2+
+# infrastructure/docker/docker-compose.yml
+services:
+  redis:
+    image: redis:7.4.2-alpine  # MINIMUM 7.4.2 or 7.2.7
+```
+
+**Verification**:
+```bash
+docker run redis:latest redis-server --version
+# Should output: Redis server v=7.4.2 or higher
+```
+
+### PostgreSQL SQL Injection (CRITICAL)
+
+**Affected Versions**: < 17.3 / < 16.7 / < 15.11 / < 14.16 / < 13.19
+
+**CVE-2025-1094**: SQL injection actively exploited in the wild
+
+**Mitigation**:
+```bash
+# Update Docker Compose to use PostgreSQL 16.7+
+services:
+  postgres:
+    image: postgres:16.7-alpine  # MINIMUM 16.7 (or 17.3/15.11/14.16/13.19)
+```
+
+**Additional Patch** (after database starts):
+```bash
+psql $DATABASE_URL -f fix-CVE-2024-4317.sql
+```
+
+**Verification**:
+```bash
+psql $DATABASE_URL -c "SELECT version()"
+# Should output: PostgreSQL 16.7 or higher
+```
+
+### Fastify Content-Type Parsing Bypass
+
+**Affected Versions**: < 5.3.2
+
+**CVE-2025-32442**: Content-type parsing bypass allowing malicious payloads
+
+**Mitigation**:
+```json
+// packages/api/package.json
+{
+  "dependencies": {
+    "fastify": "5.3.2"  // MINIMUM 5.3.2
+  }
+}
+```
+
+**Verification**:
+```bash
+cat packages/api/package.json | grep fastify
+# Should show: "fastify": "5.3.2" or higher
+```
+
+### Security Patching Timeline
+
+**7-Day Patch Window** from project start:
+- **Day 1-2**: Identify affected versions
+- **Day 3-4**: Update all dependencies and Docker images
+- **Day 5**: Run full test suite and validation
+- **Day 6**: Deploy to staging and verify
+- **Day 7**: Production deployment
+
+**Automated Monitoring**:
+```bash
+# Weekly dependency audit
+pnpm audit
+
+# GitHub Dependabot alerts (automatic)
+# Snyk integration for real-time monitoring
+```
+
 ---
 
 ## 🔐 Authentication & Authorization
 
-### Lucia Auth Implementation
+### Auth.js (NextAuth.js) Implementation
+
+**Why Auth.js**: Lucia v4 deprecated March 2025. Auth.js is SOC 2 certified, 3.8M weekly downloads, industry standard.
 
 ```typescript
-// packages/auth/src/lucia.ts
-import { Lucia } from 'lucia';
-import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
-import { db } from '@platform/database';
-import * as schema from '@platform/database/schema';
+// packages/auth/src/auth-config.ts
+import NextAuth from "next-auth";
+import Google from "next-auth/providers/google";
+import { DrizzleAdapter } from "@auth-js/drizzle-adapter";
+import { db } from "@platform/db";
+import { accounts, sessions, users, verificationTokens } from "@platform/db/schema";
 
-const adapter = new DrizzlePostgreSQLAdapter(db, schema.luciaSessions, schema.users);
-
-export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    attributes: {
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      httpOnly: true,
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
+    }),
+    // Microsoft OAuth can be added for enterprise customers
+  ],
+  session: {
+    strategy: "database",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
     },
   },
-  getUserAttributes: (attributes) => {
-    return {
-      email: attributes.email,
-      tenantId: attributes.tenantId,
-      role: attributes.role,
-    };
+  callbacks: {
+    async session({ session, user }) {
+      // Add tenant context to session
+      const tenant = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, user.id),
+        columns: { tenantId: true, role: true },
+      });
+
+      if (tenant) {
+        session.user.tenantId = tenant.tenantId;
+        session.user.role = tenant.role;
+      }
+
+      return session;
+    },
   },
 });
+```
+
+**tRPC Context Integration**:
+```typescript
+// packages/api/src/context.ts
+import { auth } from "@platform/auth";
+
+export async function createContext({ req, res }: FetchCreateContextFnOptions) {
+  const session = await auth();
+
+  return {
+    session,
+    tenantId: session?.user?.tenantId,
+    userId: session?.user?.id,
+    db,
+  };
+}
 ```
 
 ### API Key Management
@@ -132,8 +286,95 @@ logger.info('User login', {
 
 ### 5. Broken Access Control
 
+**⚠️ CRITICAL**: Drizzle ORM has NO automatic tenant filtering - catastrophic data leakage risk!
+
+**MANDATORY**: Implement PostgreSQL Row-Level Security (RLS) policies for multi-tenant isolation.
+
+```sql
+-- packages/db/migrations/001_enable_rls.sql
+
+-- Enable RLS on all tenant-scoped tables
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE widgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_events ENABLE ROW LEVEL SECURITY;
+
+-- Force RLS even for table owners (PostgreSQL superusers)
+ALTER TABLE tenants FORCE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+ALTER TABLE widgets FORCE ROW LEVEL SECURITY;
+ALTER TABLE meetings FORCE ROW LEVEL SECURITY;
+ALTER TABLE sessions FORCE ROW LEVEL SECURITY;
+ALTER TABLE messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_documents FORCE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_chunks FORCE ROW LEVEL SECURITY;
+ALTER TABLE cost_events FORCE ROW LEVEL SECURITY;
+
+-- Create RLS policies for tenant isolation
+CREATE POLICY tenant_isolation_policy ON users
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON widgets
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON meetings
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+-- Repeat for all tenant-scoped tables...
+```
+
+**Tenant Context Middleware** (REQUIRED for all requests):
 ```typescript
-// Multi-tenancy enforcement
+// packages/api/src/middleware/tenant-context.ts
+import { db } from "@platform/db";
+
+export async function setTenantContext(tenantId: string) {
+  // Set PostgreSQL session variable for RLS policies
+  await db.execute(
+    sql`SET LOCAL app.current_tenant_id = ${tenantId}`
+  );
+}
+
+// Apply to all tRPC procedures
+export const protectedProcedure = publicProcedure
+  .use(async ({ ctx, next }) => {
+    if (!ctx.session?.user?.tenantId) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
+    // CRITICAL: Set tenant context before ANY database query
+    await setTenantContext(ctx.session.user.tenantId);
+
+    return next({
+      ctx: {
+        ...ctx,
+        tenantId: ctx.session.user.tenantId,
+      },
+    });
+  });
+```
+
+**Connection Pooling with PgBouncer**:
+```ini
+# infrastructure/pgbouncer/pgbouncer.ini
+[databases]
+platform = host=postgres port=5432 dbname=platform
+
+[pgbouncer]
+pool_mode = transaction  # CRITICAL: transaction mode for RLS session variables
+max_client_conn = 1000
+default_pool_size = 50
+reserve_pool_size = 25
+```
+
+**Alternative: Tenant Wrapper** (if RLS not used):
+```typescript
+// packages/db/src/tenant-wrapper.ts
 export function createTenantContext(tenantId: string) {
   return {
     query: {
@@ -350,7 +591,9 @@ const cspDirectives = {
   connectSrc: [
     "'self'",
     'https://api.platform.com',
-    'wss://api.platform.com', // LiveKit WebSocket
+    'wss://api.platform.com', // WebSocket real-time chat
+    'https://livekit.cloud', // LiveKit WebRTC
+    'wss://livekit.cloud', // LiveKit WebRTC signaling
   ],
   fontSrc: ["'self'", 'data:'],
   objectSrc: ["'none'"],
@@ -421,27 +664,57 @@ export async function detectAnomalies(tenantId: string) {
 
 ## ✅ Security Checklist
 
-### Pre-Launch
-- [ ] All API endpoints require authentication
-- [ ] Multi-tenant isolation tested
-- [ ] SQL injection testing passed
-- [ ] XSS prevention verified
-- [ ] CSRF protection enabled
-- [ ] Rate limiting implemented
-- [ ] Secrets in environment variables
-- [ ] HTTPS enforced everywhere
-- [ ] Security headers configured
-- [ ] Dependency vulnerabilities resolved
+### Pre-Launch (MANDATORY)
+**Critical Vulnerabilities** (7-day patch window):
+- [ ] Redis 7.4.2+ deployed (RCE vulnerabilities patched)
+- [ ] PostgreSQL 16.7+ deployed (SQL injection patched)
+- [ ] Fastify 5.3.2+ installed (content-type bypass patched)
+- [ ] All dependency audits passing (pnpm audit)
 
-### Production
-- [ ] Regular security audits scheduled
-- [ ] Automated dependency scanning
-- [ ] Intrusion detection system
-- [ ] Log monitoring and alerts
-- [ ] Incident response plan
-- [ ] Data backup strategy
-- [ ] Disaster recovery tested
-- [ ] Penetration testing completed
+**Multi-Tenant Security**:
+- [ ] PostgreSQL RLS policies enabled on all tenant-scoped tables
+- [ ] RLS FORCE applied (even for superusers)
+- [ ] Tenant context middleware implemented
+- [ ] PgBouncer configured with transaction mode
+- [ ] Multi-tenant isolation tested (negative testing)
+- [ ] Cross-tenant data leakage tests passed
+
+**Authentication & Authorization**:
+- [ ] Auth.js configured with OAuth providers
+- [ ] All API endpoints require authentication
+- [ ] Session security configured (httpOnly, sameSite, secure)
+- [ ] CSRF protection enabled
+- [ ] Rate limiting implemented (login, API calls)
+
+**Application Security**:
+- [ ] SQL injection testing passed (Drizzle ORM used)
+- [ ] XSS prevention verified (React auto-escaping)
+- [ ] Input validation with Zod schemas
+- [ ] Secrets in environment variables (never hardcoded)
+- [ ] HTTPS enforced everywhere
+- [ ] Security headers configured (CSP, HSTS, X-Frame-Options)
+
+### Production (Ongoing)
+**Monitoring & Response**:
+- [ ] Regular security audits scheduled (quarterly)
+- [ ] Automated dependency scanning (weekly pnpm audit)
+- [ ] Intrusion detection system active
+- [ ] Log monitoring and alerts configured
+- [ ] Incident response plan documented
+- [ ] Security incident communication plan
+
+**Data Protection**:
+- [ ] Data backup strategy tested (daily backups, 30-day retention)
+- [ ] Disaster recovery tested (quarterly)
+- [ ] Encryption at rest enabled
+- [ ] Encryption in transit enforced (TLS 1.3+)
+- [ ] GDPR compliance verified (data subject rights)
+
+**Validation & Testing**:
+- [ ] Penetration testing completed (annually)
+- [ ] Vulnerability scanning automated (CI/CD)
+- [ ] Security regression tests in CI pipeline
+- [ ] Load testing with security scenarios
 
 ---
 

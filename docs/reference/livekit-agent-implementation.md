@@ -2,23 +2,31 @@
 
 > **Phase 5 Implementation** - Comprehensive guide for building the production LiveKit agent for real-time multi-modal AI sessions
 
-**Status**: Implementation pending (Scheduled for Phase 5: Weeks 7-8)
+**Status**: Implementation pending (Scheduled for Phase 5: Weeks 11-13)
 
 **Reference Code**: See [livekit-agent/](./livekit-agent/) for playground/experimental implementation
+
+> **🚨 BUDGET CRITICAL**: LiveKit Enterprise plan REQUIRED for production
+> - **Minimum Cost**: $5,000-$10,000+/month base fee
+> - **Build/Scale Plans Insufficient**: Cold starts, limited agent pool (unusable for production)
+> - **Enterprise Features Required**: 40-100 worker pool, sub-100ms latency, 99.99% SLA
+> - **Budget Approval**: Secure executive approval BEFORE Phase 5 implementation
+> - **Alternative**: Self-hosted LiveKit (significant DevOps overhead, no SLA)
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Implementation Phases](#implementation-phases)
-4. [Core Components](#core-components)
-5. [Backend Integration](#backend-integration)
-6. [Cost Optimization Strategies](#cost-optimization-strategies)
-7. [Testing Strategy](#testing-strategy)
-8. [Deployment](#deployment)
-9. [Migration from Reference](#migration-from-reference)
+2. [LiveKit Enterprise Requirements](#livekit-enterprise-requirements)
+3. [Architecture](#architecture)
+4. [Implementation Phases](#implementation-phases)
+5. [Core Components](#core-components)
+6. [Backend Integration](#backend-integration)
+7. [Cost Optimization Strategies](#cost-optimization-strategies)
+8. [Testing Strategy](#testing-strategy)
+9. [Deployment](#deployment)
+10. [Migration from Reference](#migration-from-reference)
 
 ---
 
@@ -47,13 +55,70 @@ The production LiveKit agent is a Python-based server-side participant that join
 
 ---
 
+## LiveKit Enterprise Requirements
+
+### Why Enterprise Plan is Mandatory
+
+**Build/Scale Plan Limitations** (NOT suitable for production):
+- **Cold Starts**: 5-30 second delays when agent not running
+- **Limited Agent Pool**: 1-5 concurrent agents maximum
+- **No SLA**: No uptime guarantees or support commitments
+- **Inconsistent Performance**: Resource sharing with other customers
+- **Poor User Experience**: Delays destroy real-time interaction quality
+
+**Enterprise Plan Benefits** (REQUIRED for production):
+- **40-100 Worker Pool**: Pre-warmed agents, instant availability
+- **Sub-100ms Latency**: Global edge network, optimized routing
+- **99.99% SLA**: Financial guarantees, 24/7 support
+- **Dedicated Resources**: No resource contention, predictable performance
+- **Priority Support**: Direct Slack channel, dedicated account manager
+- **Custom Scaling**: Tailored to your traffic patterns
+
+### Budget Planning
+
+**Monthly Costs**:
+```
+Enterprise Base Fee:     $5,000-$10,000/month (minimum)
+Variable Usage:          $0.50-$2.00 per session hour
+AI Provider Costs:       $0.04-$0.08 per session hour (optimized)
+────────────────────────────────────────────────────
+Total (1000 sessions):   $5,500-$10,500/month
+Total (10K sessions):    $10,000-$25,000/month
+```
+
+**Cost Justification**:
+- **Per-Session Value**: $50-$200 revenue potential
+- **Break-Even**: 25-200 paid sessions/month
+- **Margin Impact**: Enterprise fee = 5-10% of revenue at scale
+- **Alternative Cost**: Self-hosting = $8K-$15K/month (DevOps + infrastructure)
+
+### Pre-Implementation Checklist
+
+**Before starting Phase 5**:
+- [ ] Executive budget approval secured ($5K-$10K+/month)
+- [ ] LiveKit Enterprise contract signed
+- [ ] Account manager assigned
+- [ ] Dedicated Slack channel active
+- [ ] Worker pool size determined (40-100 agents)
+- [ ] Global edge regions selected
+- [ ] SLA terms reviewed and accepted
+- [ ] Billing alerts configured
+
+**Alternative Path** (if budget rejected):
+- [ ] Evaluate self-hosted LiveKit (significant DevOps investment)
+- [ ] Consider Phase 5 delay until budget available
+- [ ] Explore alternative WebRTC providers (inferior AI integration)
+
+---
+
 ## Architecture
 
 ### High-Level System Design
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                 LiveKit Cloud Infrastructure             │
+│         LiveKit Cloud Enterprise Infrastructure          │
+│  (40-100 worker pool, sub-100ms latency, 99.99% SLA)   │
 ├─────────────────────────────────────────────────────────┤
 │              Production LiveKit Agent                     │
 │  ┌────────────────────────────────────────────────────┐ │
@@ -112,6 +177,15 @@ The production LiveKit agent is a Python-based server-side participant that join
 ---
 
 ## Implementation Phases
+
+### Prerequisites
+
+**BEFORE Phase 5.1**:
+1. **LiveKit Enterprise Contract**: Signed and active
+2. **Budget Approval**: $5K-$10K+/month confirmed
+3. **Account Setup**: Enterprise credentials issued
+4. **Backend Ready**: tRPC APIs deployed and tested
+5. **Security Patches**: All critical vulnerabilities patched
 
 ### Phase 5.1: Project Setup (Day 1-2)
 
@@ -668,14 +742,30 @@ See `.env.example` for required configuration.
 
 ### Production Checklist
 
+**LiveKit Enterprise**:
+- [ ] Enterprise plan active and verified
+- [ ] Worker pool size configured (40-100 agents)
+- [ ] Edge regions selected and tested
+- [ ] SLA monitoring configured
+- [ ] Account manager contact confirmed
+- [ ] Dedicated Slack channel active
+
+**Application Configuration**:
 - [ ] All environment variables configured
 - [ ] Backend API accessible from agent
-- [ ] LiveKit Cloud credentials valid
+- [ ] LiveKit Enterprise credentials valid
 - [ ] AI provider API keys tested
 - [ ] Monitoring and logging configured
 - [ ] Error handling tested
 - [ ] Cost tracking validated
 - [ ] Multi-tenancy isolation verified
+
+**Performance Validation**:
+- [ ] Sub-100ms latency achieved
+- [ ] Zero cold starts confirmed
+- [ ] 99.99% uptime in staging
+- [ ] Agent auto-scaling tested
+- [ ] Global failover tested
 
 ---
 
@@ -719,12 +809,48 @@ See `.env.example` for required configuration.
 
 ---
 
-**Implementation Timeline**: 14-21 days (Weeks 7-8)
+## Budget Approval Template
+
+**For Finance/Executive Team**:
+
+```markdown
+## LiveKit Enterprise Budget Request
+
+**Request**: $5,000-$10,000/month recurring (Enterprise plan)
+
+**Justification**:
+- REQUIRED for production multi-modal AI assistant
+- Build/Scale plans unsuitable (cold starts, limited agents)
+- Enterprise = 99.99% SLA + sub-100ms latency + 40-100 worker pool
+
+**Revenue Impact**:
+- Per-session value: $50-$200 (customer acquisition/support efficiency)
+- Break-even: 25-200 paid sessions/month
+- Scale impact: 5-10% of revenue (sustainable margin)
+
+**Alternative Analysis**:
+- Self-hosted LiveKit: $8K-$15K/month (DevOps + infrastructure) + NO SLA
+- Delay Phase 5: Competitive disadvantage, delayed revenue
+- Alternative providers: Inferior AI integration, vendor lock-in risk
+
+**Risk Assessment**:
+- WITHOUT Enterprise: Production unusable (cold starts destroy UX)
+- WITH Enterprise: Competitive advantage, reliable revenue stream
+
+**Recommendation**: Approve Enterprise plan for Phase 5 start (Week 11)
+```
+
+---
+
+**Implementation Timeline**: 14-21 days (Weeks 11-13, Phase 5)
 
 **Success Criteria**:
+- ✅ LiveKit Enterprise plan active and validated
 - ✅ 1 FPS screen capture working
-- ✅ Cost optimization validated (80% savings)
+- ✅ Cost optimization validated (80% AI savings)
 - ✅ Backend integration functional
 - ✅ Multi-tenancy isolation verified
 - ✅ All tests passing (≥80% coverage)
+- ✅ Sub-100ms latency achieved
+- ✅ 99.99% uptime in staging
 - ✅ Production deployment successful

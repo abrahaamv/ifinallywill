@@ -225,9 +225,17 @@ STRIPE_PUBLISHABLE_KEY="pk_test_..."
 SENTRY_DSN="" # Optional
 AXIOM_TOKEN="" # Optional
 
-# ==================== SECURITY ====================
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-SESSION_SECRET="your-super-secret-session-key-change-in-production"
+# ==================== AUTHENTICATION (Auth.js / NextAuth.js) ====================
+NEXTAUTH_URL="http://localhost:3001"
+NEXTAUTH_SECRET="your-super-secret-32-char-string-change-in-production"
+
+# OAuth Providers (Google REQUIRED, Microsoft optional)
+GOOGLE_CLIENT_ID="your-google-oauth-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-oauth-client-secret"
+
+# Optional: Microsoft OAuth
+# MICROSOFT_CLIENT_ID=""
+# MICROSOFT_CLIENT_SECRET=""
 
 # ==================== DEVELOPMENT ====================
 NODE_ENV="development"
@@ -237,16 +245,23 @@ LOG_LEVEL="debug"
 ### Generate Secrets
 
 ```bash
-# Generate random secrets for JWT and sessions
+# Generate random secret for Auth.js (NextAuth.js)
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # Or use this script:
 # scripts/generate-secrets.js
 const crypto = require('crypto');
 
-console.log('JWT_SECRET=' + crypto.randomBytes(32).toString('hex'));
-console.log('SESSION_SECRET=' + crypto.randomBytes(32).toString('hex'));
+console.log('NEXTAUTH_SECRET=' + crypto.randomBytes(32).toString('hex'));
 ```
+
+**Setup Google OAuth**:
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select existing
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add authorized redirect URI: `http://localhost:3001/api/auth/callback/google`
+6. Copy Client ID and Secret to `.env`
 
 ### Environment File Template
 
@@ -510,17 +525,32 @@ curl http://localhost:3001/health
 
 ### Create Test Session
 
-```bash
-# Register test tenant
-curl -X POST http://localhost:3001/trpc/auth.register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123",
-    "tenantName": "Test Company"
-  }'
+**Auth.js OAuth Flow** (Google Sign-In):
 
-# Should return session token and user info
+```bash
+# 1. Visit the sign-in page in browser
+http://localhost:3001/api/auth/signin
+
+# 2. Click "Sign in with Google"
+# 3. Complete Google OAuth flow
+# 4. You'll be redirected back with a session cookie
+
+# To test programmatically:
+curl http://localhost:3001/api/auth/session \
+  -H "Cookie: authjs.session-token=<your-session-token>"
+
+# Should return user info and tenant context
+```
+
+**Alternative: Seed Database** (development only):
+
+```bash
+# Run seed script to create test tenants and users
+pnpm db:seed
+
+# This creates:
+# - Test tenant: "Acme Corp"
+# - Test user: admin@acme.com (with Google OAuth account)
 ```
 
 ---
@@ -626,8 +656,8 @@ platform/
 │   ├── voice/             # Voice pipeline (STT/TTS)
 │   ├── vision/            # Screen analysis engine
 │   ├── rag/               # RAG system + embeddings
-│   ├── auth/              # Lucia Auth utilities
-│   ├── chat/              # Chat logic (SSE + LiveKit)
+│   ├── auth/              # Auth.js (NextAuth.js) utilities
+│   ├── chat/              # Chat logic (WebSocket + LiveKit)
 │   └── config/            # Shared configs
 │
 ├── tooling/

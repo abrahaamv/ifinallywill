@@ -23,7 +23,9 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 
 ### Key Innovation
 
-**Cost-optimized architecture** that uses lightweight SSE for text chat and only activates LiveKit when screen sharing is needed, resulting in **90% cost savings** versus always-on video conferencing solutions.
+**Cost-optimized architecture** that uses lightweight WebSocket for text chat and only activates LiveKit when screen sharing is needed, resulting in **90% cost savings** versus always-on video conferencing solutions.
+
+> **🚨 IMPLEMENTATION NOTE**: 15-17 week timeline (Auth.js pivot adds 2-3 weeks to original 12-week plan)
 
 ---
 
@@ -37,10 +39,10 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 ```
 1. User sees chatbot button on website
 2. Clicks → Opens chat panel
-3. Types/speaks questions → AI responds via text (SSE)
+3. Types/speaks questions → AI responds via text (WebSocket)
 4. [Optional] Clicks "Share Screen" → Upgrades to LiveKit
 5. Full desktop sharing + voice guidance
-6. User stops sharing → Returns to cost-effective text chat
+6. User stops sharing → Returns to cost-effective WebSocket chat
 ```
 
 **Embedding Options**:
@@ -82,18 +84,20 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 
 ## 💰 Cost Architecture
 
-### Text Chat Mode (SSE)
+### Text Chat Mode (WebSocket + Redis Streams)
 - **Cost**: $0.05-0.10 per hour
 - **Use When**: Simple Q&A, basic guidance
-- **Technology**: Server-Sent Events + Redis pub/sub
+- **Technology**: WebSocket (bidirectional) + Redis Streams (multi-instance)
+- **Requirements**: Sticky sessions for load balancing, consumer groups for scaling
 
-### Meeting Mode (LiveKit)
-- **Cost**: $1.20-2.20 per hour
+### Meeting Mode (LiveKit Enterprise)
+- **Cost**: $1.20-2.20 per hour (session) + $5K-$10K/month (base fee)
 - **Use When**: Screen sharing needed, visual guidance required
-- **Technology**: LiveKit WebRTC + AI agents
+- **Technology**: LiveKit WebRTC + Python AI agents
+- **🚨 BUDGET ALERT**: Enterprise plan REQUIRED for production (Build/Scale plans unusable)
 
 ### Cost Savings
-**90% cheaper** than always-on LiveKit by starting with SSE and upgrading on-demand.
+**90% cheaper** than always-on LiveKit by starting with WebSocket and upgrading on-demand.
 
 ---
 
@@ -148,15 +152,16 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 - **Turborepo** monorepo (3-10x faster builds)
 
 ### Backend
-- **Fastify 5** (3x faster than Express)
+- **Fastify 5.3.2+** (3x faster than Express, CVE-2025-32442 patched)
 - **tRPC v11** (end-to-end type safety)
-- **PostgreSQL 16** + **pgvector** (vector search)
+- **PostgreSQL 16.7+** + **pgvector** (vector search, CVE-2025-1094 patched)
 - **Drizzle ORM** (100x faster than Prisma)
-- **Redis 7** (SSE pub/sub, caching)
+- **Redis 7.4.2+** (Streams pub/sub, caching, RCE CVEs patched)
 
 ### Real-Time
-- **Server-Sent Events** (text chat, cost-effective)
-- **LiveKit** (voice + screen sharing on-demand)
+- **WebSocket** (bidirectional text chat, cost-effective)
+- **Redis Streams** (multi-instance message broadcasting)
+- **LiveKit Enterprise** (voice + screen sharing on-demand)
 - **Full desktop capture** capability
 
 ### AI Stack
@@ -205,28 +210,46 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 
 ## 🚀 Development Roadmap
 
-### Phase 1: Foundation (Weeks 1-4)
-- Monorepo setup (Turborepo + pnpm)
-- Core infrastructure (Fastify API + PostgreSQL)
-- Embedded widget skeleton
-- SSE chat implementation
+> **Updated Timeline**: 15-17 weeks (Auth.js pivot adds 2-3 weeks to original 12-week plan)
 
-### Phase 2: AI Integration (Weeks 5-8)
+### Phase 1: Foundation (Week 1) ✅ COMPLETE
+- Monorepo setup (Turborepo + pnpm)
+- Project scaffolding and documentation
+- Security patch validation
+
+### Phase 2: Security + Database + Auth (Weeks 2-4)
+- Security patching (Redis 7.4.2+, PostgreSQL 16.7+, Fastify 5.3.2+)
+- Database schema with RLS policies
+- Auth.js integration (Google OAuth)
+- Multi-tenant architecture
+
+### Phase 3: Backend APIs (Weeks 5-6)
+- tRPC router implementation
+- WebSocket + Redis Streams
+- RAG knowledge system
+- Cost tracking
+
+### Phase 4: Frontend Apps (Weeks 7-10)
+- Landing page + dashboard
+- Meeting room interface
+- Embedded widget SDK
+- Component library
+
+### Phase 5: AI Integration (Weeks 11-13)
+- LiveKit Enterprise setup ($5K-$10K+/month)
+- Python agent implementation
 - Vision analysis (Gemini + Claude)
 - Voice pipeline (Deepgram + ElevenLabs)
-- RAG system (Voyage + pgvector)
-- LiveKit integration
 
-### Phase 3: Production (Weeks 9-12)
-- Meeting platform interface
-- Multi-tenancy + billing
-- Security + compliance
+### Phase 6: Production (Weeks 14-15)
+- Multi-tenancy testing
+- Security audit
+- Performance optimization
 - Beta launch
 
-### Phase 4: Scale (Months 4-6)
-- Performance optimization
+### Phase 7: Scale (Weeks 16-17+)
 - Enterprise features
-- SOC 2 certification
+- SOC 2 preparation
 - Go-to-market execution
 
 ---
@@ -251,13 +274,14 @@ An AI-powered guidance system that helps users navigate complex interfaces throu
 
 ## 🎯 Next Steps
 
-1. Review complete technical architecture (see other docs)
-2. Set up development environment
-3. Initialize monorepo structure
-4. Begin Phase 1 implementation
+1. ✅ Phase 1 Complete - Foundation scaffolding ready
+2. 🚨 **Critical**: Apply security patches (Redis 7.4.2+, PostgreSQL 16.7+, Fastify 5.3.2+)
+3. Implement Auth.js with Google OAuth
+4. Create database schema with RLS policies
+5. Begin Phase 3 backend implementation
 
 ---
 
-**Project Status**: Planning Complete ✅
-**Next Action**: Begin implementation in new repository
-**Expected Launch**: 12 weeks from start
+**Project Status**: Phase 1 Complete ✅ | Phase 2 In Progress
+**Next Action**: Security patching (7-day window) + Auth.js integration
+**Expected Launch**: 15-17 weeks from start (Auth.js pivot adds 2-3 weeks)

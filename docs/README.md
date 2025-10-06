@@ -2,6 +2,14 @@
 
 > **Enterprise-grade documentation** for the AI Assistant Platform - Complete technical guides, architecture specs, and implementation references.
 
+> **🚨 SECURITY CRITICAL - READ FIRST**:
+> - **7-Day Security Patch Window**: Redis 7.4.2+, PostgreSQL 16.7+, Fastify 5.3.2+ REQUIRED
+> - **RLS Policies MANDATORY**: Multi-tenant data isolation via Row-Level Security
+> - **LiveKit Enterprise Budget**: $5K-$10K+/month minimum for production
+> - **Timeline**: 15-17 weeks total implementation (Auth.js pivot adds 2-3 weeks)
+>
+> See [Quick Start Guide](getting-started/quick-start.md) for critical security patches.
+
 ---
 
 ## 📚 Quick Navigation
@@ -25,12 +33,12 @@ Understand the system design and technical decisions:
 
 Step-by-step implementation guides:
 
-- **[Development Roadmap](guides/roadmap.md)** - 7-phase implementation plan
+- **[Development Roadmap](guides/roadmap.md)** - 7-phase, 15-17 week implementation plan
+- **[Security Guide](guides/security.md)** - 🚨 CRITICAL: Security patches, RLS policies, Auth.js
 - **[Component Patterns](guides/components.md)** - React component architecture
 - **[AI Integration](guides/ai-integration.md)** - AI provider integration patterns
-- **[Integration Guide](guides/integration.md)** - Component integration and data flow
-- **[Testing Strategy](guides/testing.md)** - Testing approach and patterns
-- **[Security Guide](guides/security.md)** - Security and compliance best practices
+- **[Integration Guide](guides/integration.md)** - WebSocket, Redis Streams, data flow
+- **[Testing Strategy](guides/testing.md)** - Multi-tenant testing, WebSocket tests
 
 ### 📋 Reference
 
@@ -64,14 +72,14 @@ Production implementation (Phase 5) and reference code:
 ### For New Developers
 
 **Day 1** - Understand the platform:
-1. [Overview](getting-started/overview.md)
-2. [System Design](architecture/system-design.md)
-3. [Development Setup](getting-started/development.md)
+1. [Quick Start Guide](getting-started/quick-start.md) - 🚨 START HERE (security patches)
+2. [Overview](getting-started/overview.md)
+3. [System Design](architecture/system-design.md)
 
-**Week 1** - Deep dive:
-1. [Development Roadmap](guides/roadmap.md)
-2. [Tech Stack](architecture/tech-stack.md)
-3. [API Reference](reference/api.md)
+**Week 1** - Security & Setup:
+1. [Security Guide](guides/security.md) - Critical vulnerabilities, RLS policies
+2. [Development Roadmap](guides/roadmap.md) - 15-17 week plan
+3. [Tech Stack](architecture/tech-stack.md) - Auth.js, WebSocket, minimum versions
 
 ### For Implementation
 
@@ -115,10 +123,13 @@ All documentation follows enterprise-grade standards:
 
 | Need to... | Go to... |
 |------------|----------|
+| 🚨 **Apply security patches** | **[Quick Start Guide](getting-started/quick-start.md)** |
+| Understand security requirements | [Security Guide](guides/security.md) |
 | Set up development environment | [Development Setup](getting-started/development.md) |
 | Understand system architecture | [System Design](architecture/system-design.md) |
-| Implement tRPC endpoints | [API Reference](reference/api.md) |
-| Design database schema | [Database Schema](reference/database.md) |
+| Implement tRPC endpoints with Auth.js | [API Reference](reference/api.md) |
+| Design database schema with RLS | [Database Schema](reference/database.md) |
+| Configure Auth.js OAuth | [Configuration](reference/configuration.md) |
 | Build React components | [Component Patterns](guides/components.md) |
 | Integrate AI providers | [AI Integration](guides/ai-integration.md) |
 | Deploy to production | [Deployment Guide](operations/deployment.md) |
@@ -169,6 +180,14 @@ docs/
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: January 2025 (827-source research validation)
 **Version**: 1.0.0
 **Status**: Complete and Ready for Development
+
+**Key Changes**:
+- Auth.js replaces deprecated Lucia v4
+- WebSocket replaces SSE for real-time chat
+- Redis Streams replaces Pub/Sub for multi-instance broadcasting
+- PostgreSQL RLS policies MANDATORY for multi-tenant security
+- LiveKit Enterprise plan requirement ($5K-$10K+/month)
+- Timeline updated: 12 weeks → 15-17 weeks

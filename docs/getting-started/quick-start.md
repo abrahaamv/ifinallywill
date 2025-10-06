@@ -1,6 +1,8 @@
 # Quick Start Guide
 
-> Get the AI Assistant Platform running locally in **under 10 minutes**.
+> Get the AI Assistant Platform running locally in **under 15 minutes**.
+
+> **🚨 CRITICAL**: Security patching REQUIRED first (Step 0 below). 7-day patch window.
 
 ---
 
@@ -13,9 +15,85 @@ Ensure you have these installed:
 - **Python** 3.11+ ([Download](https://www.python.org/))
 - **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop))
 
+**Minimum Versions** (security patches):
+- **Redis**: 7.4.2+ or 7.2.7+ (4 RCE vulnerabilities)
+- **PostgreSQL**: 17.3 / 16.7 / 15.11 / 14.16 / 13.19 (SQL injection actively exploited)
+- **Fastify**: 5.3.2+ (content-type parsing bypass)
+
 ---
 
-## 🚀 5-Step Setup
+## 🚨 Step 0: Security Patching (MANDATORY FIRST STEP)
+
+**⚠️ DO NOT SKIP**: Apply security patches before any development.
+
+### Redis Security Patches
+
+```bash
+# Check current Redis version
+docker run redis:latest redis-server --version
+
+# Update docker-compose.yml to use Redis 7.4.2+
+# infrastructure/docker/docker-compose.yml
+```
+
+Update to:
+```yaml
+services:
+  redis:
+    image: redis:7.4.2-alpine  # MINIMUM 7.4.2 or 7.2.7
+```
+
+**Vulnerabilities Patched**:
+- CVE-2024-55656 (RedisBloom) - CVSS 8.8
+- CVE-2024-46981 (Lua scripting) - CVSS 7.0
+- CVE-2024-51737, CVE-2024-51480
+
+### PostgreSQL Security Patches
+
+```bash
+# Update docker-compose.yml to use PostgreSQL 16.7+
+```
+
+Update to:
+```yaml
+services:
+  postgres:
+    image: postgres:16.7-alpine  # MINIMUM 16.7 (or 17.3/15.11/14.16/13.19)
+```
+
+**Vulnerability Patched**: CVE-2025-1094 (SQL injection actively exploited)
+
+Run patch script:
+```bash
+# After database starts, apply SQL patch
+psql $DATABASE_URL -f fix-CVE-2024-4317.sql
+```
+
+### Fastify Security Patch
+
+```bash
+# Verify Fastify version in package.json
+cat packages/api/package.json | grep fastify
+
+# Should show: "fastify": "5.3.2" or higher
+```
+
+**Vulnerability Patched**: CVE-2025-32442 (content-type parsing bypass)
+
+### Verification
+
+```bash
+# Verify all patches applied
+pnpm list redis fastify
+docker-compose ps  # Check image versions
+psql $DATABASE_URL -c "SELECT version()"
+```
+
+**✅ CHECKPOINT**: All patches applied? Proceed to Step 1.
+
+---
+
+## 🚀 6-Step Setup (After Security Patching)
 
 ### 1. Install Dependencies
 

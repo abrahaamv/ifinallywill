@@ -3,13 +3,19 @@
 ## 🎯 Database Philosophy
 
 **Principles**:
-1. **Multi-tenant by default** - Every table filtered by `tenant_id`
+1. **Multi-tenant by default** - Every table filtered by `tenant_id` + RLS policies
 2. **Type-safe** - Drizzle ORM with TypeScript inference
 3. **Performance-optimized** - Strategic indexes, pgvector for embeddings
 4. **Scalable** - Partitioning-ready, connection pooling
 5. **Audit-ready** - Timestamps, soft deletes where needed
+6. **Security-first** - Row-Level Security (RLS) MANDATORY for multi-tenant isolation
 
-**Technology**: PostgreSQL 16 + pgvector + Drizzle ORM
+**Technology**: PostgreSQL 16.7+ + pgvector + Drizzle ORM + Auth.js
+
+> **🚨 SECURITY CRITICAL**:
+> - **PostgreSQL 16.7+ REQUIRED**: SQL injection CVE-2025-1094 actively exploited
+> - **Row-Level Security (RLS)**: MANDATORY for all tenant-scoped tables
+> - **Drizzle ORM WARNING**: NO automatic tenant filtering - catastrophic data leakage risk without RLS!
 
 ---
 
@@ -73,28 +79,71 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.tenantId],
     references: [tenants.id],
   }),
-  sessions: many(luciaSessions),
+  accounts: many(accounts),
+  sessions: many(authSessions),
 }));
 
-// ==================== LUCIA AUTH SESSIONS ====================
+// ==================== AUTH.JS TABLES ====================
+// Auth.js (NextAuth.js) - SOC 2 certified, industry standard
+// Replaces deprecated Lucia v4
 
-export const luciaSessions = pgTable('lucia_sessions', {
-  id: text('id').primaryKey(),
+export const accounts = pgTable('accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', {
+  type: text('type').notNull(), // 'oauth', 'email', etc.
+  provider: text('provider').notNull(), // 'google', 'microsoft', etc.
+  providerAccountId: text('provider_account_id').notNull(),
+  refreshToken: text('refresh_token'),
+  accessToken: text('access_token'),
+  expiresAt: integer('expires_at'),
+  tokenType: text('token_type'),
+  scope: text('scope'),
+  idToken: text('id_token'),
+  sessionState: text('session_state'),
+});
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const authSessions = pgTable('auth_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionToken: text('session_token').notNull().unique(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires', {
     withTimezone: true,
     mode: 'date',
   }).notNull(),
 });
 
-export const luciaSessionsRelations = relations(luciaSessions, ({ one }) => ({
+export const authSessionsRelations = relations(authSessions, ({ one }) => ({
   user: one(users, {
-    fields: [luciaSessions.userId],
+    fields: [authSessions.userId],
     references: [users.id],
   }),
 }));
+
+export const verificationTokens = pgTable('verification_tokens', {
+  identifier: text('identifier').notNull(),
+  token: text('token').notNull().unique(),
+  expires: timestamp('expires', {
+    withTimezone: true,
+    mode: 'date',
+  }).notNull(),
+});
+
+// Composite primary key for verification tokens
+export const verificationTokensIdx = index('verification_tokens_identifier_token_idx').on(
+  verificationTokens.identifier,
+  verificationTokens.token
+);
 
 // ==================== WIDGETS ====================
 
@@ -667,16 +716,157 @@ export async function createContext({ req }: FetchCreateContextFnOptions) {
 
 ### Row-Level Security (PostgreSQL RLS)
 
-```sql
--- Enable RLS on tenants table
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+**⚠️ CRITICAL**: RLS policies are MANDATORY for multi-tenant isolation. Drizzle ORM has NO automatic tenant filtering!
 
--- Policy: Users can only access their tenant's sessions
-CREATE POLICY tenant_isolation ON sessions
+```sql
+-- packages/db/migrations/001_enable_rls.sql
+
+-- ==================== ENABLE RLS ====================
+-- Enable RLS on all tenant-scoped tables
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE widgets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_summaries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budget_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY;
+
+-- ==================== FORCE RLS ====================
+-- CRITICAL: Force RLS even for table owners (PostgreSQL superusers)
+ALTER TABLE tenants FORCE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+ALTER TABLE accounts FORCE ROW LEVEL SECURITY;
+ALTER TABLE auth_sessions FORCE ROW LEVEL SECURITY;
+ALTER TABLE widgets FORCE ROW LEVEL SECURITY;
+ALTER TABLE meetings FORCE ROW LEVEL SECURITY;
+ALTER TABLE sessions FORCE ROW LEVEL SECURITY;
+ALTER TABLE messages FORCE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_documents FORCE ROW LEVEL SECURITY;
+ALTER TABLE knowledge_chunks FORCE ROW LEVEL SECURITY;
+ALTER TABLE cost_events FORCE ROW LEVEL SECURITY;
+ALTER TABLE cost_summaries FORCE ROW LEVEL SECURITY;
+ALTER TABLE budget_alerts FORCE ROW LEVEL SECURITY;
+ALTER TABLE ai_personalities FORCE ROW LEVEL SECURITY;
+
+-- ==================== CREATE RLS POLICIES ====================
+-- Tenant isolation policy (applied to all tenant-scoped tables)
+CREATE POLICY tenant_isolation_policy ON users
   USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
 
--- Set tenant context in application:
--- SET app.current_tenant_id = 'tenant-uuid-here';
+CREATE POLICY tenant_isolation_policy ON accounts
+  USING (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+  ));
+
+CREATE POLICY tenant_isolation_policy ON auth_sessions
+  USING (user_id IN (
+    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+  ));
+
+CREATE POLICY tenant_isolation_policy ON widgets
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON meetings
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON sessions
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON messages
+  USING (session_id IN (
+    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+  ));
+
+CREATE POLICY tenant_isolation_policy ON knowledge_documents
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON knowledge_chunks
+  USING (document_id IN (
+    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
+  ));
+
+CREATE POLICY tenant_isolation_policy ON cost_events
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON cost_summaries
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON budget_alerts
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+CREATE POLICY tenant_isolation_policy ON ai_personalities
+  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
+
+-- Tenants table: users can only see their own tenant
+CREATE POLICY tenant_isolation_policy ON tenants
+  USING (id = current_setting('app.current_tenant_id')::uuid);
+```
+
+**Tenant Context Middleware** (REQUIRED for all requests):
+```typescript
+// packages/api/src/middleware/tenant-context.ts
+import { db } from "@platform/db";
+import { sql } from "drizzle-orm";
+
+export async function setTenantContext(tenantId: string) {
+  // Set PostgreSQL session variable for RLS policies
+  await db.execute(
+    sql`SET LOCAL app.current_tenant_id = ${tenantId}`
+  );
+}
+
+// Apply to all tRPC procedures
+export const protectedProcedure = publicProcedure
+  .use(async ({ ctx, next }) => {
+    if (!ctx.session?.user?.tenantId) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
+    // CRITICAL: Set tenant context before ANY database query
+    await setTenantContext(ctx.session.user.tenantId);
+
+    return next({
+      ctx: {
+        ...ctx,
+        tenantId: ctx.session.user.tenantId,
+      },
+    });
+  });
+```
+
+**PgBouncer Configuration** (REQUIRED for connection pooling):
+```ini
+# infrastructure/pgbouncer/pgbouncer.ini
+[databases]
+platform = host=postgres port=5432 dbname=platform
+
+[pgbouncer]
+pool_mode = transaction  # CRITICAL: transaction mode for RLS session variables
+max_client_conn = 1000
+default_pool_size = 50
+reserve_pool_size = 25
+server_reset_query = DISCARD ALL  # Reset session state between transactions
+```
+
+**Verification**:
+```sql
+-- Test RLS policy enforcement
+SET app.current_tenant_id = 'tenant-1-uuid';
+SELECT * FROM sessions;  -- Should only return tenant-1 sessions
+
+SET app.current_tenant_id = 'tenant-2-uuid';
+SELECT * FROM sessions;  -- Should only return tenant-2 sessions
+
+-- Test FORCE RLS (even superuser cannot bypass)
+RESET app.current_tenant_id;
+SELECT * FROM sessions;  -- Should return 0 rows (no tenant context)
 ```
 
 ---
@@ -832,7 +1022,7 @@ export const getCostSummary = tenantProcedure
 // packages/database/src/seed.ts
 import { db } from './client';
 import * as schema from './schema';
-import { Argon2id } from 'oslo/password';
+import bcrypt from 'bcryptjs';
 
 export async function seed() {
   console.log('🌱 Seeding database...');
@@ -853,8 +1043,10 @@ export async function seed() {
 
   console.log('✅ Created tenant:', tenant.id);
 
-  // Create demo user
-  const hashedPassword = await new Argon2id().hash('password123');
+  // Create demo user (Auth.js compatible)
+  // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)
+  // Password hash only needed for development/testing
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   const [user] = await db
     .insert(schema.users)
@@ -868,6 +1060,21 @@ export async function seed() {
     .returning();
 
   console.log('✅ Created user:', user.email);
+
+  // Create demo Auth.js session (optional, for testing)
+  const sessionToken = crypto.randomUUID();
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 30); // 30 days
+
+  await db
+    .insert(schema.authSessions)
+    .values({
+      sessionToken,
+      userId: user.id,
+      expires: expiryDate,
+    });
+
+  console.log('✅ Created auth session');
 
   // Create demo widget
   const [widget] = await db
