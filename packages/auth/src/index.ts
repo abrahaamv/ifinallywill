@@ -12,11 +12,12 @@
  * export const { auth, handlers, signIn, signOut } = NextAuth(authConfig);
  * ```
  *
- * To use helper functions:
+ * To use middleware (Phase 3):
  * ```typescript
- * import { requireTenant, getTenantId } from "@platform/auth";
+ * import { authMiddleware, type AuthContext } from "@platform/auth";
  *
- * const { tenantId } = await requireTenant();
+ * const context = await authMiddleware(req);
+ * // context: { session, tenantId, userId, role }
  * ```
  *
  * @see https://authjs.dev/
@@ -27,14 +28,18 @@ export { authConfig } from './config';
 
 // Export helper functions
 export {
-  getSession,
-  getUserId,
-  getTenantId,
-  requireAuth,
-  requireTenant,
-  hasRole,
-  requireRole,
+	getSession,
+	getUserId,
+	getTenantId,
+	requireAuth,
+	requireTenant,
+	hasRole,
+	requireRole,
 } from './helpers';
+
+// Export middleware (Phase 3 - Request-scoped RLS context)
+export { authMiddleware, refreshSession, logoutCleanup, AuthError } from './lib/middleware';
+export type { AuthContext } from './lib/middleware';
 
 // Re-export types for convenience
 export type { Session, User } from 'next-auth';

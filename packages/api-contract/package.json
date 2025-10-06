@@ -9,14 +9,24 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
     "@trpc/server": "11.0.0",
-    "zod": "3.24.1"
+    "zod": "3.24.1",
+    "drizzle-orm": "0.44.6",
+    "@platform/db": "workspace:*",
+    "@platform/api": "workspace:*",
+    "@platform/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
-    "typescript": "5.7.2"
+    "@vitest/coverage-v8": "2.1.8",
+    "dotenv": "16.4.7",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   }
 }

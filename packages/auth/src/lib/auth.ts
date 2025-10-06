@@ -6,27 +6,31 @@
  */
 
 import NextAuth from 'next-auth';
-import type { NextAuthConfig } from 'next-auth';
+import type { NextAuthConfig, Session } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Microsoft from 'next-auth/providers/microsoft-entra-id';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import { db } from '@platform/db';
 
 /**
  * Auth.js configuration with OAuth providers
  *
- * NOTE: Drizzle adapter integration requires schema updates to match Auth.js expectations:
- * - Users table: Add `emailVerified` timestamp and `image` text columns
- * - Auth sessions table: Make `sessionToken` the primary key (currently `id` is PK)
- * - Accounts table: Use snake_case column names (refresh_token, access_token, etc.)
+ * Database adapter enabled (Migration 007 complete):
+ * ✅ Users table: emailVerified and image columns added
+ * ✅ Auth sessions: session_token is primary key
+ * ✅ Accounts table: snake_case column names
+ * ✅ Verification tokens: Composite primary key
  *
- * TODO (Phase 3): Create migration 007 to align schema with Auth.js Drizzle adapter
  * See: https://authjs.dev/reference/adapter/drizzle#postgres
  */
 export const authConfig: NextAuthConfig = {
-  // Temporarily using JWT strategy until schema is updated for Drizzle adapter
-  // Will switch to database sessions in Phase 3
+  // Drizzle adapter for database sessions (Migration 007 complete)
+  adapter: DrizzleAdapter(db),
+
   session: {
-    strategy: 'jwt', // JWT sessions (no database storage)
+    strategy: 'database', // Database sessions (via Drizzle adapter)
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Update session every 24 hours
   },
 
   // OAuth providers
@@ -94,12 +98,12 @@ export const authConfig: NextAuthConfig = {
     },
 
     /**
-     * Session Callback - Called when session is checked
+     * Session Callback - Called when session is checked (database strategy)
      * Add custom properties to the session object
      */
     async session({ session, user }) {
-      // Add user properties from database to session
-      if (session.user) {
+      // Database strategy: user comes from database
+      if (session.user && user) {
         session.user.id = user.id;
         session.user.tenantId = user.tenantId;
         session.user.role = user.role;
@@ -166,7 +170,18 @@ export const authConfig: NextAuthConfig = {
 /**
  * Initialize Auth.js with configuration
  *
- * @ts-expect-error - NextAuth v5 beta type inference issue with Next.js peer dependencies
+ * Explicit type annotations required for NextAuth v5 beta (TS2742 error workaround)
  * See: https://github.com/nextauthjs/next-auth/issues/7658
  */
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+const nextAuth = NextAuth(authConfig);
+
+// Export with explicit types to fix TypeScript inference issues
+// Using 'any' for handler request type since Next.js types not available in Fastify context
+export const handlers: {
+	GET: (req: any) => Promise<Response>;
+	POST: (req: any) => Promise<Response>;
+} = nextAuth.handlers as any;
+
+export const auth: () => Promise<Session | null> = nextAuth.auth as any;
+export const signIn: typeof nextAuth.signIn = nextAuth.signIn;
+export const signOut: typeof nextAuth.signOut = nextAuth.signOut;

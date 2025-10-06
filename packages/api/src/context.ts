@@ -1,57 +1,92 @@
-import { getSession, getTenantId } from '@platform/auth';
-import { db } from '@platform/db';
-import type { Session } from 'next-auth';
-import { setTenantContext } from './middleware/tenant-context';
-
 /**
- * tRPC Context
+ * tRPC Context with Auth.js Integration (Phase 3)
  *
- * Provides authentication session and tenant context for all tRPC procedures.
+ * Provides request-scoped authentication and tenant context for all tRPC procedures.
  *
  * Context flow:
- * 1. Extract session from request (via Auth.js)
- * 2. Extract tenant ID from session
- * 3. Set PostgreSQL session variable for RLS
- * 4. Provide session, tenantId, and db to procedures
+ * 1. Extract session from Auth.js
+ * 2. Validate tenant ID and set RLS context
+ * 3. Extract user role for RBAC
+ * 4. Provide AuthContext + db to procedures
+ *
+ * CRITICAL FOR SECURITY:
+ * - authMiddleware sets `SET LOCAL app.current_tenant_id` for RLS
+ * - Each request gets isolated tenant context
+ * - No manual tenant filtering needed (RLS enforces automatically)
  */
 
+import { authMiddleware, AuthError } from '@platform/auth';
+import { db } from '@platform/db';
+import { TRPCError } from '@trpc/server';
+import type { Session } from 'next-auth';
+
+/**
+ * tRPC Context Interface
+ *
+ * Available in all tRPC procedures via `ctx` parameter.
+ */
 export interface Context {
-  /** Authenticated user session (null if not authenticated) */
-  session: Session | null;
-  /** Tenant ID from session (null if not authenticated or tenant not set) */
-  tenantId: string | null;
-  /** Database instance (use with caution - RLS applied via tenantId) */
-  db: typeof db;
+	/** Authenticated user session (null if not authenticated) */
+	session: Session | null;
+	/** Tenant ID from session (null if not authenticated) */
+	tenantId: string | null;
+	/** User ID from session (null if not authenticated) */
+	userId: string | null;
+	/** User role: owner > admin > member (null if not authenticated) */
+	role: 'owner' | 'admin' | 'member' | null;
+	/** Database instance with RLS policies active */
+	db: typeof db;
 }
 
 /**
  * Create tRPC context for each request
  *
- * This runs for EVERY tRPC request and provides:
- * - User session (from Auth.js)
- * - Tenant context (for multi-tenant isolation)
- * - Database instance (with RLS policies active)
+ * Runs for EVERY tRPC request:
+ * 1. Attempts to authenticate via Auth.js
+ * 2. If authenticated, sets tenant context for RLS
+ * 3. Provides auth context to procedures
  *
+ * Note: This doesn't throw on missing auth - procedures use middleware
+ * like requireAuth(), requireTenant(), requireRole() to enforce auth.
+ *
+ * @param opts - tRPC request options with req/res
  * @returns Promise<Context>
  */
-export async function createContext(): Promise<Context> {
-  // Get authenticated session from Auth.js
-  const session = await getSession();
+export async function createContext(opts: { req: Request }): Promise<Context> {
+	try {
+		// Attempt to authenticate and set tenant context
+		const authContext = await authMiddleware(opts.req);
 
-  // Extract tenant ID from session
-  const tenantId = await getTenantId();
+		// Successfully authenticated - return full context
+		return {
+			session: authContext.session,
+			tenantId: authContext.tenantId,
+			userId: authContext.userId,
+			role: authContext.role,
+			db,
+		};
+	} catch (error) {
+		// Authentication failed - return unauthenticated context
+		// Procedures can check ctx.session to enforce auth
+		if (error instanceof AuthError) {
+			// Expected auth errors (no session, invalid tenant, etc.)
+			return {
+				session: null,
+				tenantId: null,
+				userId: null,
+				role: null,
+				db,
+			};
+		}
 
-  // Set PostgreSQL session variable for RLS
-  // CRITICAL: This MUST happen before any database queries
-  if (tenantId) {
-    await setTenantContext(tenantId);
-  }
-
-  return {
-    session,
-    tenantId,
-    db,
-  };
+		// Unexpected errors - log and re-throw
+		console.error('Unexpected error in createContext:', error);
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: 'Failed to create request context',
+			cause: error,
+		});
+	}
 }
 
 /**

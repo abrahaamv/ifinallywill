@@ -9,7 +9,10 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
-    "clean": "rm -rf dist node_modules .turbo"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist node_modules .turbo coverage"
   },
   "dependencies": {
     "@auth/core": "0.40.0",
@@ -20,8 +23,10 @@
   },
   "devDependencies": {
     "@types/node": "22.10.5",
+    "@vitest/coverage-v8": "2.1.8",
     "react": "18.3.1",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   },
   "peerDependencies": {
     "react": "^18.3.1"

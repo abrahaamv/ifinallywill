@@ -14,7 +14,7 @@ When completing a phase and preparing for the next:
 
 **Standard Request**: "Update all docs and get ready for next phase"
 
-This triggers the following automated workflow:
+This triggers the following auUpdate all docs and get ready for next phase"tomated workflow:
 
 ### 2. Phase Completion Documentation
 

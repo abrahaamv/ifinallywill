@@ -1,6 +1,13 @@
-import { db } from '@platform/db';
+/**
+ * PostgreSQL RLS Tenant Context Utilities
+ *
+ * Low-level utilities for setting tenant context (app.current_tenant_id).
+ * In Phase 3, authMiddleware handles this automatically - these utilities
+ * are provided for manual testing and debugging.
+ */
+
+import { sql } from '@platform/db';
 import { TRPCError } from '@trpc/server';
-import { sql } from 'drizzle-orm';
 
 /**
  * Set PostgreSQL session variable for Row-Level Security (RLS)
@@ -8,21 +15,24 @@ import { sql } from 'drizzle-orm';
  * CRITICAL: This MUST be called before ANY database query to ensure tenant isolation.
  * PostgreSQL RLS policies use app.current_tenant_id to filter all tenant-scoped tables.
  *
+ * Note: In Phase 3, authMiddleware handles this automatically.
+ * This function is kept for manual testing and debugging.
+ *
  * @param tenantId - UUID of the tenant context
  */
 export async function setTenantContext(tenantId: string) {
-  try {
-    // Set PostgreSQL session variable for RLS policies
-    // This affects ALL subsequent queries in the current transaction
-    await db.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
-  } catch (error) {
-    console.error('Failed to set tenant context:', error);
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to set tenant context',
-      cause: error,
-    });
-  }
+	try {
+		// Set PostgreSQL session variable for RLS policies
+		// This affects ALL subsequent queries in the current transaction
+		await sql.unsafe(`SET LOCAL app.current_tenant_id = '${tenantId}'`);
+	} catch (error) {
+		console.error('Failed to set tenant context:', error);
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: 'Failed to set tenant context',
+			cause: error,
+		});
+	}
 }
 
 /**
@@ -32,12 +42,12 @@ export async function setTenantContext(tenantId: string) {
  * this is handled automatically by server_reset_query = DISCARD ALL
  */
 export async function clearTenantContext() {
-  try {
-    await db.execute(sql`RESET app.current_tenant_id`);
-  } catch (error) {
-    console.error('Failed to clear tenant context:', error);
-    // Don't throw - this is cleanup, not critical path
-  }
+	try {
+		await sql.unsafe('RESET app.current_tenant_id');
+	} catch (error) {
+		console.error('Failed to clear tenant context:', error);
+		// Don't throw - this is cleanup, not critical path
+	}
 }
 
 /**
@@ -46,17 +56,17 @@ export async function clearTenantContext() {
  * @returns Current tenant ID or null if not set
  */
 export async function getCurrentTenantContext(): Promise<string | null> {
-  try {
-    const result = await db.execute<{ current_setting: string }>(
-      sql`SELECT current_setting('app.current_tenant_id', true) as current_setting`
-    );
+	try {
+		const result = await sql<Array<{ current_setting: string }>>`
+			SELECT current_setting('app.current_tenant_id', true) as current_setting
+		`;
 
-    const setting = result[0]?.current_setting;
-    return setting && setting !== '' ? setting : null;
-  } catch (error) {
-    console.error('Failed to get tenant context:', error);
-    return null;
-  }
+		const setting = result[0]?.current_setting;
+		return setting && setting !== '' ? setting : null;
+	} catch (error) {
+		console.error('Failed to get tenant context:', error);
+		return null;
+	}
 }
 
 /**
@@ -67,19 +77,19 @@ export async function getCurrentTenantContext(): Promise<string | null> {
  * @param expectedTenantId - Expected tenant ID
  */
 export async function verifyTenantContext(expectedTenantId: string) {
-  const currentTenantId = await getCurrentTenantContext();
+	const currentTenantId = await getCurrentTenantContext();
 
-  if (!currentTenantId) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Tenant context not set - security violation',
-    });
-  }
+	if (!currentTenantId) {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: 'Tenant context not set - security violation',
+		});
+	}
 
-  if (currentTenantId !== expectedTenantId) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Tenant context mismatch - security violation',
-    });
-  }
+	if (currentTenantId !== expectedTenantId) {
+		throw new TRPCError({
+			code: 'INTERNAL_SERVER_ERROR',
+			message: 'Tenant context mismatch - security violation',
+		});
+	}
 }

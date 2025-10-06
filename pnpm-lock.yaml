@@ -191,9 +191,21 @@ importers:
 
   packages/api-contract:
     dependencies:
+      '@platform/api':
+        specifier: workspace:*
+        version: link:../api
+      '@platform/db':
+        specifier: workspace:*
+        version: link:../db
+      '@platform/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@trpc/server':
         specifier: 11.0.0
         version: 11.0.0(typescript@5.7.2)
+      drizzle-orm:
+        specifier: 0.44.6
+        version: 0.44.6(postgres@3.4.6)
       zod:
         specifier: 3.24.1
         version: 3.24.1
@@ -201,9 +213,18 @@ importers:
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
+      '@vitest/coverage-v8':
+        specifier: 2.1.8
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.5))
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
       typescript:
         specifier: 5.7.2
         version: 5.7.2
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.5)
 
   packages/auth:
     dependencies:
@@ -226,12 +247,18 @@ importers:
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
+      '@vitest/coverage-v8':
+        specifier: 2.1.8
+        version: 2.1.8(vitest@2.1.8(@types/node@22.10.5))
       react:
         specifier: 18.3.1
         version: 18.3.1
       typescript:
         specifier: 5.7.2
         version: 5.7.2
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.5)
 
   packages/db:
     dependencies:

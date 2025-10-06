@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -54,6 +55,9 @@ export const users = pgTable('users', {
     .default('member'),
   name: text('name'),
   avatarUrl: text('avatar_url'),
+  // Auth.js required columns (Migration 007)
+  emailVerified: timestamp('email_verified', { withTimezone: true, mode: 'date' }),
+  image: text('image'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -79,6 +83,7 @@ export const accounts = pgTable('accounts', {
   type: text('type').notNull(), // 'oauth', 'email', etc.
   provider: text('provider').notNull(), // 'google', 'microsoft', etc.
   providerAccountId: text('provider_account_id').notNull(),
+  // Auth.js OAuth token columns (snake_case - Migration 007)
   refreshToken: text('refresh_token'),
   accessToken: text('access_token'),
   expiresAt: integer('expires_at'),
@@ -96,8 +101,8 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 }));
 
 export const authSessions = pgTable('auth_sessions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  sessionToken: text('session_token').notNull().unique(),
+  // Migration 007: session_token is now the primary key (not id)
+  sessionToken: text('session_token').primaryKey(),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -114,14 +119,17 @@ export const authSessionsRelations = relations(authSessions, ({ one }) => ({
   }),
 }));
 
+// Migration 007: Composite primary key (identifier, token)
 export const verificationTokens = pgTable('verification_tokens', {
   identifier: text('identifier').notNull(),
-  token: text('token').notNull().unique(),
+  token: text('token').notNull(),
   expires: timestamp('expires', {
     withTimezone: true,
     mode: 'date',
   }).notNull(),
-});
+}, (table) => ({
+  compoundKey: primaryKey({ columns: [table.identifier, table.token] }),
+}));
 
 // ==================== WIDGETS ====================
 
