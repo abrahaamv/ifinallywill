@@ -120,6 +120,8 @@ cp .env.example .env
 
 ### 3. Start Databases
 
+> **✅ Phase 2 Complete**: Database schema, RLS policies, and seeding are fully implemented.
+
 ```bash
 # Start PostgreSQL and Redis
 pnpm db:up
@@ -127,9 +129,38 @@ pnpm db:up
 # Initialize database schema
 pnpm db:push
 
-# (Optional) Seed with sample data
+# Apply RLS policies (Row-Level Security for multi-tenant isolation)
+psql -U platform -d platform -f packages/db/migrations/001_enable_rls.sql
+psql -U platform -d platform -f packages/db/migrations/002_fix_rls_policies.sql
+psql -U platform -d platform -f packages/db/migrations/003_fix_rls_empty_string.sql
+
+# Seed with sample data (temporary RLS disable/restore)
+psql -U platform -d platform -f packages/db/migrations/004_seed_helper.sql
 pnpm db:seed
+psql -U platform -d platform -f packages/db/migrations/005_restore_force_rls.sql
 ```
+
+**What was set up**:
+- 15 database tables (tenants, users, auth, widgets, meetings, sessions, messages, knowledge, cost tracking, AI personalities)
+- FORCE RLS on 14 tenant-scoped tables (56 policies total)
+- Helper function for tenant context handling
+- Demo tenant with admin user (admin@acme.com / password123)
+
+**Verification**:
+```bash
+# Test database connection
+psql -U platform -d platform -c "SELECT COUNT(*) FROM tenants;"
+# Should return: count = 1 (demo tenant)
+
+# Verify RLS is enabled
+psql -U platform -d platform -c "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname IN ('tenants', 'users', 'sessions');"
+# Should show: RLS enabled, FORCE enabled
+```
+
+For detailed setup information, see:
+- `docs/reference/database.md` - Complete schema reference
+- `docs/reference/rls-policies.md` - RLS security model
+- `docs/reference/migrations.md` - Migration execution details
 
 ### 4. Start Development Servers
 

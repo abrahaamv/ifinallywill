@@ -1,4 +1,29 @@
-# Database Schema - Complete Drizzle ORM Design
+# Database Schema Reference
+
+## 📊 Overview
+
+**Database**: PostgreSQL 16+ (minimum 17.3/16.7/15.11 for security patches)
+**ORM**: Drizzle ORM 0.44.6 with postgres driver
+**Extensions**: `pgvector` for vector embeddings (1024 dimensions)
+**Connection Pooling**: PgBouncer recommended (50-100 connections)
+**Migration Strategy**: SQL files for RLS policies + Drizzle Kit push for schema
+
+**Status**: ✅ Phase 2 complete (2025-10-06) - All schema, RLS policies, and seeding implemented
+
+**15 Tables Total**:
+- **Core**: `tenants`, `users`, `widgets`, `meetings`, `sessions`, `messages`
+- **Auth.js**: `accounts`, `auth_sessions`, `verification_tokens`
+- **Knowledge**: `knowledge_documents`, `knowledge_chunks`
+- **Cost Tracking**: `cost_events`, `cost_summaries`, `budget_alerts`
+- **AI**: `ai_personalities`
+
+> **🔐 SECURITY IMPLEMENTATION**:
+> - Row-Level Security (RLS) with **FORCE mode** enabled on 14 tenant-scoped tables
+> - 56 policies implemented (4 per table: SELECT, INSERT, UPDATE, DELETE)
+> - Helper function `get_current_tenant_id()` for edge case handling
+> - Session variable `app.current_tenant_id` MUST be set before ANY database query
+> - See `rls-policies.md` for comprehensive RLS documentation
+> - See `migrations.md` for migration history and execution order
 
 ## 🎯 Database Philosophy
 
@@ -10,12 +35,7 @@
 5. **Audit-ready** - Timestamps, soft deletes where needed
 6. **Security-first** - Row-Level Security (RLS) MANDATORY for multi-tenant isolation
 
-**Technology**: PostgreSQL 16.7+ + pgvector + Drizzle ORM + Auth.js
-
-> **🚨 SECURITY CRITICAL**:
-> - **PostgreSQL 16.7+ REQUIRED**: SQL injection CVE-2025-1094 actively exploited
-> - **Row-Level Security (RLS)**: MANDATORY for all tenant-scoped tables
-> - **Drizzle ORM WARNING**: NO automatic tenant filtering - catastrophic data leakage risk without RLS!
+**Technology**: PostgreSQL 16+ + pgvector + Drizzle ORM 0.44.6 + Auth.js
 
 ---
 
@@ -138,12 +158,6 @@ export const verificationTokens = pgTable('verification_tokens', {
     mode: 'date',
   }).notNull(),
 });
-
-// Composite primary key for verification tokens
-export const verificationTokensIdx = index('verification_tokens_identifier_token_idx').on(
-  verificationTokens.identifier,
-  verificationTokens.token
-);
 
 // ==================== WIDGETS ====================
 
@@ -478,338 +492,174 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
 
 ## 🔍 Indexes for Performance
 
-```typescript
-// packages/database/src/schema/indexes.ts
-import { index } from 'drizzle-orm/pg-core';
-import * as schema from './index';
+> **⚠️ TODO**: Indexes temporarily removed due to Drizzle ORM 0.44.6 compatibility issue
+>
+> Standalone index exports caused runtime errors in Drizzle 0.44.6. Indexes will be added via SQL migration in future phase.
+>
+> See `packages/db/src/schema/index.ts` line 454 for implementation note.
 
-// Tenant lookups
-export const tenantApiKeyIdx = index('tenant_api_key_idx').on(
-  schema.tenants.apiKey
-);
+**Planned Indexes** (to be implemented via SQL migration):
 
-// User queries
-export const userEmailIdx = index('user_email_idx').on(schema.users.email);
-export const userTenantIdx = index('user_tenant_idx').on(schema.users.tenantId);
+```sql
+-- Tenant lookups
+CREATE INDEX tenant_api_key_idx ON tenants(api_key);
 
-// Session queries (most frequent)
-export const sessionTenantIdx = index('session_tenant_idx').on(
-  schema.sessions.tenantId
-);
-export const sessionWidgetIdx = index('session_widget_idx').on(
-  schema.sessions.widgetId
-);
-export const sessionMeetingIdx = index('session_meeting_idx').on(
-  schema.sessions.meetingId
-);
-export const sessionCreatedAtIdx = index('session_created_at_idx').on(
-  schema.sessions.createdAt
-);
+-- User queries
+CREATE INDEX user_email_idx ON users(email);
+CREATE INDEX user_tenant_idx ON users(tenant_id);
 
-// Message queries (high volume)
-export const messageSessionIdx = index('message_session_idx').on(
-  schema.messages.sessionId
-);
-export const messageTimestampIdx = index('message_timestamp_idx').on(
-  schema.messages.timestamp
-);
+-- Session queries (most frequent)
+CREATE INDEX session_tenant_idx ON sessions(tenant_id);
+CREATE INDEX session_widget_idx ON sessions(widget_id);
+CREATE INDEX session_meeting_idx ON sessions(meeting_id);
+CREATE INDEX session_created_at_idx ON sessions(created_at);
 
-// Knowledge base vector search
-export const knowledgeEmbeddingIdx = index('knowledge_embedding_idx')
-  .using('hnsw')
-  .on(schema.knowledgeDocuments.embedding)
-  .with({ m: 16, ef_construction: 64 }); // HNSW parameters
+-- Message queries (high volume)
+CREATE INDEX message_session_idx ON messages(session_id);
+CREATE INDEX message_timestamp_idx ON messages(timestamp);
 
-export const knowledgeChunkEmbeddingIdx = index('knowledge_chunk_embedding_idx')
-  .using('hnsw')
-  .on(schema.knowledgeChunks.embedding)
-  .with({ m: 16, ef_construction: 64 });
+-- Knowledge base vector search (HNSW for fast approximate nearest neighbor)
+CREATE INDEX knowledge_embedding_idx
+  ON knowledge_documents
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
 
-export const knowledgeTenantIdx = index('knowledge_tenant_idx').on(
-  schema.knowledgeDocuments.tenantId
-);
+CREATE INDEX knowledge_chunk_embedding_idx
+  ON knowledge_chunks
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
 
-export const knowledgeCategoryIdx = index('knowledge_category_idx').on(
-  schema.knowledgeDocuments.category
-);
+CREATE INDEX knowledge_tenant_idx ON knowledge_documents(tenant_id);
+CREATE INDEX knowledge_category_idx ON knowledge_documents(category);
 
-// Cost tracking queries
-export const costTenantTimestampIdx = index('cost_tenant_timestamp_idx').on(
-  schema.costEvents.tenantId,
-  schema.costEvents.timestamp
-);
+-- Cost tracking queries
+CREATE INDEX cost_tenant_timestamp_idx ON cost_events(tenant_id, timestamp);
+CREATE INDEX cost_session_idx ON cost_events(session_id);
 
-export const costSessionIdx = index('cost_session_idx').on(
-  schema.costEvents.sessionId
-);
+-- Cost summaries queries (period-based reporting)
+CREATE INDEX cost_summary_tenant_period_idx ON cost_summaries(tenant_id, period_start, period_end);
 
-// Cost summaries queries (period-based reporting)
-export const costSummaryTenantPeriodIdx = index('cost_summary_tenant_period_idx').on(
-  schema.costSummaries.tenantId,
-  schema.costSummaries.periodStart,
-  schema.costSummaries.periodEnd
-);
+-- Budget alerts queries (active monitoring)
+CREATE INDEX budget_alert_tenant_idx ON budget_alerts(tenant_id);
+CREATE INDEX budget_alert_active_idx ON budget_alerts(tenant_id, resolved);
+CREATE INDEX budget_alert_triggered_idx ON budget_alerts(triggered_at);
 
-// Budget alerts queries (active monitoring)
-export const budgetAlertTenantIdx = index('budget_alert_tenant_idx').on(
-  schema.budgetAlerts.tenantId
-);
-
-export const budgetAlertActiveIdx = index('budget_alert_active_idx').on(
-  schema.budgetAlerts.tenantId,
-  schema.budgetAlerts.resolved
-);
-
-export const budgetAlertTriggeredIdx = index('budget_alert_triggered_idx').on(
-  schema.budgetAlerts.triggeredAt
-);
-
-// AI personalities queries (configuration lookups)
-export const aiPersonalityTenantIdx = index('ai_personality_tenant_idx').on(
-  schema.aiPersonalities.tenantId
-);
-
-export const aiPersonalityDefaultIdx = index('ai_personality_default_idx').on(
-  schema.aiPersonalities.tenantId,
-  schema.aiPersonalities.isDefault,
-  schema.aiPersonalities.isActive
-);
+-- AI personalities queries (configuration lookups)
+CREATE INDEX ai_personality_tenant_idx ON ai_personalities(tenant_id);
+CREATE INDEX ai_personality_default_idx ON ai_personalities(tenant_id, is_default, is_active);
 ```
 
 ---
 
 ## 🔄 Migration Strategy
 
+**Status**: ✅ Phase 2 complete (2025-10-06)
+
+**Strategy**: Hybrid approach combining Drizzle Kit push with SQL migration files
+
+### Execution Order
+
+```bash
+# 1. Push schema changes to database (Drizzle Kit)
+pnpm db:push
+
+# 2. Apply RLS policies (SQL migrations)
+psql -U platform -d platform -f packages/db/migrations/001_enable_rls.sql
+psql -U platform -d platform -f packages/db/migrations/002_fix_rls_policies.sql
+psql -U platform -d platform -f packages/db/migrations/003_fix_rls_empty_string.sql
+
+# 3. Seed database (with temporary RLS disable)
+psql -U platform -d platform -f packages/db/migrations/004_seed_helper.sql
+pnpm db:seed
+psql -U platform -d platform -f packages/db/migrations/005_restore_force_rls.sql
+```
+
 ### Drizzle Kit Configuration
 
 ```typescript
-// drizzle.config.ts (root)
+// packages/db/drizzle.config.ts
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import type { Config } from 'drizzle-kit';
-import { env } from './env';
+
+// Load .env from project root
+config({ path: resolve(__dirname, '../../.env') });
 
 export default {
-  schema: './packages/database/src/schema/*.ts',
-  out: './packages/database/migrations',
-  driver: 'pg',
+  schema: './src/schema/index.ts',
+  out: './migrations',
+  dialect: 'postgresql',
   dbCredentials: {
-    connectionString: env.DATABASE_URL,
+    url: process.env.DATABASE_URL!,
   },
   verbose: true,
   strict: true,
 } satisfies Config;
 ```
 
-### Generate Migrations
+### Migration Files
 
-```bash
-# Generate migration from schema changes
-pnpm drizzle-kit generate:pg
+**5 migration files implemented** in `packages/db/migrations/`:
 
-# Apply migrations to database
-pnpm drizzle-kit push:pg
+1. **`001_enable_rls.sql`** - Initial RLS setup (superseded by 003)
+2. **`002_fix_rls_policies.sql`** - Separate INSERT/UPDATE/DELETE policies (superseded by 003)
+3. **`003_fix_rls_empty_string.sql`** - ✅ Production-ready RLS with helper function (ACTIVE)
+4. **`004_seed_helper.sql`** - Temporarily disable FORCE RLS for seeding
+5. **`005_restore_force_rls.sql`** - Restore FORCE RLS after seeding
 
-# View current schema
-pnpm drizzle-kit introspect:pg
-```
-
-### Migration File Example
-
-```sql
--- packages/database/migrations/0001_initial_schema.sql
-
--- Enable pgvector extension
-CREATE EXTENSION IF NOT EXISTS vector;
-
--- Create tenants table
-CREATE TABLE IF NOT EXISTS "tenants" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "name" TEXT NOT NULL,
-  "api_key" TEXT NOT NULL UNIQUE,
-  "plan" TEXT NOT NULL DEFAULT 'starter',
-  "settings" JSONB,
-  "stripe_customer_id" TEXT UNIQUE,
-  "stripe_subscription_id" TEXT,
-  "created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Create users table
-CREATE TABLE IF NOT EXISTS "users" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenant_id" UUID NOT NULL REFERENCES "tenants"("id") ON DELETE CASCADE,
-  "email" TEXT NOT NULL UNIQUE,
-  "password_hash" TEXT NOT NULL,
-  "role" TEXT NOT NULL DEFAULT 'member',
-  "name" TEXT,
-  "avatar_url" TEXT,
-  "created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Continue for all tables...
-
--- Create indexes
-CREATE INDEX "tenant_api_key_idx" ON "tenants"("api_key");
-CREATE INDEX "user_email_idx" ON "users"("email");
-CREATE INDEX "user_tenant_idx" ON "users"("tenant_id");
-
--- Vector indexes (HNSW for fast approximate nearest neighbor search)
-CREATE INDEX "knowledge_embedding_idx"
-  ON "knowledge_documents"
-  USING hnsw (embedding vector_cosine_ops)
-  WITH (m = 16, ef_construction = 64);
-```
+See `migrations.md` for complete migration documentation and execution details.
 
 ---
 
 ## 🔐 Multi-Tenancy Enforcement
 
-### Context-Based Filtering
+**Status**: ✅ Phase 2 complete - FORCE RLS enabled on 14 tenant-scoped tables
 
-```typescript
-// packages/database/src/client.ts
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+> **📚 COMPREHENSIVE DOCUMENTATION**: See `rls-policies.md` for complete RLS implementation details, policy structure, middleware integration, and troubleshooting guide.
 
-const client = postgres(process.env.DATABASE_URL!);
-export const db = drizzle(client, { schema });
+### Security Summary
 
-// Tenant-scoped database context
-export function createTenantDb(tenantId: string) {
-  return {
-    query: {
-      // Override query methods to auto-filter by tenant
-      sessions: {
-        findMany: async (config?: any) => {
-          return db.query.sessions.findMany({
-            ...config,
-            where: (sessions, { eq, and }) => {
-              const conditions = [eq(sessions.tenantId, tenantId)];
-              if (config?.where) {
-                conditions.push(config.where(sessions, { eq, and }));
-              }
-              return and(...conditions);
-            },
-          });
-        },
-        // ... other methods
-      },
-      // ... other tables
-    },
-    // Raw query access (use with caution)
-    raw: db,
-  };
-}
+- **Tables Protected**: 14 tenant-scoped tables
+- **Policies Implemented**: 56 total (4 per table: SELECT, INSERT, UPDATE, DELETE)
+- **RLS Mode**: FORCE (even superusers must comply)
+- **Helper Function**: `get_current_tenant_id()` handles edge cases
+- **Session Variable**: `app.current_tenant_id` MUST be set before ANY database query
 
-// Usage in tRPC context:
-export async function createContext({ req }: FetchCreateContextFnOptions) {
-  const tenantId = await extractTenantId(req);
+### Quick Reference
 
-  return {
-    db: tenantId ? createTenantDb(tenantId) : db,
-    tenantId,
-    // ... other context
-  };
-}
-```
-
-### Row-Level Security (PostgreSQL RLS)
-
-**⚠️ CRITICAL**: RLS policies are MANDATORY for multi-tenant isolation. Drizzle ORM has NO automatic tenant filtering!
-
+**Helper Function** (handles empty string from `current_setting()`):
 ```sql
--- packages/db/migrations/001_enable_rls.sql
-
--- ==================== ENABLE RLS ====================
--- Enable RLS on all tenant-scoped tables
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE widgets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE knowledge_chunks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cost_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cost_summaries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE budget_alerts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY;
-
--- ==================== FORCE RLS ====================
--- CRITICAL: Force RLS even for table owners (PostgreSQL superusers)
-ALTER TABLE tenants FORCE ROW LEVEL SECURITY;
-ALTER TABLE users FORCE ROW LEVEL SECURITY;
-ALTER TABLE accounts FORCE ROW LEVEL SECURITY;
-ALTER TABLE auth_sessions FORCE ROW LEVEL SECURITY;
-ALTER TABLE widgets FORCE ROW LEVEL SECURITY;
-ALTER TABLE meetings FORCE ROW LEVEL SECURITY;
-ALTER TABLE sessions FORCE ROW LEVEL SECURITY;
-ALTER TABLE messages FORCE ROW LEVEL SECURITY;
-ALTER TABLE knowledge_documents FORCE ROW LEVEL SECURITY;
-ALTER TABLE knowledge_chunks FORCE ROW LEVEL SECURITY;
-ALTER TABLE cost_events FORCE ROW LEVEL SECURITY;
-ALTER TABLE cost_summaries FORCE ROW LEVEL SECURITY;
-ALTER TABLE budget_alerts FORCE ROW LEVEL SECURITY;
-ALTER TABLE ai_personalities FORCE ROW LEVEL SECURITY;
-
--- ==================== CREATE RLS POLICIES ====================
--- Tenant isolation policy (applied to all tenant-scoped tables)
-CREATE POLICY tenant_isolation_policy ON users
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON accounts
-  USING (user_id IN (
-    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
-  ));
-
-CREATE POLICY tenant_isolation_policy ON auth_sessions
-  USING (user_id IN (
-    SELECT id FROM users WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
-  ));
-
-CREATE POLICY tenant_isolation_policy ON widgets
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON meetings
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON sessions
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON messages
-  USING (session_id IN (
-    SELECT id FROM sessions WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
-  ));
-
-CREATE POLICY tenant_isolation_policy ON knowledge_documents
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON knowledge_chunks
-  USING (document_id IN (
-    SELECT id FROM knowledge_documents WHERE tenant_id = current_setting('app.current_tenant_id')::uuid
-  ));
-
-CREATE POLICY tenant_isolation_policy ON cost_events
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON cost_summaries
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON budget_alerts
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
-CREATE POLICY tenant_isolation_policy ON ai_personalities
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid);
-
--- Tenants table: users can only see their own tenant
-CREATE POLICY tenant_isolation_policy ON tenants
-  USING (id = current_setting('app.current_tenant_id')::uuid);
+CREATE OR REPLACE FUNCTION get_current_tenant_id() RETURNS uuid AS $$
+BEGIN
+  RETURN COALESCE(NULLIF(current_setting('app.current_tenant_id', true), ''), '00000000-0000-0000-0000-000000000000')::uuid;
+END;
+$$ LANGUAGE plpgsql STABLE;
 ```
 
-**Tenant Context Middleware** (REQUIRED for all requests):
+**Policy Example**:
+```sql
+-- SELECT: Users can only see their own tenant's data
+CREATE POLICY tenants_select ON tenants
+  FOR SELECT
+  USING (id = get_current_tenant_id());
+
+-- INSERT: Allow creating new tenants (for admin operations and seeding)
+CREATE POLICY tenants_insert ON tenants
+  FOR INSERT
+  WITH CHECK (true);
+
+-- UPDATE: Only modify own tenant
+CREATE POLICY tenants_update ON tenants
+  FOR UPDATE
+  USING (id = get_current_tenant_id());
+
+-- DELETE: Only delete own tenant
+CREATE POLICY tenants_delete ON tenants
+  FOR DELETE
+  USING (id = get_current_tenant_id());
+```
+
+**Middleware Integration** (REQUIRED for all requests):
 ```typescript
 // packages/api/src/middleware/tenant-context.ts
 import { db } from "@platform/db";
@@ -817,12 +667,10 @@ import { sql } from "drizzle-orm";
 
 export async function setTenantContext(tenantId: string) {
   // Set PostgreSQL session variable for RLS policies
-  await db.execute(
-    sql`SET LOCAL app.current_tenant_id = ${tenantId}`
-  );
+  await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${tenantId}'`));
 }
 
-// Apply to all tRPC procedures
+// Apply to all protected tRPC procedures
 export const protectedProcedure = publicProcedure
   .use(async ({ ctx, next }) => {
     if (!ctx.session?.user?.tenantId) {
@@ -841,33 +689,25 @@ export const protectedProcedure = publicProcedure
   });
 ```
 
-**PgBouncer Configuration** (REQUIRED for connection pooling):
-```ini
-# infrastructure/pgbouncer/pgbouncer.ini
-[databases]
-platform = host=postgres port=5432 dbname=platform
-
-[pgbouncer]
-pool_mode = transaction  # CRITICAL: transaction mode for RLS session variables
-max_client_conn = 1000
-default_pool_size = 50
-reserve_pool_size = 25
-server_reset_query = DISCARD ALL  # Reset session state between transactions
-```
-
 **Verification**:
 ```sql
--- Test RLS policy enforcement
-SET app.current_tenant_id = 'tenant-1-uuid';
-SELECT * FROM sessions;  -- Should only return tenant-1 sessions
+-- Set tenant context
+SET app.current_tenant_id = '72cda7ac-9168-41a5-87ad-895ca68d2fd0';
+SELECT COUNT(*) FROM sessions;  -- Returns only this tenant's sessions
 
-SET app.current_tenant_id = 'tenant-2-uuid';
-SELECT * FROM sessions;  -- Should only return tenant-2 sessions
-
--- Test FORCE RLS (even superuser cannot bypass)
+-- Reset context
 RESET app.current_tenant_id;
-SELECT * FROM sessions;  -- Should return 0 rows (no tenant context)
+SELECT COUNT(*) FROM sessions;  -- Returns 0 (FORCE RLS blocks access without tenant context)
 ```
+
+For complete documentation including:
+- All 56 policy definitions
+- Indirect tenant-scoped tables (via foreign keys)
+- Common pitfalls and solutions
+- Testing procedures
+- Future improvements
+
+See `rls-policies.md` and `migrations.md`.
 
 ---
 
@@ -1018,111 +858,179 @@ export const getCostSummary = tenantProcedure
 
 ## 🌱 Seed Data
 
+**Status**: ✅ Implemented with RLS handling
+
+> **⚠️ RLS SEEDING STRATEGY**: FORCE RLS blocks all operations (even superuser), including seeding. Solution: Temporarily disable FORCE RLS during seeding, then restore.
+
+### Seeding Process
+
+```bash
+# 1. Disable FORCE RLS (allows seeding)
+psql -U platform -d platform -f packages/db/migrations/004_seed_helper.sql
+
+# 2. Run seed script
+pnpm db:seed
+
+# 3. Restore FORCE RLS (CRITICAL for production security!)
+psql -U platform -d platform -f packages/db/migrations/005_restore_force_rls.sql
+```
+
+### Seed Implementation
+
 ```typescript
-// packages/database/src/seed.ts
+// packages/db/src/seed.ts
+import crypto from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import { db } from './client';
-import * as schema from './schema';
-import bcrypt from 'bcryptjs';
+import * as schema from './schema/index';
 
 export async function seed() {
   console.log('🌱 Seeding database...');
 
-  // Create demo tenant
-  const [tenant] = await db
-    .insert(schema.tenants)
-    .values({
-      name: 'Acme Corporation',
-      apiKey: 'pk_test_acme_1234567890',
-      plan: 'business',
-      settings: {
-        maxMonthlySpend: 1000,
-        allowedDomains: ['https://acme.com'],
-      },
-    })
-    .returning();
+  try {
+    // Set placeholder tenant ID to satisfy RLS policies during seeding
+    // Required because FORCE RLS is enabled on all tables
+    // Use SET SESSION (not SET LOCAL) since we're not in an explicit transaction
+    const placeholderTenantId = '00000000-0000-0000-0000-000000000000';
+    await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${placeholderTenantId}'`));
+    console.log('✅ Set placeholder tenant context');
 
-  console.log('✅ Created tenant:', tenant.id);
+    // Create demo tenant (INSERT policy allows this without tenant context)
+    const tenantResult = await db
+      .insert(schema.tenants)
+      .values({
+        name: 'Acme Corporation',
+        apiKey: `pk_test_${crypto.randomBytes(16).toString('hex')}`,
+        plan: 'business',
+        settings: {
+          maxMonthlySpend: 1000,
+          allowedDomains: ['https://acme.com'],
+          features: ['chat', 'meetings', 'knowledge-base'],
+        },
+      })
+      .returning();
 
-  // Create demo user (Auth.js compatible)
-  // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)
-  // Password hash only needed for development/testing
-  const hashedPassword = await bcrypt.hash('password123', 10);
+    const tenant = tenantResult[0];
+    console.log('✅ Created tenant:', tenant.id);
 
-  const [user] = await db
-    .insert(schema.users)
-    .values({
-      tenantId: tenant.id,
-      email: 'admin@acme.com',
-      passwordHash: hashedPassword,
-      role: 'owner',
-      name: 'John Doe',
-    })
-    .returning();
+    // Update session variable to the actual tenant ID for subsequent inserts
+    await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${tenant.id}'`));
+    console.log('✅ Updated tenant context to:', tenant.id);
 
-  console.log('✅ Created user:', user.email);
+    // Create demo user
+    // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)
+    // Password hash only needed for development/testing
+    const hashedPassword = crypto.createHash('sha256').update('password123').digest('hex');
 
-  // Create demo Auth.js session (optional, for testing)
-  const sessionToken = crypto.randomUUID();
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + 30); // 30 days
+    const userResult = await db
+      .insert(schema.users)
+      .values({
+        tenantId: tenant.id,
+        email: 'admin@acme.com',
+        passwordHash: hashedPassword,
+        role: 'owner',
+        name: 'John Doe',
+      })
+      .returning();
 
-  await db
-    .insert(schema.authSessions)
-    .values({
+    const user = userResult[0];
+    console.log('✅ Created user:', user.email);
+
+    // Create demo Auth.js session (optional, for testing)
+    const sessionToken = crypto.randomUUID();
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30); // 30 days
+
+    await db.insert(schema.authSessions).values({
       sessionToken,
       userId: user.id,
       expires: expiryDate,
     });
 
-  console.log('✅ Created auth session');
+    console.log('✅ Created auth session');
 
-  // Create demo widget
-  const [widget] = await db
-    .insert(schema.widgets)
-    .values({
-      tenantId: tenant.id,
-      name: 'Main Website Widget',
-      domainWhitelist: ['https://acme.com', 'https://www.acme.com'],
-      settings: {
-        theme: 'auto',
-        position: 'bottom-right',
-        greeting: 'Hi! How can I help you today?',
-      },
-    })
-    .returning();
+    // Create demo widget
+    const widgetResult = await db
+      .insert(schema.widgets)
+      .values({
+        tenantId: tenant.id,
+        name: 'Main Website Widget',
+        domainWhitelist: ['https://acme.com', 'https://www.acme.com'],
+        settings: {
+          theme: 'auto',
+          position: 'bottom-right',
+          greeting: 'Hi! How can I help you today?',
+        },
+      })
+      .returning();
 
-  console.log('✅ Created widget:', widget.id);
+    const widget = widgetResult[0];
+    console.log('✅ Created widget:', widget.id);
 
-  // Create demo knowledge document
-  const [doc] = await db
-    .insert(schema.knowledgeDocuments)
-    .values({
-      tenantId: tenant.id,
-      title: 'Getting Started Guide',
-      content: 'Welcome to our platform! Here is how to get started...',
-      category: 'onboarding',
-      metadata: {
-        source: 'docs',
-        tags: ['beginner', 'tutorial'],
-      },
-    })
-    .returning();
+    // Create demo knowledge document
+    const docResult = await db
+      .insert(schema.knowledgeDocuments)
+      .values({
+        tenantId: tenant.id,
+        title: 'Getting Started Guide',
+        content: 'Welcome to our platform! Here is how to get started with our AI assistant...',
+        category: 'onboarding',
+        metadata: {
+          source: 'docs',
+          tags: ['beginner', 'tutorial'],
+        },
+      })
+      .returning();
 
-  console.log('✅ Created knowledge document:', doc.id);
+    const doc = docResult[0];
+    console.log('✅ Created knowledge document:', doc.id);
 
-  console.log('🎉 Seeding complete!');
+    // Create AI personality
+    const personalityResult = await db
+      .insert(schema.aiPersonalities)
+      .values({
+        tenantId: tenant.id,
+        name: 'Helpful Assistant',
+        description: 'A friendly and knowledgeable assistant',
+        systemPrompt:
+          'You are a helpful AI assistant for Acme Corporation. Be friendly, professional, and concise in your responses.',
+        temperature: '0.7',
+        maxTokens: 2000,
+        isDefault: true,
+        isActive: true,
+      })
+      .returning();
+
+    const personality = personalityResult[0];
+    console.log('✅ Created AI personality:', personality.id);
+
+    console.log('🎉 Seeding complete!');
+  } catch (error) {
+    console.error('❌ Seeding failed:', error);
+    throw error;
+  }
 }
 
-// Run: pnpm db:seed
-if (require.main === module) {
+// Run seed if executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   seed()
-    .then(() => process.exit(0))
+    .then(() => {
+      console.log('✅ Seed completed successfully');
+      process.exit(0);
+    })
     .catch((err) => {
-      console.error('❌ Seeding failed:', err);
+      console.error('❌ Seed failed:', err);
       process.exit(1);
     });
 }
 ```
+
+**Key Implementation Details**:
+1. **Placeholder Tenant Context**: Set `app.current_tenant_id` to placeholder UUID before creating tenant
+2. **Session Variable Update**: Update to actual tenant ID after tenant creation
+3. **RLS-Aware**: Uses `sql.raw()` for SET SESSION commands (avoids parameterization issues)
+4. **Error Handling**: Comprehensive try-catch with detailed logging
+5. **ESM Compatibility**: Uses `import.meta.url` instead of `require.main`
 
 ---
 
