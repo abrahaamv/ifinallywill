@@ -1,11 +1,22 @@
 import type { Config } from 'drizzle-kit';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env from project root
+config({ path: resolve(__dirname, '../../.env') });
+
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    'DATABASE_URL is not set. Please create .env file in project root with DATABASE_URL="postgresql://platform:platform_dev_password@localhost:5432/platform"'
+  );
+}
 
 export default {
   schema: './src/schema/index.ts',
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || '',
+    url: process.env.DATABASE_URL,
   },
   verbose: true,
   strict: true,
