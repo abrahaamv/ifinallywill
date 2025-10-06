@@ -12,7 +12,11 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
-    "lucia": "3.2.2"
+    "@auth/core": "0.40.0",
+    "@auth/drizzle-adapter": "1.10.0",
+    "next-auth": "5.0.0-beta.29",
+    "drizzle-orm": "0.44.6",
+    "@platform/db": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
