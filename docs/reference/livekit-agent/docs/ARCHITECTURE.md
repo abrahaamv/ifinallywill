@@ -5,25 +5,25 @@ Complete architecture documentation for the production LiveKit agent and its int
 ## Platform Architecture Summary
 
 **Real-time Communication Stack**:
-- **Text Chat**: Server-Sent Events (SSE) + Redis pub/sub
-  - Native browser API (EventSource)
-  - Built-in auto-reconnect
-  - 98% browser support
+- **Text Chat**: WebSocket + Redis Streams
+  - Bidirectional communication
+  - Built-in reconnection logic
+  - Consumer groups for horizontal scaling
   - Cost: $0.00001 per hour (negligible)
 - **Voice + Screen**: LiveKit Cloud (WebRTC)
   - Cost: $0.50-2.00 per hour (only when active)
   - Full desktop capture
   - Sub-100ms latency
 
-**Why SSE**:
-- ✅ Simpler than WebSocket libraries
-- ✅ Native browser support
-- ✅ Auto-reconnect built-in
-- ✅ 90% cost savings vs always-on connections
-- ✅ No sticky sessions needed
+**Why WebSocket + Redis Streams**:
+- ✅ Bidirectional communication (not just server→client)
+- ✅ Consumer groups for horizontal scaling
+- ✅ Message persistence and acknowledgment
+- ✅ 90% cost savings vs always-on LiveKit connections
+- ⚠️ Sticky sessions required for load balancing
 
 **When users upgrade from text to meeting**:
-1. Close SSE connection (save costs)
+1. Close WebSocket connection (save costs)
 2. Request LiveKit token from backend
 3. Connect to LiveKit room
 4. AI agent joins for voice + vision
@@ -252,20 +252,22 @@ logger.info("Tenant joined", extra={
 
 ## Data Flow
 
-### 1. Text Chat (SSE Mode)
+### 1. Text Chat (WebSocket Mode)
 
 ```
-User message → Frontend → tRPC API → Store in DB
-                                    ↓
-                          Redis Pub/Sub publish
-                                    ↓
-                          All SSE clients receive (broadcast)
-                                    ↓
-                          AI processes → Response chunks
-                                    ↓
-                          Redis Pub/Sub publish
-                                    ↓
-                          SSE streams to user
+User message → Frontend → WebSocket → tRPC API → Store in DB
+                                                  ↓
+                                        Redis Streams publish
+                                                  ↓
+                                        Consumer groups distribute
+                                                  ↓
+                                        All WebSocket instances receive
+                                                  ↓
+                                        AI processes → Response chunks
+                                                  ↓
+                                        Redis Streams publish
+                                                  ↓
+                                        WebSocket sends to user
 ```
 
 ### 2. Meeting Start (LiveKit Mode)
@@ -275,7 +277,7 @@ User clicks "Share Screen" → Frontend requests token
                                     ↓
 Backend generates LiveKit token → Return credentials
                                     ↓
-Close SSE connection (save costs!) → Connect to LiveKit
+Close WebSocket connection (save costs!) → Connect to LiveKit
                                     ↓
 Agent joins room ← get_tenant_by_room() ← LiveKit webhook
                   ↓

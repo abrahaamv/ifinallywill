@@ -74,10 +74,10 @@ platform/
 ├── packages/
 │   ├── ui/                 # Shared UI components (used by all apps)
 │   ├── api/                # Fastify + tRPC API server
-│   ├── realtime/           # SSE + Redis pub/sub for real-time chat
+│   ├── realtime/           # WebSocket + Redis Streams for real-time chat
 │   ├── shared/             # Shared types and utilities
 │   ├── db/                 # Drizzle ORM schemas and migrations
-│   ├── auth/               # Lucia authentication
+│   ├── auth/               # Auth.js (NextAuth.js) authentication
 │   ├── api-contract/       # tRPC router definitions
 │   ├── ai-core/            # AI service abstractions
 │   └── knowledge/          # Knowledge management system
@@ -106,10 +106,10 @@ platform/
 
 ### Enterprise-Grade Infrastructure
 
-- **Backend**: Fastify 5 + tRPC v11 for type-safe APIs
-- **Database**: PostgreSQL 16 + Drizzle ORM + Redis
-- **Real-time**: SSE + Redis pub/sub for chat, LiveKit Cloud for WebRTC
-- **Auth**: Lucia Auth with secure session management
+- **Backend**: Fastify 5.3.2+ + tRPC v11 for type-safe APIs
+- **Database**: PostgreSQL 16.7+ + Drizzle ORM + Redis 7.4.2+
+- **Real-time**: WebSocket + Redis Streams for chat, LiveKit Cloud for WebRTC
+- **Auth**: Auth.js (NextAuth.js) v5 with OAuth providers
 - **Build**: Turborepo monorepo with pnpm workspace
 
 ### Advanced AI Capabilities
@@ -131,12 +131,12 @@ platform/
 - **Build**: Vite with SWC transpilation
 
 ### Backend
-- **API Framework**: Fastify 5.2
+- **API Framework**: Fastify 5.3.2+
 - **Type Safety**: tRPC v11 with Zod validation
-- **Database ORM**: Drizzle ORM with PostgreSQL
-- **Real-time**: SSE (Server-Sent Events) + Redis pub/sub
-- **Caching**: Redis for sessions and broadcasting
-- **Auth**: Lucia v4 for session management
+- **Database ORM**: Drizzle ORM with PostgreSQL 16.7+
+- **Real-time**: WebSocket + Redis Streams (bidirectional)
+- **Caching**: Redis 7.4.2+ for sessions and consumer groups
+- **Auth**: Auth.js (NextAuth.js) v5.0.0-beta.25
 
 ### AI Services
 - **Vision**:

@@ -97,7 +97,7 @@ platform/
 │   │   ├── tsconfig.json
 │   │   └── README.md
 │   │
-│   ├── realtime/                     # SSE + Redis pub/sub server
+│   ├── realtime/                     # WebSocket + Redis Streams server
 │   │   ├── src/
 │   │   │   └── index.ts              # Package entry (placeholder)
 │   │   ├── package.json
@@ -118,7 +118,7 @@ platform/
 │   │   ├── tsconfig.json
 │   │   └── README.md
 │   │
-│   ├── auth/                         # Lucia authentication
+│   ├── auth/                         # Auth.js (NextAuth.js) authentication
 │   │   ├── src/
 │   │   │   └── index.ts              # Package entry (placeholder)
 │   │   ├── package.json
@@ -251,7 +251,7 @@ platform/
 
 **Future (Phases 2-7)** - What Will Be Added:
 - ⏳ Database schemas and migrations
-- ⏳ Lucia authentication implementation
+- ⏳ Auth.js (NextAuth.js) OAuth authentication
 - ⏳ tRPC router implementations
 - ⏳ Fastify server setup
 - ⏳ React components and pages
@@ -299,9 +299,9 @@ platform/
 - **Status**: Package structure only (implementation in Phase 3)
 
 #### packages/realtime
-- **Purpose**: Server-Sent Events + Redis pub/sub for chat
+- **Purpose**: WebSocket + Redis Streams for real-time chat
 - **Port**: 3002 (development)
-- **Dependencies**: ioredis, fastify
+- **Dependencies**: ioredis, fastify, ws
 - **Status**: Package structure only (implementation in Phase 6)
 
 #### packages/shared
@@ -315,8 +315,8 @@ platform/
 - **Status**: Package structure only (implementation in Phase 2)
 
 #### packages/auth
-- **Purpose**: Lucia v4 authentication utilities
-- **Dependencies**: lucia, @lucia-auth/adapter-drizzle
+- **Purpose**: Auth.js (NextAuth.js) v5 authentication utilities
+- **Dependencies**: next-auth, @auth/drizzle-adapter
 - **Status**: Package structure only (implementation in Phase 2)
 
 #### packages/api-contract
@@ -471,8 +471,8 @@ All documentation is cross-referenced with relative links. Start with `docs/READ
 
 **Phase 2** (Database + Auth):
 - Database schemas in `packages/db/src/schema/`
-- Lucia configuration in `packages/auth/src/`
-- Drizzle migrations
+- Auth.js configuration in `packages/auth/src/`
+- Drizzle migrations with RLS policies
 
 **Phase 3** (Backend APIs):
 - tRPC routers in `packages/api-contract/src/routers/`
@@ -492,9 +492,9 @@ All documentation is cross-referenced with relative links. Start with `docs/READ
 - Knowledge system in `packages/knowledge/`
 
 **Phase 6** (Real-time Features):
-- SSE server in `packages/realtime/src/`
-- Redis pub/sub handlers
-- WebSocket fallbacks
+- WebSocket server in `packages/realtime/src/`
+- Redis Streams consumer groups
+- Sticky session configuration
 
 **Phase 7** (Widget SDK):
 - Widget components in `apps/widget-sdk/src/`

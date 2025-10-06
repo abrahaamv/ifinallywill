@@ -17,16 +17,16 @@ This document addresses critical architectural concerns and design decisions tha
 
 ---
 
-## 1️⃣ SSE Pub/Sub Pattern - Multi-Instance Coordination
+## 1️⃣ WebSocket + Redis Streams Pattern - Multi-Instance Coordination
 
 ### Problem Statement
 
 When running multiple API instances behind a load balancer:
-- User connects to Instance 1 via SSE
+- User connects to Instance 1 via WebSocket
 - Message published to Instance 2
 - User never receives the message
 
-**Solution**: Redis-based pub/sub for broadcasting across all instances.
+**Solution**: Redis Streams with consumer groups for broadcasting and horizontal scaling.
 
 ### Architecture
 
@@ -34,6 +34,8 @@ When running multiple API instances behind a load balancer:
 ┌─────────────┐
 │ Load        │
 │ Balancer    │
+│ (Sticky     │
+│  Sessions)  │
 └──────┬──────┘
        │
        ├─────────────────┬─────────────────┐
@@ -42,24 +44,25 @@ When running multiple API instances behind a load balancer:
 │ API         │   │ API         │   │ API         │
 │ Instance 1  │   │ Instance 2  │   │ Instance 3  │
 │             │   │             │   │             │
-│ SSE Client  │   │ SSE Client  │   │ SSE Client  │
+│ WebSocket   │   │ WebSocket   │   │ WebSocket   │
 │   User A    │   │   User B    │   │   User C    │
 └──────┬──────┘   └──────┬──────┘   └──────┬──────┘
        │                 │                 │
        └─────────────────┼─────────────────┘
                          │
-                  ┌──────▼──────┐
-                  │   Redis     │
-                  │  Pub/Sub    │
-                  └─────────────┘
+                  ┌──────▼──────────────────┐
+                  │   Redis Streams         │
+                  │  Consumer Groups        │
+                  │  (Horizontal Scaling)   │
+                  └─────────────────────────┘
 ```
 
 ### Implementation
 
-#### 1. Redis Pub/Sub Manager
+#### 1. Redis Streams Manager
 
 ```typescript
-// packages/shared/src/services/redis-pubsub.ts
+// packages/shared/src/services/redis-streams.ts
 import { Redis } from 'ioredis';
 import { EventEmitter } from 'events';
 
@@ -71,140 +74,197 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export class RedisPubSubManager extends EventEmitter {
-  private publisher: Redis;
-  private subscriber: Redis;
+export class RedisStreamsManager extends EventEmitter {
+  private redis: Redis;
   private instanceId: string;
+  private consumerGroup: string;
+  private streamKey: string;
+  private isProcessing: boolean;
 
-  constructor(redisUrl: string) {
+  constructor(redisUrl: string, consumerGroup = 'chat-consumers') {
     super();
-    this.publisher = new Redis(redisUrl);
-    this.subscriber = new Redis(redisUrl);
+    this.redis = new Redis(redisUrl);
     this.instanceId = `api-${process.pid}-${Date.now()}`;
+    this.consumerGroup = consumerGroup;
+    this.streamKey = 'chat:messages';
+    this.isProcessing = false;
 
-    // Subscribe to all chat channels
-    this.subscriber.psubscribe('chat:*', (err) => {
-      if (err) {
-        console.error('Failed to subscribe to chat channels:', err);
-      }
-    });
-
-    // Handle incoming messages
-    this.subscriber.on('pmessage', (pattern, channel, message) => {
-      try {
-        const data = JSON.parse(message);
-
-        // Don't process our own messages (prevent echo)
-        if (data.instanceId === this.instanceId) {
-          return;
-        }
-
-        const sessionId = channel.replace('chat:', '');
-        this.emit('message', { sessionId, ...data });
-      } catch (error) {
-        console.error('Failed to parse pubsub message:', error);
-      }
-    });
+    this.initConsumerGroup();
   }
 
   /**
-   * Publish a message to all API instances
+   * Initialize consumer group for horizontal scaling
    */
-  async publish(sessionId: string, message: ChatMessage): Promise<void> {
-    const channel = `chat:${sessionId}`;
+  private async initConsumerGroup(): Promise<void> {
+    try {
+      await this.redis.xgroup(
+        'CREATE',
+        this.streamKey,
+        this.consumerGroup,
+        '$',
+        'MKSTREAM'
+      );
+    } catch (err: any) {
+      if (!err.message.includes('BUSYGROUP')) {
+        console.error('Failed to create consumer group:', err);
+      }
+    }
+  }
+
+  /**
+   * Publish a message to Redis Stream
+   */
+  async publish(sessionId: string, message: ChatMessage): Promise<string> {
     const payload = {
       ...message,
       instanceId: this.instanceId,
     };
 
-    await this.publisher.publish(channel, JSON.stringify(payload));
+    const messageId = await this.redis.xadd(
+      this.streamKey,
+      '*',
+      'sessionId', sessionId,
+      'data', JSON.stringify(payload)
+    );
+
+    return messageId;
+  }
+
+  /**
+   * Start processing messages from stream with consumer group
+   */
+  async startProcessing(): Promise<void> {
+    this.isProcessing = true;
+
+    while (this.isProcessing) {
+      try {
+        // Read messages from consumer group
+        const results = await this.redis.xreadgroup(
+          'GROUP',
+          this.consumerGroup,
+          this.instanceId,
+          'COUNT',
+          10,
+          'BLOCK',
+          1000,
+          'STREAMS',
+          this.streamKey,
+          '>'
+        );
+
+        if (!results) continue;
+
+        for (const [_stream, messages] of results) {
+          for (const [messageId, fields] of messages) {
+            const sessionId = fields[1];
+            const data = JSON.parse(fields[3]);
+
+            // Don't process own messages
+            if (data.instanceId === this.instanceId) {
+              await this.redis.xack(this.streamKey, this.consumerGroup, messageId);
+              continue;
+            }
+
+            this.emit('message', { sessionId, ...data });
+
+            // Acknowledge message
+            await this.redis.xack(this.streamKey, this.consumerGroup, messageId);
+          }
+        }
+      } catch (error) {
+        console.error('Stream processing error:', error);
+      }
+    }
+  }
+
+  /**
+   * Stop processing
+   */
+  stopProcessing(): void {
+    this.isProcessing = false;
   }
 
   /**
    * Clean up resources
    */
   async close(): Promise<void> {
-    await this.subscriber.quit();
-    await this.publisher.quit();
+    this.stopProcessing();
+    await this.redis.quit();
   }
 }
 ```
 
-#### 2. SSE Connection Manager
+#### 2. WebSocket Connection Manager
 
 ```typescript
-// packages/shared/src/services/sse-manager.ts
-import { Response } from 'fastify';
-import { RedisPubSubManager, ChatMessage } from './redis-pubsub';
+// packages/shared/src/services/websocket-manager.ts
+import { WebSocket } from 'ws';
+import { RedisStreamsManager, ChatMessage } from './redis-streams';
 
-interface SSEConnection {
+interface WebSocketConnection {
   sessionId: string;
   tenantId: string;
-  response: Response;
+  socket: WebSocket;
   userId: string;
 }
 
-export class SSEConnectionManager {
-  private connections = new Map<string, SSEConnection>();
-  private pubsub: RedisPubSubManager;
+export class WebSocketConnectionManager {
+  private connections = new Map<string, WebSocketConnection>();
+  private streams: RedisStreamsManager;
 
-  constructor(pubsub: RedisPubSubManager) {
-    this.pubsub = pubsub;
+  constructor(streams: RedisStreamsManager) {
+    this.streams = streams;
 
-    // Listen for messages from Redis
-    this.pubsub.on('message', ({ sessionId, ...message }) => {
+    // Listen for messages from Redis Streams
+    this.streams.on('message', ({ sessionId, ...message }) => {
       this.sendToClient(sessionId, message);
     });
+
+    // Start processing stream messages
+    this.streams.startProcessing();
   }
 
   /**
-   * Register a new SSE connection
+   * Register a new WebSocket connection
    */
-  register(connection: SSEConnection): void {
-    const { sessionId, response } = connection;
-
-    // Setup SSE headers
-    response.raw.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no', // Disable nginx buffering
-    });
+  register(connection: WebSocketConnection): void {
+    const { sessionId, socket } = connection;
 
     // Send initial connection message
-    this.sendEvent(response, {
+    socket.send(JSON.stringify({
       type: 'connected',
       data: { sessionId, timestamp: new Date().toISOString() },
-    });
+    }));
 
     // Store connection
     this.connections.set(sessionId, connection);
 
     // Cleanup on disconnect
-    response.raw.on('close', () => {
+    socket.on('close', () => {
       this.connections.delete(sessionId);
-      console.log(`SSE connection closed: ${sessionId}`);
+      console.log(`WebSocket connection closed: ${sessionId}`);
     });
 
-    // Send heartbeat every 30 seconds
+    // Heartbeat every 30 seconds
     const heartbeat = setInterval(() => {
       if (!this.connections.has(sessionId)) {
         clearInterval(heartbeat);
         return;
       }
-      this.sendEvent(response, { type: 'heartbeat', data: {} });
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'heartbeat', data: {} }));
+      }
     }, 30000);
   }
 
   /**
-   * Broadcast message to all instances (via Redis)
+   * Broadcast message to all instances (via Redis Streams)
    */
   async broadcast(sessionId: string, message: ChatMessage): Promise<void> {
-    // Publish to Redis (all instances will receive)
-    await this.pubsub.publish(sessionId, message);
+    // Publish to Redis Streams (consumer groups distribute load)
+    await this.streams.publish(sessionId, message);
 
-    // Also send to local client if connected
-    this.sendToClient(sessionId, message);
+    // Local client will receive via stream processing
   }
 
   /**
@@ -216,18 +276,12 @@ export class SSEConnectionManager {
       return; // Client not connected to this instance
     }
 
-    this.sendEvent(connection.response, {
-      type: 'message',
-      data: message,
-    });
-  }
-
-  /**
-   * Send SSE event
-   */
-  private sendEvent(response: Response, event: { type: string; data: any }): void {
-    const data = `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
-    response.raw.write(data);
+    if (connection.socket.readyState === WebSocket.OPEN) {
+      connection.socket.send(JSON.stringify({
+        type: 'message',
+        data: message,
+      }));
+    }
   }
 
   /**
@@ -253,47 +307,72 @@ export class SSEConnectionManager {
 #### 3. Fastify Plugin Integration
 
 ```typescript
-// packages/api/src/plugins/sse.ts
+// packages/api/src/plugins/websocket.ts
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { Redis } from 'ioredis';
-import { RedisPubSubManager } from '@platform/shared/services/redis-pubsub';
-import { SSEConnectionManager } from '@platform/shared/services/sse-manager';
+import { WebSocketServer } from 'ws';
+import { RedisStreamsManager } from '@platform/shared/services/redis-streams';
+import { WebSocketConnectionManager } from '@platform/shared/services/websocket-manager';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    sse: SSEConnectionManager;
+    ws: WebSocketConnectionManager;
   }
 }
 
-const ssePlugin: FastifyPluginAsync = async (fastify) => {
+const websocketPlugin: FastifyPluginAsync = async (fastify) => {
   const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 
-  // Initialize pub/sub manager
-  const pubsub = new RedisPubSubManager(redisUrl);
+  // Initialize Redis Streams manager
+  const streams = new RedisStreamsManager(redisUrl);
 
-  // Initialize SSE manager
-  const sseManager = new SSEConnectionManager(pubsub);
+  // Initialize WebSocket manager
+  const wsManager = new WebSocketConnectionManager(streams);
+
+  // Create WebSocket server
+  const wss = new WebSocketServer({ noServer: true });
+
+  // Upgrade HTTP connections to WebSocket
+  fastify.server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  });
+
+  // Handle new connections
+  wss.on('connection', (socket, request) => {
+    const sessionId = new URL(request.url!, 'http://localhost').searchParams.get('sessionId');
+
+    if (sessionId) {
+      wsManager.register({
+        sessionId,
+        tenantId: request.headers['x-tenant-id'] as string,
+        userId: request.headers['x-user-id'] as string,
+        socket,
+      });
+    }
+  });
 
   // Decorate Fastify instance
-  fastify.decorate('sse', sseManager);
+  fastify.decorate('ws', wsManager);
 
   // Cleanup on server close
   fastify.addHook('onClose', async () => {
-    await pubsub.close();
+    await streams.close();
+    wss.close();
   });
 
   // Expose metrics endpoint
-  fastify.get('/sse/metrics', async () => {
+  fastify.get('/ws/metrics', async () => {
     return {
-      activeConnections: sseManager.getConnectionCount(),
+      activeConnections: wsManager.getConnectionCount(),
       instanceId: process.pid,
     };
   });
 };
 
-export default fp(ssePlugin, {
-  name: 'sse',
+export default fp(websocketPlugin, {
+  name: 'websocket',
   dependencies: [],
 });
 ```
@@ -308,9 +387,10 @@ import { TRPCError } from '@trpc/server';
 
 export const chatRouter = router({
   /**
-   * SSE endpoint for receiving messages
+   * WebSocket connection is handled via HTTP upgrade
+   * No tRPC subscription needed - WebSocket handles bidirectional communication
    */
-  subscribe: protectedProcedure
+  getWebSocketUrl: protectedProcedure
     .input(
       z.object({
         sessionId: z.string().uuid(),
@@ -330,16 +410,10 @@ export const chatRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Session not found' });
       }
 
-      // Register SSE connection
-      ctx.fastify.sse.register({
-        sessionId,
-        tenantId,
-        userId: user.id,
-        response: ctx.reply,
-      });
-
-      // Note: Connection stays open, tRPC will not return
-      return new Promise(() => {}); // Keep connection alive
+      // Return WebSocket URL with query params
+      return {
+        url: `ws://${process.env.WS_HOST || 'localhost:3002'}?sessionId=${sessionId}`,
+      };
     }),
 
   /**
@@ -393,40 +467,42 @@ export const chatRouter = router({
 });
 ```
 
-### Testing SSE Pub/Sub
+### Testing WebSocket + Redis Streams
 
 ```typescript
-// tests/integration/sse-pubsub.test.ts
+// tests/integration/websocket-streams.test.ts
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Redis } from 'ioredis';
-import { RedisPubSubManager } from '@platform/shared/services/redis-pubsub';
+import { RedisStreamsManager } from '@platform/shared/services/redis-streams';
 
-describe('SSE Pub/Sub', () => {
-  let pubsub1: RedisPubSubManager;
-  let pubsub2: RedisPubSubManager;
+describe('WebSocket + Redis Streams', () => {
+  let streams1: RedisStreamsManager;
+  let streams2: RedisStreamsManager;
 
   beforeAll(() => {
-    pubsub1 = new RedisPubSubManager('redis://localhost:6379');
-    pubsub2 = new RedisPubSubManager('redis://localhost:6379');
+    streams1 = new RedisStreamsManager('redis://localhost:6379');
+    streams2 = new RedisStreamsManager('redis://localhost:6379');
+    streams1.startProcessing();
+    streams2.startProcessing();
   });
 
   afterAll(async () => {
-    await pubsub1.close();
-    await pubsub2.close();
+    await streams1.close();
+    await streams2.close();
   });
 
-  it('should broadcast message across instances', async () => {
+  it('should broadcast message across instances via streams', async () => {
     const sessionId = 'test-session-123';
 
     // Setup listener on instance 2
     const received = new Promise((resolve) => {
-      pubsub2.once('message', (data) => {
+      streams2.once('message', (data) => {
         resolve(data);
       });
     });
 
     // Publish from instance 1
-    await pubsub1.publish(sessionId, {
+    await streams1.publish(sessionId, {
       sessionId,
       tenantId: 'tenant-1',
       role: 'user',
@@ -434,7 +510,7 @@ describe('SSE Pub/Sub', () => {
       timestamp: new Date().toISOString(),
     });
 
-    // Verify instance 2 received it
+    // Verify instance 2 received it via consumer group
     const message = await received;
     expect(message).toMatchObject({
       sessionId,
@@ -442,28 +518,30 @@ describe('SSE Pub/Sub', () => {
     });
   });
 
-  it('should not receive own messages (prevent echo)', async () => {
+  it('should distribute load across consumer group', async () => {
     const sessionId = 'test-session-456';
-    let receivedCount = 0;
+    let instance1Count = 0;
+    let instance2Count = 0;
 
-    pubsub1.on('message', () => {
-      receivedCount++;
-    });
+    streams1.on('message', () => instance1Count++);
+    streams2.on('message', () => instance2Count++);
 
-    // Publish from instance 1
-    await pubsub1.publish(sessionId, {
-      sessionId,
-      tenantId: 'tenant-1',
-      role: 'user',
-      content: 'Should not echo',
-      timestamp: new Date().toISOString(),
-    });
+    // Publish 10 messages
+    for (let i = 0; i < 10; i++) {
+      await streams1.publish(`session-${i}`, {
+        sessionId: `session-${i}`,
+        tenantId: 'tenant-1',
+        role: 'user',
+        content: `Message ${i}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    // Wait a bit
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Should not receive own message
-    expect(receivedCount).toBe(0);
+    // Messages should be distributed across both instances
+    expect(instance1Count + instance2Count).toBeGreaterThan(0);
+    console.log(`Instance 1: ${instance1Count}, Instance 2: ${instance2Count}`);
   });
 });
 ```

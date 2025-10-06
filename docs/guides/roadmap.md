@@ -806,7 +806,8 @@ pnpm deploy:cdn
 
 ### Phase 2: Database + Auth
 - ✅ All tables created with migrations
-- ✅ Lucia auth working
+- ✅ Auth.js OAuth working
+- ✅ RLS policies enforced
 - ✅ Tenant isolation tested
 - ✅ Seed data populated
 
