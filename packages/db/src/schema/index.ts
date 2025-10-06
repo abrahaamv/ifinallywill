@@ -2,7 +2,6 @@ import { relations } from 'drizzle-orm';
 import {
   boolean,
   decimal,
-  index,
   integer,
   jsonb,
   pgTable,
@@ -450,65 +449,6 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
   }),
 }));
 
+
 // ==================== INDEXES ====================
-
-// Tenant lookups
-export const tenantApiKeyIdx = index('tenant_api_key_idx').on(tenants.apiKey);
-
-// User queries
-export const userEmailIdx = index('user_email_idx').on(users.email);
-export const userTenantIdx = index('user_tenant_idx').on(users.tenantId);
-
-// Session queries (most frequent)
-export const sessionTenantIdx = index('session_tenant_idx').on(sessions.tenantId);
-export const sessionWidgetIdx = index('session_widget_idx').on(sessions.widgetId);
-export const sessionMeetingIdx = index('session_meeting_idx').on(sessions.meetingId);
-export const sessionCreatedAtIdx = index('session_created_at_idx').on(sessions.createdAt);
-
-// Message queries (high volume)
-export const messageSessionIdx = index('message_session_idx').on(messages.sessionId);
-export const messageTimestampIdx = index('message_timestamp_idx').on(messages.timestamp);
-
-// Knowledge base queries
-export const knowledgeTenantIdx = index('knowledge_tenant_idx').on(knowledgeDocuments.tenantId);
-export const knowledgeCategoryIdx = index('knowledge_category_idx').on(knowledgeDocuments.category);
-
-// Cost tracking queries
-export const costTenantTimestampIdx = index('cost_tenant_timestamp_idx').on(
-  costEvents.tenantId,
-  costEvents.timestamp
-);
-export const costSessionIdx = index('cost_session_idx').on(costEvents.sessionId);
-
-// Cost summaries queries
-export const costSummaryTenantPeriodIdx = index('cost_summary_tenant_period_idx').on(
-  costSummaries.tenantId,
-  costSummaries.periodStart,
-  costSummaries.periodEnd
-);
-
-// Budget alerts queries
-export const budgetAlertTenantIdx = index('budget_alert_tenant_idx').on(budgetAlerts.tenantId);
-export const budgetAlertActiveIdx = index('budget_alert_active_idx').on(
-  budgetAlerts.tenantId,
-  budgetAlerts.resolved
-);
-export const budgetAlertTriggeredIdx = index('budget_alert_triggered_idx').on(
-  budgetAlerts.triggeredAt
-);
-
-// AI personalities queries
-export const aiPersonalityTenantIdx = index('ai_personality_tenant_idx').on(
-  aiPersonalities.tenantId
-);
-export const aiPersonalityDefaultIdx = index('ai_personality_default_idx').on(
-  aiPersonalities.tenantId,
-  aiPersonalities.isDefault,
-  aiPersonalities.isActive
-);
-
-// Verification tokens composite index
-export const verificationTokensIdx = index('verification_tokens_identifier_token_idx').on(
-  verificationTokens.identifier,
-  verificationTokens.token
-);
+// TODO: Add indexes via SQL migration (standalone index exports cause runtime errors in Drizzle 0.44.6)

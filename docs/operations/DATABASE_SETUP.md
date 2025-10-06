@@ -32,7 +32,25 @@ psql -d platform -c "CREATE EXTENSION IF NOT EXISTS vector;"
 exit
 ```
 
-### 3. Test Connection
+### 3. Fix Peer Authentication
+
+```bash
+# Edit pg_hba.conf to change authentication method
+sudo nano /etc/postgresql/15/main/pg_hba.conf
+
+# Find this line:
+# local   all             all                                     peer
+
+# Change it to:
+local   all             all                                     md5
+
+# Save and exit (Ctrl+O, Enter, Ctrl+X)
+
+# Restart PostgreSQL
+sudo /etc/init.d/postgresql restart
+```
+
+### 4. Test Connection
 
 ```bash
 # Test connection with the platform user
@@ -40,7 +58,7 @@ psql -U platform -d platform -c "SELECT version();"
 # Enter password when prompted: platform_dev_password
 ```
 
-### 4. Push Schema and Apply RLS
+### 5. Push Schema and Apply RLS
 
 ```bash
 # From project root
@@ -56,7 +74,7 @@ psql -U platform -d platform -f packages/db/migrations/001_enable_rls.sql
 pnpm db:seed
 ```
 
-### 5. Verify RLS Policies
+### 6. Verify RLS Policies
 
 ```bash
 psql -U platform -d platform << 'EOF'
@@ -123,23 +141,6 @@ PING
 ```
 
 ## Troubleshooting
-
-### PostgreSQL Peer Authentication Error
-
-If you get "Peer authentication failed", edit pg_hba.conf:
-
-```bash
-sudo nano /etc/postgresql/15/main/pg_hba.conf
-
-# Change this line:
-# local   all             all                                     peer
-
-# To:
-local   all             all                                     md5
-
-# Restart PostgreSQL (sysvinit)
-sudo /etc/init.d/postgresql restart
-```
 
 ### Connection Refused
 
