@@ -1,0 +1,25 @@
+{
+  "name": "@platform/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --write .",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "@fastify/cors": "10.0.1",
+    "@trpc/server": "11.0.0",
+    "fastify": "5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

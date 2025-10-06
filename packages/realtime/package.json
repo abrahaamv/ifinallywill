@@ -1,0 +1,23 @@
+{
+  "name": "@platform/realtime",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --write .",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "ioredis": "5.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

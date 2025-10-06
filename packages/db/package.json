@@ -1,0 +1,27 @@
+{
+  "name": "@platform/db",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --write .",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seed.ts",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.44.6",
+    "postgres": "3.4.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "drizzle-kit": "0.31.5",
+    "tsx": "4.19.2",
+    "typescript": "5.7.2"
+  }
+}

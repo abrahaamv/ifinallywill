@@ -1,0 +1,28 @@
+# AI Assistant Platform - Production Agent Dependencies
+# Simplified and production-ready requirements
+
+# LiveKit Agent SDK - Real-time multi-modal AI
+livekit>=1.0.0
+livekit-agents>=0.8.0
+livekit-plugins-openai>=0.8.0
+livekit-plugins-deepgram>=0.6.0
+livekit-plugins-cartesia>=0.2.0
+
+# AI Providers - Cost-Optimized Architecture
+openai>=1.12.0                  # GPT-4o-mini (70%) + GPT-4o (30%) for LLM routing
+anthropic>=0.39.0               # Claude 3.5 Sonnet for complex vision (15% of frames)
+google-generativeai>=0.8.0      # Gemini Flash 2.5 for routine vision (85% of frames)
+elevenlabs>=1.8.0               # ElevenLabs Turbo v2.5 TTS (best emotional warmth)
+voyageai>=0.3.0                 # Voyage Multimodal-3 embeddings for RAG
+
+# HTTP Client for tRPC Backend Integration
+httpx>=0.27.0
+
+# Async Support
+aiohttp>=3.9.0
+
+# Environment Configuration
+python-dotenv>=1.0.0
+
+# Logging and Monitoring (aligned with 11-OBSERVABILITY.md)
+# Standard library logging is sufficient, no additional deps needed
