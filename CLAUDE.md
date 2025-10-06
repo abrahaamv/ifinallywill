@@ -277,6 +277,39 @@ grep -r "[\^~]" package.json apps/*/package.json packages/*/package.json
 
 ---
 
+## Phase Transition Workflow
+
+**CRITICAL WORKFLOW**: When user requests "update all docs and get ready for next phase":
+
+### Automated Phase Completion Process
+
+1. **Create Phase Implementation Doc**: `docs/implementation/phase-N-implementation.md`
+   - Comprehensive documentation (10-25KB)
+   - All achievements, testing results, known issues
+   - Validation results and lessons learned
+
+2. **Create Phase Readiness Doc**: `docs/implementation/PHASE_(N+1)_READINESS.md`
+   - **SUPER COMPLETE** implementation guide (15-30KB)
+   - Week-by-week detailed objectives with checkboxes
+   - Complete code templates and examples
+   - Pre-phase setup instructions
+   - Success criteria for each week
+   - Critical path dependencies
+   - Blocker workarounds and troubleshooting
+
+3. **Update Project Documentation**:
+   - `README.md`: Status, dates, quick start
+   - `docs/guides/roadmap.md`: Phase achievements
+   - `docs/implementation/README.md`: Navigation
+   - `docs/README.md`: Documentation index
+
+4. **Commit Strategy**:
+   - Commit: phase-N-implementation.md, README updates, all package changes
+   - **DO NOT COMMIT**: PHASE_N_READINESS.md (working document)
+   - Rationale: Readiness doc is replaced with phase-N+1-implementation.md when phase completes
+
+**Full Workflow Details**: See `docs/implementation/WORKFLOW.md`
+
 ## Important Development Notes
 
 ### Environment Configuration

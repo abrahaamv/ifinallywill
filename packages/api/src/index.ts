@@ -5,21 +5,21 @@
  */
 
 // Export tRPC context
-export { createContext } from "./context";
-export type { Context, TRPCContext } from "./context";
+export { createContext } from './context';
+export type { Context, TRPCContext } from './context';
 
 // Export authentication middleware
 export {
-	requireAuth,
-	requireTenant,
-	requireRole,
-	hasRole,
-} from "./middleware/auth";
+  requireAuth,
+  requireTenant,
+  requireRole,
+  hasRole,
+} from './middleware/auth';
 
 // Export tenant context helpers
 export {
-	setTenantContext,
-	clearTenantContext,
-	getCurrentTenantContext,
-	verifyTenantContext,
-} from "./middleware/tenant-context";
+  setTenantContext,
+  clearTenantContext,
+  getCurrentTenantContext,
+  verifyTenantContext,
+} from './middleware/tenant-context';

@@ -1,7 +1,7 @@
-import type { Session } from "next-auth";
-import { getSession, getTenantId } from "@platform/auth";
-import { db } from "@platform/db";
-import { setTenantContext } from "./middleware/tenant-context";
+import { getSession, getTenantId } from '@platform/auth';
+import { db } from '@platform/db';
+import type { Session } from 'next-auth';
+import { setTenantContext } from './middleware/tenant-context';
 
 /**
  * tRPC Context
@@ -16,12 +16,12 @@ import { setTenantContext } from "./middleware/tenant-context";
  */
 
 export interface Context {
-	/** Authenticated user session (null if not authenticated) */
-	session: Session | null;
-	/** Tenant ID from session (null if not authenticated or tenant not set) */
-	tenantId: string | null;
-	/** Database instance (use with caution - RLS applied via tenantId) */
-	db: typeof db;
+  /** Authenticated user session (null if not authenticated) */
+  session: Session | null;
+  /** Tenant ID from session (null if not authenticated or tenant not set) */
+  tenantId: string | null;
+  /** Database instance (use with caution - RLS applied via tenantId) */
+  db: typeof db;
 }
 
 /**
@@ -35,23 +35,23 @@ export interface Context {
  * @returns Promise<Context>
  */
 export async function createContext(): Promise<Context> {
-	// Get authenticated session from Auth.js
-	const session = await getSession();
+  // Get authenticated session from Auth.js
+  const session = await getSession();
 
-	// Extract tenant ID from session
-	const tenantId = await getTenantId();
+  // Extract tenant ID from session
+  const tenantId = await getTenantId();
 
-	// Set PostgreSQL session variable for RLS
-	// CRITICAL: This MUST happen before any database queries
-	if (tenantId) {
-		await setTenantContext(tenantId);
-	}
+  // Set PostgreSQL session variable for RLS
+  // CRITICAL: This MUST happen before any database queries
+  if (tenantId) {
+    await setTenantContext(tenantId);
+  }
 
-	return {
-		session,
-		tenantId,
-		db,
-	};
+  return {
+    session,
+    tenantId,
+    db,
+  };
 }
 
 /**

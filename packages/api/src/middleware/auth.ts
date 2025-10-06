@@ -1,5 +1,5 @@
-import { TRPCError } from "@trpc/server";
-import type { TRPCContext } from "../context";
+import { TRPCError } from '@trpc/server';
+import type { TRPCContext } from '../context';
 
 /**
  * Authentication Middleware for tRPC
@@ -17,14 +17,14 @@ import type { TRPCContext } from "../context";
  * @returns Session object
  */
 export function requireAuth(ctx: TRPCContext) {
-	if (!ctx.session) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message: "Authentication required",
-		});
-	}
+  if (!ctx.session) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Authentication required',
+    });
+  }
 
-	return ctx.session;
+  return ctx.session;
 }
 
 /**
@@ -36,20 +36,19 @@ export function requireAuth(ctx: TRPCContext) {
  * @returns Object with session and tenantId
  */
 export function requireTenant(ctx: TRPCContext) {
-	const session = requireAuth(ctx);
+  const session = requireAuth(ctx);
 
-	if (!ctx.tenantId) {
-		throw new TRPCError({
-			code: "UNAUTHORIZED",
-			message:
-				"Tenant context not found - user may not be associated with a tenant",
-		});
-	}
+  if (!ctx.tenantId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Tenant context not found - user may not be associated with a tenant',
+    });
+  }
 
-	return {
-		session,
-		tenantId: ctx.tenantId,
-	};
+  return {
+    session,
+    tenantId: ctx.tenantId,
+  };
 }
 
 /**
@@ -61,32 +60,29 @@ export function requireTenant(ctx: TRPCContext) {
  * @param requiredRole - Minimum role required
  * @returns Session object
  */
-export function requireRole(
-	ctx: TRPCContext,
-	requiredRole: "owner" | "admin" | "member",
-) {
-	const session = requireAuth(ctx);
+export function requireRole(ctx: TRPCContext, requiredRole: 'owner' | 'admin' | 'member') {
+  const session = requireAuth(ctx);
 
-	const userRole = (session.user as { role?: string }).role;
+  const userRole = (session.user as { role?: string }).role;
 
-	// Role hierarchy
-	const roleHierarchy = {
-		owner: 3,
-		admin: 2,
-		member: 1,
-	};
+  // Role hierarchy
+  const roleHierarchy = {
+    owner: 3,
+    admin: 2,
+    member: 1,
+  };
 
-	const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
-	const requiredLevel = roleHierarchy[requiredRole];
+  const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
+  const requiredLevel = roleHierarchy[requiredRole];
 
-	if (userLevel < requiredLevel) {
-		throw new TRPCError({
-			code: "FORBIDDEN",
-			message: `${requiredRole} role required for this operation`,
-		});
-	}
+  if (userLevel < requiredLevel) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: `${requiredRole} role required for this operation`,
+    });
+  }
 
-	return session;
+  return session;
 }
 
 /**
@@ -96,24 +92,21 @@ export function requireRole(
  * @param requiredRole - Role to check
  * @returns True if user has required role
  */
-export function hasRole(
-	ctx: TRPCContext,
-	requiredRole: "owner" | "admin" | "member",
-): boolean {
-	if (!ctx.session?.user) {
-		return false;
-	}
+export function hasRole(ctx: TRPCContext, requiredRole: 'owner' | 'admin' | 'member'): boolean {
+  if (!ctx.session?.user) {
+    return false;
+  }
 
-	const userRole = (ctx.session.user as { role?: string }).role;
+  const userRole = (ctx.session.user as { role?: string }).role;
 
-	const roleHierarchy = {
-		owner: 3,
-		admin: 2,
-		member: 1,
-	};
+  const roleHierarchy = {
+    owner: 3,
+    admin: 2,
+    member: 1,
+  };
 
-	const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
-	const requiredLevel = roleHierarchy[requiredRole];
+  const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
+  const requiredLevel = roleHierarchy[requiredRole];
 
-	return userLevel >= requiredLevel;
+  return userLevel >= requiredLevel;
 }

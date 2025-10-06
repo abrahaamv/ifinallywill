@@ -17,6 +17,9 @@ const client = postgres(connectionString, {
   prepare: true, // Use prepared statements (faster)
 });
 
+// Export raw SQL client for direct queries (used in tests and migrations)
+export const sql = client;
+
 // Create drizzle instance with schema
 export const db = drizzle(client, { schema });
 

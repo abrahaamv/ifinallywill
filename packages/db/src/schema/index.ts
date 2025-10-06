@@ -449,6 +449,5 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
   }),
 }));
 
-
 // ==================== INDEXES ====================
 // TODO: Add indexes via SQL migration (standalone index exports cause runtime errors in Drizzle 0.44.6)

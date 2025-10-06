@@ -23,18 +23,18 @@
  */
 
 // Export configuration
-export { authConfig } from "./config";
+export { authConfig } from './config';
 
 // Export helper functions
 export {
-	getSession,
-	getUserId,
-	getTenantId,
-	requireAuth,
-	requireTenant,
-	hasRole,
-	requireRole,
-} from "./helpers";
+  getSession,
+  getUserId,
+  getTenantId,
+  requireAuth,
+  requireTenant,
+  hasRole,
+  requireRole,
+} from './helpers';
 
 // Re-export types for convenience
-export type { Session, User } from "next-auth";
+export type { Session, User } from 'next-auth';
