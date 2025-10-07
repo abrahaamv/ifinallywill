@@ -1,312 +1,734 @@
-# Phase 4 Readiness Checklist
+# Phase 4 Readiness - Frontend Application Implementation
 
-**Current Status**: ✅ Ready to Start
-**Phase 3 Completion**: 2025-10-06
-**Phase 4 Start**: Ready
-**Estimated Duration**: 3 weeks (21 days)
+**Phase**: 4 of 7
 **Goal**: Build React frontend applications with tRPC integration and responsive UI
+**Duration**: 3 weeks (21 days)
+**Start Date**: TBD
+**Prerequisites**: Phase 3 complete ✅
 
 ---
 
-## 📋 Phase 3 Completion Summary
+## 📊 Phase 3 Completion Summary
 
 ### ✅ Production-Ready Components
 
-1. **Backend API Infrastructure** (100% Complete):
-   - ✅ 5 tRPC routers with RLS enforcement
-   - ✅ Auth.js middleware with request-scoped tenant context
-   - ✅ Health check system (comprehensive + K8s probes)
-   - ✅ Monitoring and metrics infrastructure
-   - ✅ 85% test coverage (exceeds 80% target)
-   - ✅ Performance benchmarks met (<100ms response times)
+**Backend API Infrastructure**:
+- ✅ 5 tRPC routers with RLS enforcement (users, widgets, knowledge, sessions, health)
+- ✅ Auth.js middleware with request-scoped tenant context
+- ✅ Comprehensive health check system (standard + K8s probes)
+- ✅ Monitoring and metrics infrastructure
+- ✅ 85% test coverage (exceeds 80% target)
+- ✅ 3 operational guides (1200+ lines documentation)
 
-2. **Security** (Production-Ready):
-   - ✅ Row-Level Security (RLS) with FORCE enforcement
-   - ✅ Auth.js OAuth (Google + Microsoft)
-   - ✅ Request-scoped tenant isolation
-   - ✅ Role-based access control (owner > admin > member)
-   - ✅ All security patches applied (PostgreSQL, Redis, Fastify)
+**API Endpoints Available**:
+```typescript
+// Authentication & Users
+trpc.users.list()          // List users in tenant
+trpc.users.get()           // Get user by ID
+trpc.users.update()        // Update user profile
+trpc.users.delete()        // Delete user (owner only)
 
-3. **Documentation** (Comprehensive):
-   - ✅ Phase 3 implementation guide (25KB)
-   - ✅ Deployment guide (10KB)
-   - ✅ Monitoring setup guide (8KB)
-   - ✅ Runbook for operations (12KB)
-   - ✅ tRPC API reference (in code JSDoc)
+// Widget Configuration
+trpc.widgets.create()      // Create widget
+trpc.widgets.list()        // List widgets
+trpc.widgets.get()         // Get widget by ID
+trpc.widgets.update()      // Update widget
+trpc.widgets.delete()      // Delete widget
 
-### ✅ No Blockers
+// Knowledge Management
+trpc.knowledge.uploadDocument()    // Upload document
+trpc.knowledge.listDocuments()     // List documents
+trpc.knowledge.getDocument()       // Get document details
+trpc.knowledge.deleteDocument()    // Delete document
+trpc.knowledge.searchChunks()      // Vector search (Phase 5)
 
-All Phase 3 objectives met with zero critical issues. Ready for Phase 4 implementation.
+// AI Sessions
+trpc.sessions.create()     // Create AI session
+trpc.sessions.list()       // List sessions
+trpc.sessions.get()        // Get session with messages
+trpc.sessions.addMessage() // Add message
+trpc.sessions.delete()     // Delete session
+
+// Health & Monitoring
+trpc.health.check()        // Comprehensive health check
+trpc.health.liveness()     // K8s liveness probe
+trpc.health.readiness()    // K8s readiness probe
+trpc.health.metrics()      // Metrics endpoint
+```
+
+**Performance Metrics**:
+- ✅ <100ms response times (P95)
+- ✅ <10ms RLS context set time
+- ✅ <50ms database query latency
+- ✅ 100% index usage
+
+**Security Validation**:
+- ✅ Auth.js session management working
+- ✅ OAuth flow validated (Google, Microsoft)
+- ✅ Role-based access control enforced
+- ✅ Tenant isolation verified
+- ✅ PostgreSQL 16.7+ (SQL injection patched)
+- ✅ Redis 7.4.2+ (RCE vulnerabilities patched)
+- ✅ Fastify 5.3.2+ (parsing bypass patched)
+
+### ⚠️ No Critical Blockers
+
+All Phase 3 objectives met successfully. No blockers for Phase 4.
+
+### 📝 Phase 3 Documentation
+
+**Implementation Documents**:
+- `docs/implementation/phase-3-implementation.md` - Comprehensive achievements summary
+- `docs/operations/deployment-guide.md` - Production deployment instructions (438 lines)
+- `docs/operations/monitoring-setup.md` - Health check and metrics configuration
+- `docs/operations/runbook.md` - Troubleshooting and emergency procedures
 
 ---
 
 ## 🎯 Phase 4 Objectives
 
-**Duration**: 3 weeks (21 days)
-**Goal**: Build React frontend applications with type-safe tRPC integration, responsive design, and multi-app architecture
+### High-Level Goal
 
-### Success Metrics
-- ✅ 4 React apps running (landing, dashboard, meeting, widget-sdk)
-- ✅ tRPC integration with type-safe queries
-- ✅ Auth.js authentication flow working
-- ✅ Responsive design (mobile + desktop)
-- ✅ Shared UI component library
-- ✅ 80%+ test coverage
+Build 4 React frontend applications with:
+- Type-safe tRPC integration
+- Auth.js authentication flow
+- Responsive design (mobile + desktop)
+- Shared UI component library
+- 80%+ test coverage
+- Production-ready deployment
+
+### Applications to Implement
+
+1. **Landing Page** (`apps/landing`) - Public marketing
+   - Homepage with feature highlights
+   - Pricing page
+   - Contact/signup forms
+   - Responsive design
+   - Port 5173 → **www.platform.com**
+
+2. **Dashboard** (`apps/dashboard`) - Admin portal
+   - Knowledge base management (upload, configure)
+   - Widget configuration
+   - Team management
+   - Cost analytics
+   - Port 5174 → **dashboard.platform.com**
+
+3. **Meeting Rooms** (`apps/meeting`) - LiveKit integration
+   - Meeting room interface
+   - Video/audio controls
+   - Chat sidebar
+   - Screen sharing
+   - Port 5175 → **meet.platform.com**
+
+4. **Widget SDK** (`apps/widget-sdk`) - Embeddable widget
+   - ShadowDOM isolation
+   - Minimal bundle size
+   - Global API interface
+   - NPM package + CDN distribution
+   - Port 5176 → Customer websites
+
+### Week-by-Week Breakdown
+
+**Week 1 (Days 1-7)**: Foundation + Auth + Shared Components
+- [ ] Day 1-2: App structure and tRPC integration
+- [ ] Day 3-4: Auth.js integration and protected routes
+- [ ] Day 5-7: Shared UI component library
+
+**Week 2 (Days 8-14)**: Core Application Features
+- [ ] Day 8-9: Dashboard UI and knowledge management
+- [ ] Day 10-11: Widget configuration interface
+- [ ] Day 12-14: Meeting room interface
+
+**Week 3 (Days 15-21)**: Testing + Optimization + Polish
+- [ ] Day 15-16: Component testing (80%+ coverage)
+- [ ] Day 17-18: E2E testing with Playwright
+- [ ] Day 19-21: Performance optimization and production build
 
 ---
 
-## Week 1: Vite + React Setup + Shared UI Library
+## 📋 Pre-Phase 4 Setup
 
-**Objective**: Set up Vite build system, React apps, and shared component library
+### 1. Environment Validation
 
-**Timeline**: Days 1-7
-**Critical Path**: Must complete before Week 2 app implementation
-
-### Task 1.1: Vite Configuration for 4 Apps
-
-**Priority**: CRITICAL (Day 1-2)
-**Estimated Time**: 8-10 hours
-
-#### Step 1: Install Dependencies
-
+**Verify Backend Services Running**:
 ```bash
-# Root package.json - add dev dependencies
-pnpm add -D -w @vitejs/plugin-react vite@6.0.0 vitest@2.1.8
+# Check API server
+curl http://localhost:3001/trpc/health.check
+# Expected: {"status":"healthy", ...}
 
-# Each app gets the same dependencies
-cd apps/landing && pnpm add react@18.3.1 react-dom@18.3.1 react-router-dom@6.28.0
-cd apps/dashboard && pnpm add react@18.3.1 react-dom@18.3.1 react-router-dom@6.28.0
-cd apps/meeting && pnpm add react@18.3.1 react-dom@18.3.1 react-router-dom@6.28.0
-cd apps/widget-sdk && pnpm add react@18.3.1 react-dom@18.3.1 react-router-dom@6.28.0
+# Check database
+psql postgresql://platform:platform_dev_password@localhost:5432/platform -c "SELECT 1"
+# Expected: 1 row returned
+
+# Check Redis
+redis-cli -h localhost -p 6379 PING
+# Expected: PONG
 ```
 
-#### Step 2: Create Vite Configuration
+**Verify Phase 3 Completion**:
+```bash
+# TypeScript type checking
+pnpm typecheck
+# Expected: No errors
 
-**Template for Each App** (`apps/*/vite.config.ts`):
+# Linting
+pnpm lint
+# Expected: No errors
 
+# Build
+pnpm build
+# Expected: All packages build successfully
+
+# Tests
+pnpm test
+# Expected: 85%+ coverage, all tests passing
+```
+
+### 2. Required Environment Variables
+
+Add to `.env`:
+```bash
+# Frontend URLs
+VITE_API_URL=http://localhost:3001
+VITE_REALTIME_URL=http://localhost:3002
+VITE_LIVEKIT_URL=wss://platform.livekit.cloud
+VITE_WIDGET_CDN_URL=http://localhost:5176
+
+# Auth.js (already configured in Phase 3)
+AUTH_SECRET=your-secret-key
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+AUTH_MICROSOFT_ID=your-microsoft-client-id
+AUTH_MICROSOFT_SECRET=your-microsoft-client-secret
+
+# LiveKit (Phase 5 - not needed for Phase 4)
+# LIVEKIT_API_KEY=...
+# LIVEKIT_API_SECRET=...
+```
+
+### 3. Package Dependencies Check
+
+**Verify Installed Packages**:
+```bash
+# React and Vite should be installed
+pnpm list react react-dom @vitejs/plugin-react
+# Expected: react@18.3.1, react-dom@18.3.1, @vitejs/plugin-react@latest
+
+# tRPC client packages
+pnpm list @trpc/client @trpc/react-query
+# Expected: @trpc/client@11.0.0, @trpc/react-query@11.0.0
+
+# If missing, install:
+cd apps/dashboard
+pnpm add react@18.3.1 react-dom@18.3.1
+pnpm add @trpc/client@11.0.0 @trpc/react-query@11.0.0 @tanstack/react-query@5.60.5
+pnpm add -D @vitejs/plugin-react@5.0.0
+```
+
+---
+
+## 📅 Week 1: Foundation + Auth + Shared Components
+
+### Day 1-2: App Structure and tRPC Integration
+
+#### Task 1.1: Configure Vite for All Apps
+
+**Files to Create/Update**:
+
+**`apps/landing/vite.config.ts`**:
 ```typescript
-// apps/landing/vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,  // landing
-    // port: 5174,  // dashboard
-    // port: 5175,  // meeting
-    // port: 5176,  // widget-sdk
+    port: 5173,
+    host: true,
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
   },
+});
+```
+
+**`apps/dashboard/vite.config.ts`**:
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5174,
+    host: true,
+  },
   resolve: {
     alias: {
-      '@': '/src',
+      '@': path.resolve(__dirname, './src'),
     },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
   },
 });
 ```
 
-#### Step 3: Create React Entry Points
+**`apps/meeting/vite.config.ts`**: Same as dashboard but port 5175
 
-**For Each App** (`apps/*/src/main.tsx`):
+**`apps/widget-sdk/vite.config.ts`**: Same as dashboard but port 5176
 
+**Success Criteria**:
+- [ ] All 4 apps start with `pnpm dev:landing`, `pnpm dev:dashboard`, etc.
+- [ ] No TypeScript errors
+- [ ] Hot module replacement (HMR) working
+
+#### Task 1.2: Set Up tRPC Client
+
+**Files to Create**:
+
+**`apps/dashboard/src/utils/trpc.ts`**:
 ```typescript
-// apps/landing/src/main.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '@platform/api-contract';
+
+export const trpc = createTRPCReact<AppRouter>();
+```
+
+**`apps/dashboard/src/utils/trpc-client.ts`**:
+```typescript
+import { httpBatchLink } from '@trpc/client';
+import { trpc } from './trpc';
+
+export const trpcClient = trpc.createClient({
+  links: [
+    httpBatchLink({
+      url: import.meta.env.VITE_API_URL + '/trpc',
+      headers() {
+        return {
+          // Auth headers will be added here after Auth.js integration
+        };
+      },
+    }),
+  ],
+});
+```
+
+**`apps/dashboard/src/main.tsx`**:
+```typescript
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
+import { trpc } from './utils/trpc';
+import { trpcClient } from './utils/trpc-client';
 import './index.css';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </trpc.Provider>
   </React.StrictMode>
 );
 ```
 
-**For Each App** (`apps/*/src/App.tsx`):
-
+**`apps/dashboard/src/App.tsx`**:
 ```typescript
-// apps/landing/src/App.tsx
-import { BrowserRouter } from 'react-router-dom';
+import { trpc } from './utils/trpc';
 
-export default function App() {
+function App() {
+  const healthQuery = trpc.health.check.useQuery();
+
+  if (healthQuery.isLoading) return <div>Loading...</div>;
+  if (healthQuery.error) return <div>Error: {healthQuery.error.message}</div>;
+
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
-        <h1 className="text-4xl font-bold text-center pt-20">
-          Landing Page - www.platform.com
-        </h1>
-        <p className="text-center text-gray-600 mt-4">
-          Public marketing site (Phase 4 - Week 2)
-        </p>
+    <div>
+      <h1>Dashboard</h1>
+      <p>API Status: {healthQuery.data?.status}</p>
+    </div>
+  );
+}
+
+export default App;
+```
+
+**Success Criteria**:
+- [ ] Dashboard loads and displays API health status
+- [ ] tRPC queries type-safe (autocomplete working)
+- [ ] Loading and error states handled
+- [ ] No console errors
+
+### Day 3-4: Auth.js Integration and Protected Routes
+
+#### Task 1.3: Auth.js Client Setup
+
+**Files to Create**:
+
+**`packages/auth/src/client/index.ts`** (new file):
+```typescript
+/**
+ * Auth.js client utilities for frontend apps
+ * Provides session management and protected route helpers
+ */
+
+export interface Session {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: 'owner' | 'admin' | 'member';
+  };
+  tenantId: string;
+  expires: string;
+}
+
+export async function getSession(): Promise<Session | null> {
+  try {
+    const response = await fetch('/api/auth/session', {
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function signIn(provider: 'google' | 'microsoft') {
+  window.location.href = `/api/auth/signin/${provider}`;
+}
+
+export async function signOut() {
+  await fetch('/api/auth/signout', {
+    method: 'POST',
+    credentials: 'include',
+  });
+  window.location.href = '/';
+}
+```
+
+**`apps/dashboard/src/hooks/useAuth.ts`**:
+```typescript
+import { useEffect, useState } from 'react';
+import type { Session } from '@platform/auth/client';
+import { getSession } from '@platform/auth/client';
+
+export function useAuth() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getSession()
+      .then(setSession)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { session, loading, isAuthenticated: !!session };
+}
+```
+
+**`apps/dashboard/src/components/auth/ProtectedRoute.tsx`**:
+```typescript
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: 'owner' | 'admin' | 'member';
+}
+
+export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && !hasRole(session.user.role, requiredRole)) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function hasRole(userRole: string, requiredRole: string): boolean {
+  const roleHierarchy = { owner: 3, admin: 2, member: 1 };
+  return roleHierarchy[userRole as keyof typeof roleHierarchy] >=
+         roleHierarchy[requiredRole as keyof typeof roleHierarchy];
+}
+```
+
+**`apps/dashboard/src/pages/Login.tsx`**:
+```typescript
+import { signIn } from '@platform/auth/client';
+import { useAuth } from '../hooks/useAuth';
+import { Navigate } from 'react-router-dom';
+
+export function Login() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <div className="mt-8 space-y-6">
+          <button
+            onClick={() => signIn('google')}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Sign in with Google
+          </button>
+          <button
+            onClick={() => signIn('microsoft')}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900"
+          >
+            Sign in with Microsoft
+          </button>
+        </div>
       </div>
-    </BrowserRouter>
+    </div>
   );
 }
 ```
 
-#### Step 4: Create HTML Entry Points
+**`apps/dashboard/src/App.tsx` (updated with routing)**:
+```typescript
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Login } from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
-**For Each App** (`apps/*/index.html`):
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
 
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Assistant Platform - Landing</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+export default App;
 ```
 
-#### Step 5: Add Scripts to package.json
+**Success Criteria**:
+- [ ] OAuth login flow working (Google, Microsoft)
+- [ ] Session persists across page refreshes
+- [ ] Protected routes redirect to login
+- [ ] Role-based access control enforced
+- [ ] Logout functionality working
 
-**Root package.json**:
+### Day 5-7: Shared UI Component Library
 
+#### Task 1.4: Set Up `packages/ui` with shadcn/ui + Tailwind CSS v4
+
+> **🎨 CRITICAL: Tailwind CSS v4 Architecture**
+>
+> Tailwind v4.1.14 introduces **CSS-first configuration** and requires a **hybrid installation pattern** for Turborepo monorepos:
+> - **UI Package**: Uses `@tailwindcss/cli` for standalone builds
+> - **Apps**: Use `@tailwindcss/vite` plugin for Vite integration
+> - **Configuration**: CSS-only via `@theme` directive (no `tailwind.config.js`)
+> - **Cross-Package Scanning**: `@source` directive for monorepo component imports
+> - **Performance**: 3.5x faster full builds, 100x faster incremental builds
+
+**Step 1: Install Tailwind v4 (Hybrid Approach)**
+
+```bash
+# UI Package - Use CLI for standalone builds
+pnpm --filter @platform/ui add -D \
+  tailwindcss@4.1.14 \
+  @tailwindcss/cli@4.1.14
+
+# All Apps - Use Vite plugin for development
+pnpm --filter @platform/landing add -D \
+  tailwindcss@4.1.14 \
+  @tailwindcss/vite@4.1.14
+
+pnpm --filter @platform/dashboard add -D \
+  tailwindcss@4.1.14 \
+  @tailwindcss/vite@4.1.14
+
+pnpm --filter @platform/meeting add -D \
+  tailwindcss@4.1.14 \
+  @tailwindcss/vite@4.1.14
+
+pnpm --filter @platform/widget-sdk add -D \
+  tailwindcss@4.1.14 \
+  @tailwindcss/vite@4.1.14
+
+# Shared UI utilities (all packages)
+pnpm add -w \
+  class-variance-authority@0.7.1 \
+  clsx@2.1.1 \
+  tailwind-merge@2.5.5
+```
+
+**Step 2: Configure UI Package**
+
+**`packages/ui/package.json`**:
 ```json
 {
+  "name": "@platform/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "dev:landing": "pnpm --filter @platform/landing dev",
-    "dev:dashboard": "pnpm --filter @platform/dashboard dev",
-    "dev:meeting": "pnpm --filter @platform/meeting dev",
-    "dev:widget": "pnpm --filter @platform/widget-sdk dev",
-    "dev:apps": "turbo run dev --filter='./apps/*'",
-    "build:apps": "turbo run build --filter='./apps/*'"
+    "build": "tailwindcss --input src/styles.css --output dist/styles.css && tsc",
+    "dev": "tailwindcss --input src/styles.css --output dist/styles.css --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check --write .",
+    "clean": "rm -rf dist node_modules .turbo"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "2.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.18",
+    "typescript": "5.7.2",
+    "tailwindcss": "4.1.14",
+    "@tailwindcss/cli": "4.1.14"
   }
 }
 ```
 
-**Validation**:
-```bash
-# Start each app individually
-pnpm dev:landing      # http://localhost:5173
-pnpm dev:dashboard    # http://localhost:5174
-pnpm dev:meeting      # http://localhost:5175
-pnpm dev:widget       # http://localhost:5176
+**`packages/ui/src/styles.css`** (CSS-First Configuration):
+```css
+@import "tailwindcss";
 
-# Start all apps in parallel
-pnpm dev:apps
+/**
+ * Design System Theme
+ * Tailwind v4 uses @theme directive instead of tailwind.config.js
+ */
+@theme {
+  /* Color Palette - Using oklch for better color consistency */
+  --color-primary-50: oklch(0.97 0.01 262.29);
+  --color-primary-100: oklch(0.95 0.02 262.29);
+  --color-primary-200: oklch(0.88 0.05 262.29);
+  --color-primary-300: oklch(0.78 0.11 262.29);
+  --color-primary-400: oklch(0.68 0.18 262.29);
+  --color-primary-500: oklch(0.55 0.22 262.29);
+  --color-primary-600: oklch(0.45 0.20 262.29);
+  --color-primary-700: oklch(0.38 0.17 262.29);
+  --color-primary-800: oklch(0.30 0.13 262.29);
+  --color-primary-900: oklch(0.25 0.10 262.29);
+  --color-primary-950: oklch(0.18 0.06 262.29);
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+
+  /* Spacing Scale */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/**
+ * Cross-Package Component Scanning
+ * @source directive tells Tailwind where to find components
+ */
+@source "./components";
+
+/**
+ * Base Styles
+ */
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/**
+ * Component Styles
+ */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+  }
+}
 ```
 
-**Completion Criteria**:
-- [ ] All 4 apps start without errors
-- [ ] Each app shows placeholder content
-- [ ] Hot module reload working
-- [ ] TypeScript compiles without errors
-
----
-
-### Task 1.2: Shared UI Component Library
-
-**Priority**: HIGH (Day 3-5)
-**Estimated Time**: 12-16 hours
-
-#### Step 1: Install TailwindCSS + shadcn/ui
-
-```bash
-# Install Tailwind CSS
-pnpm add -D -w tailwindcss@4.0.0 postcss@8.4.49 autoprefixer@10.4.20
-
-# Install shadcn/ui dependencies
-cd packages/ui
-pnpm add class-variance-authority clsx tailwind-merge lucide-react
-pnpm add -D @types/react @types/react-dom
-```
-
-#### Step 2: Configure Tailwind
-
-**Root `tailwind.config.js`**:
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    './apps/*/src/**/*.{js,ts,jsx,tsx}',
-    './packages/ui/src/**/*.{js,ts,jsx,tsx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-    },
-  },
-  plugins: [],
-};
-```
-
-#### Step 3: Create Base Components
-
-**`packages/ui/src/components/Button.tsx`**:
-
+**`packages/ui/src/components/button.tsx`**:
 ```typescript
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'underline-offset-4 hover:underline text-primary',
+        default: 'bg-blue-600 text-white hover:bg-blue-700',
+        destructive: 'bg-red-600 text-white hover:bg-red-700',
+        outline: 'border border-gray-300 bg-transparent hover:bg-gray-100',
+        ghost: 'hover:bg-gray-100',
       },
       size: {
-        default: 'h-10 py-2 px-4',
-        sm: 'h-9 px-3 rounded-md',
-        lg: 'h-11 px-8 rounded-md',
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
         icon: 'h-10 w-10',
       },
     },
@@ -337,274 +759,243 @@ Button.displayName = 'Button';
 export { Button, buttonVariants };
 ```
 
-**Components to Create** (Days 3-5):
-
-1. `Button.tsx` - Primary action button
-2. `Input.tsx` - Text input field
-3. `Card.tsx` - Container with header/footer
-4. `Modal.tsx` - Dialog overlay
-5. `Table.tsx` - Data table with sorting
-6. `Spinner.tsx` - Loading indicator
-7. `Alert.tsx` - Notification banner
-8. `Badge.tsx` - Status badge
-9. `Avatar.tsx` - User avatar
-10. `Dropdown.tsx` - Dropdown menu
-
-**Completion Criteria**:
-- [ ] 10 base components created
-- [ ] Tailwind CSS working across all apps
-- [ ] Components exported from `@platform/ui`
-- [ ] Storybook setup (optional, recommended)
-
----
-
-### Task 1.3: tRPC Client Integration
-
-**Priority**: CRITICAL (Day 6-7)
-**Estimated Time**: 8-10 hours
-
-#### Step 1: Install tRPC Client Dependencies
-
-```bash
-# Install tRPC client packages
-cd apps/dashboard
-pnpm add @trpc/client@11.0.0 @trpc/react-query@11.0.0 @tanstack/react-query@5.50.0
-
-# Copy to other apps
-cd ../meeting && pnpm add @trpc/client@11.0.0 @trpc/react-query@11.0.0 @tanstack/react-query@5.50.0
-cd ../widget-sdk && pnpm add @trpc/client@11.0.0 @trpc/react-query@11.0.0 @tanstack/react-query@5.50.0
-```
-
-#### Step 2: Create tRPC Client Utility
-
-**`apps/dashboard/src/utils/trpc.ts`**:
-
+**`packages/ui/src/components/input.tsx`**:
 ```typescript
-import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '@platform/api-contract';
+import * as React from 'react';
+import { cn } from '../utils';
 
-// Create tRPC hooks
-export const trpc = createTRPCReact<AppRouter>();
-```
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-#### Step 3: Create tRPC Provider
-
-**`apps/dashboard/src/providers/TRPCProvider.tsx`**:
-
-```typescript
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink } from '@trpc/client';
-import { useState } from 'react';
-import { trpc } from '../utils/trpc';
-
-export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: import.meta.env.VITE_API_URL || 'http://localhost:3001/trpc',
-          // Include cookies for auth
-          credentials: 'include',
-        }),
-      ],
-    })
-  );
-
-  return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </trpc.Provider>
-  );
-}
-```
-
-#### Step 4: Wrap App with Provider
-
-**`apps/dashboard/src/main.tsx`**:
-
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import { TRPCProvider } from './providers/TRPCProvider';
-import './index.css';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <TRPCProvider>
-      <App />
-    </TRPCProvider>
-  </React.StrictMode>
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50',
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
 );
+Input.displayName = 'Input';
+
+export { Input };
 ```
 
-#### Step 5: Test tRPC Integration
-
-**`apps/dashboard/src/pages/TestPage.tsx`**:
-
+**`packages/ui/src/utils.ts`**:
 ```typescript
-import { trpc } from '../utils/trpc';
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-export default function TestPage() {
-  const { data, isLoading, error } = trpc.health.check.useQuery();
-
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  return (
-    <div>
-      <h1>Health Check</h1>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
-    </div>
-  );
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }
 ```
 
-**Validation**:
+**`packages/ui/src/index.ts`**:
+```typescript
+export { Button } from './components/button';
+export { Input } from './components/input';
+export { cn } from './utils';
+```
+
+**Step 3: Configure Apps with Tailwind v4 Vite Plugin**
+
+> **⚡ CRITICAL: Vite Plugin Configuration**
+>
+> - Each app MUST use `@tailwindcss/vite` plugin (not CLI)
+> - Config file MUST be `.ts` or `.mjs` (ESM-only package)
+> - Use `@source` directive to scan `packages/ui` components
+> - Import `packages/ui/dist/styles.css` for base theme
+
+**Update Vite Configs (All Apps)**:
+
+**`apps/dashboard/vite.config.ts`** (Update existing):
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(), // Tailwind v4 Vite plugin
+  ],
+  server: {
+    port: 5174,
+    host: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+});
+```
+
+**`apps/landing/vite.config.ts`**, **`apps/meeting/vite.config.ts`**, **`apps/widget-sdk/vite.config.ts`**:
+Same pattern - add `tailwindcss()` to plugins array and update ports accordingly (5173, 5175, 5176).
+
+**Step 4: Configure App CSS Files**
+
+**`apps/dashboard/src/index.css`**:
+```css
+@import "tailwindcss";
+
+/**
+ * Import UI package theme and styles
+ * Provides access to design tokens defined in packages/ui
+ */
+@import "@platform/ui/dist/styles.css";
+
+/**
+ * Scan packages/ui for component classes
+ * @source directive enables cross-package Tailwind scanning
+ */
+@source "../../../packages/ui/src";
+
+/**
+ * App-Specific Overrides (if needed)
+ */
+@layer components {
+  .dashboard-card {
+    @apply bg-white rounded-lg shadow-md p-6;
+  }
+}
+```
+
+**Repeat for all apps**: Create `src/index.css` with same pattern (adjust `@source` path if needed).
+
+**Step 5: Update Turborepo Configuration**
+
+**`turbo.json`** (Add CSS file outputs to cache):
+```json
+{
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "dist/styles.css"],
+      "env": ["NODE_ENV"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+**Step 6: Validation and Troubleshooting**
+
+**Validate Installation**:
 ```bash
-# Start API server
-pnpm dev:api
+# Check versions
+pnpm list tailwindcss @tailwindcss/cli @tailwindcss/vite
+
+# Expected output:
+# packages/ui
+# ├── tailwindcss@4.1.14
+# └── @tailwindcss/cli@4.1.14
+#
+# apps/dashboard (and other apps)
+# ├── tailwindcss@4.1.14
+# └── @tailwindcss/vite@4.1.14
+
+# Build UI package
+pnpm --filter @platform/ui build
 
 # Start dashboard app
 pnpm dev:dashboard
-
-# Navigate to http://localhost:5174/test
-# Should see health check data from API
 ```
 
-**Completion Criteria**:
-- [ ] tRPC client configured
-- [ ] Health check query working
-- [ ] Type safety verified (IntelliSense working)
-- [ ] Error handling tested
-- [ ] Loading states working
+**Common Issues**:
+
+1. **"@apply cannot be used with @reference"**
+   - **Cause**: Tailwind v4 removed `@apply` support for custom utilities with `@reference`
+   - **Fix**: Use inline utilities or define as CSS custom properties instead
+
+2. **"require() of ES Module not supported"**
+   - **Cause**: Vite config is `.js` instead of `.ts` or `.mjs`
+   - **Fix**: Rename `vite.config.js` → `vite.config.ts`
+
+3. **"Tailwind classes not working in UI package components"**
+   - **Cause**: Missing `@source` directive in app CSS
+   - **Fix**: Add `@source "../../../packages/ui/src"` to `apps/*/src/index.css`
+
+4. **Build fails with "Cannot find module @platform/ui/dist/styles.css"**
+   - **Cause**: UI package not built yet
+   - **Fix**: Run `pnpm --filter @platform/ui build` first
+
+5. **Changes not reflected in browser**
+   - **Cause**: Turborepo caching outdated CSS
+   - **Fix**: Clear cache with `pnpm clean` and rebuild
+
+**Performance Validation**:
+```bash
+# Measure build performance
+time pnpm build
+
+# Expected improvements with v4:
+# - Full builds: 3.5x faster than v3
+# - Incremental builds: 100x faster
+# - Hot reload: <100ms CSS updates
+```
+
+**Additional Components to Create**:
+- `card.tsx` - Card container
+- `modal.tsx` - Modal dialog
+- `table.tsx` - Data table
+- `spinner.tsx` - Loading spinner
+- `alert.tsx` - Alert notifications
+
+**Success Criteria**:
+- [ ] Tailwind v4.1.14 installed (hybrid: CLI + Vite plugin)
+- [ ] `packages/ui/dist/styles.css` generated successfully
+- [ ] All apps start with Tailwind plugin active
+- [ ] CSS-first `@theme` configuration working
+- [ ] `@source` directives scanning cross-package components
+- [ ] UI package builds without errors (`pnpm --filter @platform/ui build`)
+- [ ] All components type-safe with proper TypeScript definitions
+- [ ] Components render correctly in all 4 apps with consistent styling
+- [ ] Tailwind utilities applied correctly (test with variant classes)
+- [ ] Hot reload working (<100ms CSS updates)
+- [ ] Build performance: 3.5x faster full builds vs v3
+- [ ] No "@apply with @reference" errors
+- [ ] Component tests passing with proper accessibility attributes
 
 ---
 
-## Week 2: Landing Page + Dashboard Implementation
+## 📅 Week 2: Core Application Features
 
-**Objective**: Build public landing page and admin dashboard with authentication
+### Day 8-9: Dashboard UI and Knowledge Management
 
-**Timeline**: Days 8-14
-**Dependencies**: Week 1 complete
+#### Task 2.1: Dashboard Layout
 
-### Task 2.1: Landing Page (www.platform.com)
-
-**Priority**: HIGH (Days 8-10)
-**Estimated Time**: 12-16 hours
-
-#### Pages to Create:
-
-1. **Home** (`apps/landing/src/pages/Home.tsx`):
-   - Hero section with value proposition
-   - Features showcase (3-4 key features)
-   - Pricing tiers (Free, Pro, Enterprise)
-   - CTA button → Sign up
-
-2. **Pricing** (`apps/landing/src/pages/Pricing.tsx`):
-   - 3 pricing tiers with feature comparison
-   - FAQ section
-   - CTA → Start free trial
-
-3. **About** (`apps/landing/src/pages/About.tsx`):
-   - Company mission
-   - Team section
-   - Contact information
-
-4. **Legal** (`apps/landing/src/pages/Legal.tsx`):
-   - Terms of Service
-   - Privacy Policy
-   - Cookie Policy
-
-#### Components to Create:
-
-- `Navbar.tsx` - Top navigation with logo + links
-- `Hero.tsx` - Large hero section with CTA
-- `FeatureCard.tsx` - Feature showcase card
-- `PricingCard.tsx` - Pricing tier card
-- `Footer.tsx` - Footer with links and social media
-
-**Completion Criteria**:
-- [ ] All 4 pages created
-- [ ] Responsive design (mobile + desktop)
-- [ ] Navigation working
-- [ ] CTA buttons linked to auth flow
-- [ ] SEO meta tags added
-
----
-
-### Task 2.2: Dashboard App (dashboard.platform.com)
-
-**Priority**: CRITICAL (Days 11-14)
-**Estimated Time**: 16-20 hours
-
-#### Step 1: Authentication Pages
-
-**`apps/dashboard/src/pages/Login.tsx`**:
-
-```typescript
-import { useState } from 'react';
-import { Button } from '@platform/ui';
-
-export default function Login() {
-  const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/signin/google`;
-  };
-
-  const handleMicrosoftLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/signin/microsoft`;
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-        <div>
-          <h2 className="text-3xl font-bold text-center">Sign in to Platform</h2>
-          <p className="mt-2 text-center text-gray-600">
-            Access your AI assistant dashboard
-          </p>
-        </div>
-        <div className="space-y-4">
-          <Button
-            onClick={handleGoogleLogin}
-            variant="outline"
-            className="w-full"
-          >
-            Continue with Google
-          </Button>
-          <Button
-            onClick={handleMicrosoftLogin}
-            variant="outline"
-            className="w-full"
-          >
-            Continue with Microsoft
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
-#### Step 2: Dashboard Layout
+**Files to Create**:
 
 **`apps/dashboard/src/layouts/DashboardLayout.tsx`**:
-
 ```typescript
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from '../components/Sidebar';
-import { Header } from '../components/Header';
+import { Sidebar } from '../components/navigation/Sidebar';
+import { Header } from '../components/navigation/Header';
 
-export default function DashboardLayout() {
+export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="ml-64">
-        <Header />
-        <main className="p-8">
+      <Header />
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-8">
           <Outlet />
         </main>
       </div>
@@ -613,426 +1004,654 @@ export default function DashboardLayout() {
 }
 ```
 
-#### Step 3: Core Pages
-
-**Pages to Implement**:
-
-1. **Dashboard Home** (`src/pages/Dashboard.tsx`):
-   - Overview metrics (sessions, messages, cost)
-   - Recent activity feed
-   - Quick actions
-
-2. **Widgets** (`src/pages/Widgets.tsx`):
-   - List all widgets
-   - Create new widget
-   - Edit widget configuration
-   - Delete widget
-
-3. **Knowledge Base** (`src/pages/Knowledge.tsx`):
-   - Upload documents
-   - List documents
-   - Delete documents
-   - (Search functionality in Phase 5)
-
-4. **Analytics** (`src/pages/Analytics.tsx`):
-   - Cost metrics
-   - Usage statistics
-   - Budget alerts
-   - (Full analytics in Phase 5)
-
-5. **Settings** (`src/pages/Settings.tsx`):
-   - User profile
-   - Team management
-   - Tenant settings
-   - OAuth configuration
-
-**Completion Criteria**:
-- [ ] Authentication flow working
-- [ ] Dashboard layout responsive
-- [ ] All 5 core pages created
-- [ ] tRPC queries working
-- [ ] Loading states implemented
-- [ ] Error handling complete
-
----
-
-## Week 3: Meeting App + Widget SDK
-
-**Objective**: Build meeting rooms app and embeddable widget SDK
-
-**Timeline**: Days 15-21
-**Dependencies**: Week 2 complete
-
-### Task 3.1: Meeting App (meet.platform.com)
-
-**Priority**: MEDIUM (Days 15-17)
-**Estimated Time**: 12-16 hours
-
-**Note**: LiveKit integration in Phase 5 - create placeholder for now
-
-#### Pages to Create:
-
-1. **Meeting List** (`apps/meeting/src/pages/MeetingList.tsx`):
-   - List all meetings
-   - Create new meeting
-   - Join meeting
-
-2. **Meeting Room** (`apps/meeting/src/pages/MeetingRoom.tsx`):
-   - Video placeholder
-   - Chat sidebar
-   - Meeting controls (mute, camera, screen share)
-   - (LiveKit integration in Phase 5)
-
-**Completion Criteria**:
-- [ ] Meeting list page working
-- [ ] Meeting room placeholder created
-- [ ] UI responsive
-- [ ] Ready for LiveKit integration (Phase 5)
-
----
-
-### Task 3.2: Widget SDK (customer websites)
-
-**Priority**: HIGH (Days 18-21)
-**Estimated Time**: 16-20 hours
-
-#### Step 1: Widget Configuration
-
-**`apps/widget-sdk/vite.config.ts`**:
-
+**`apps/dashboard/src/components/navigation/Sidebar.tsx`**:
 ```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@platform/ui';
 
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    lib: {
-      entry: 'src/main.tsx',
-      name: 'AIAssistantWidget',
-      fileName: (format) => `widget.${format}.js`,
-      formats: ['es', 'umd'],
-    },
-    rollupOptions: {
-      external: ['react', 'react-dom'],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
-      },
-    },
-  },
-});
-```
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+  { name: 'Knowledge Base', href: '/knowledge', icon: '📚' },
+  { name: 'Widgets', href: '/widgets', icon: '🔧' },
+  { name: 'Team', href: '/team', icon: '👥' },
+  { name: 'Analytics', href: '/analytics', icon: '📈' },
+];
 
-#### Step 2: Create Widget Component
-
-**`apps/widget-sdk/src/components/ChatWidget.tsx`**:
-
-```typescript
-import { useState } from 'react';
-import { Button } from '@platform/ui';
-
-export function ChatWidget({ apiUrl }: { apiUrl: string }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function Sidebar() {
+  const location = useLocation();
 
   return (
-    <>
-      {/* Chat button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white"
-      >
-        💬
-      </button>
-
-      {/* Chat window */}
-      {isOpen && (
-        <div className="fixed bottom-20 right-4 w-96 h-[500px] bg-white rounded-lg shadow-xl border">
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b bg-blue-600 text-white rounded-t-lg">
-              <h3 className="font-semibold">AI Assistant</h3>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 p-4 overflow-y-auto">
-              <p className="text-gray-500 text-center">
-                Start a conversation...
-              </p>
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <aside className="w-64 bg-white border-r border-gray-200">
+      <nav className="px-4 py-6 space-y-1">
+        {navigation.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={cn(
+                'flex items-center px-4 py-2 text-sm font-medium rounded-md',
+                isActive
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'text-gray-700 hover:bg-gray-50'
+              )}
+            >
+              <span className="mr-3">{item.icon}</span>
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
 ```
 
-#### Step 3: Create Installation Script
-
-**`apps/widget-sdk/src/main.tsx`**:
-
+**`apps/dashboard/src/components/navigation/Header.tsx`**:
 ```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { ChatWidget } from './components/ChatWidget';
+import { useAuth } from '../../hooks/useAuth';
+import { signOut } from '@platform/auth/client';
+import { Button } from '@platform/ui';
 
-// Global API
-(window as any).AIAssistantWidget = {
-  init: (config: { apiUrl: string; containerId?: string }) => {
-    const containerId = config.containerId || 'ai-assistant-widget';
-    let container = document.getElementById(containerId);
+export function Header() {
+  const { session } = useAuth();
 
-    if (!container) {
-      container = document.createElement('div');
-      container.id = containerId;
-      document.body.appendChild(container);
-    }
-
-    ReactDOM.createRoot(container).render(
-      <React.StrictMode>
-        <ChatWidget apiUrl={config.apiUrl} />
-      </React.StrictMode>
-    );
-  },
-};
-
-// Auto-init if config exists
-const configScript = document.querySelector('script[data-api-url]');
-if (configScript) {
-  const apiUrl = configScript.getAttribute('data-api-url');
-  if (apiUrl) {
-    (window as any).AIAssistantWidget.init({ apiUrl });
-  }
+  return (
+    <header className="bg-white border-b border-gray-200">
+      <div className="px-8 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-semibold">AI Assistant Platform</h1>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">{session?.user.email}</span>
+          <Button variant="outline" size="sm" onClick={() => signOut()}>
+            Logout
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
 }
 ```
 
-#### Step 4: Create Usage Examples
+**Success Criteria**:
+- [ ] Dashboard layout renders correctly
+- [ ] Sidebar navigation working
+- [ ] Responsive design (mobile + desktop)
+- [ ] User info and logout button functional
 
-**`apps/widget-sdk/examples/basic.html`**:
+#### Task 2.2: Knowledge Management Page
 
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Widget Demo - Basic</title>
-  </head>
-  <body>
-    <h1>Basic Widget Demo</h1>
-    <p>The widget should appear in the bottom-right corner.</p>
+**Files to Create**:
 
-    <!-- Widget script -->
-    <script
-      src="http://localhost:5176/src/main.tsx"
-      type="module"
-      data-api-url="http://localhost:3001"
-    ></script>
-  </body>
-</html>
+**`apps/dashboard/src/pages/Knowledge.tsx`**:
+```typescript
+import { useState } from 'react';
+import { trpc } from '../utils/trpc';
+import { Button, Input } from '@platform/ui';
+
+export function Knowledge() {
+  const [file, setFile] = useState<File | null>(null);
+  const documentsQuery = trpc.knowledge.listDocuments.useQuery();
+  const uploadMutation = trpc.knowledge.uploadDocument.useMutation({
+    onSuccess: () => {
+      documentsQuery.refetch();
+      setFile(null);
+    },
+  });
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    uploadMutation.mutate({
+      name: file.name,
+      content: await file.text(),
+      metadata: { size: file.size, type: file.type },
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Knowledge Base</h2>
+        <div className="flex gap-2">
+          <Input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+          />
+          <Button onClick={handleUpload} disabled={!file}>
+            Upload
+          </Button>
+        </div>
+      </div>
+
+      {documentsQuery.isLoading && <p>Loading...</p>}
+      {documentsQuery.error && <p>Error: {documentsQuery.error.message}</p>}
+
+      <div className="grid grid-cols-1 gap-4">
+        {documentsQuery.data?.map((doc) => (
+          <div key={doc.id} className="p-4 bg-white rounded-lg border">
+            <h3 className="font-semibold">{doc.name}</h3>
+            <p className="text-sm text-gray-600">
+              Uploaded: {new Date(doc.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 ```
 
-**Completion Criteria**:
-- [ ] Widget displays chat interface
-- [ ] Widget embeddable in HTML page
-- [ ] ShadowDOM isolation working
-- [ ] Multiple usage examples created
-- [ ] CDN build ready (Phase 7)
+**Success Criteria**:
+- [ ] Document upload working
+- [ ] Document list displays correctly
+- [ ] Loading and error states handled
+- [ ] File validation (size, type)
+
+### Day 10-11: Widget Configuration Interface
+
+#### Task 2.3: Widget Configuration Page
+
+**Files to Create**:
+
+**`apps/dashboard/src/pages/Widgets.tsx`**:
+```typescript
+import { useState } from 'react';
+import { trpc } from '../utils/trpc';
+import { Button, Input } from '@platform/ui';
+
+export function Widgets() {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const widgetsQuery = trpc.widgets.list.useQuery();
+  const createMutation = trpc.widgets.create.useMutation({
+    onSuccess: () => {
+      widgetsQuery.refetch();
+      setShowCreateModal(false);
+    },
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Widgets</h2>
+        <Button onClick={() => setShowCreateModal(true)}>
+          Create Widget
+        </Button>
+      </div>
+
+      {widgetsQuery.isLoading && <p>Loading...</p>}
+      {widgetsQuery.error && <p>Error: {widgetsQuery.error.message}</p>}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {widgetsQuery.data?.map((widget) => (
+          <div key={widget.id} className="p-6 bg-white rounded-lg border">
+            <h3 className="font-semibold">{widget.name}</h3>
+            <p className="text-sm text-gray-600 mt-2">
+              {widget.description || 'No description'}
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" size="sm">
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm">
+                Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showCreateModal && (
+        <CreateWidgetModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={(data) => createMutation.mutate(data)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateWidgetModal({ onClose, onSubmit }: any) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+        <h3 className="text-lg font-semibold mb-4">Create Widget</h3>
+        <div className="space-y-4">
+          <Input
+            placeholder="Widget name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button onClick={() => onSubmit({ name, description, config: {} })}>
+              Create
+            </Button>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Success Criteria**:
+- [ ] Widget creation modal working
+- [ ] Widget list displays correctly
+- [ ] Edit and delete functionality
+- [ ] Form validation
+
+### Day 12-14: Meeting Room Interface
+
+#### Task 2.4: Meeting Room Page (Basic UI - LiveKit integration in Phase 5)
+
+**Files to Create**:
+
+**`apps/meeting/src/pages/MeetingRoom.tsx`**:
+```typescript
+import { useParams } from 'react-router-dom';
+import { trpc } from '../utils/trpc';
+import { Button } from '@platform/ui';
+
+export function MeetingRoom() {
+  const { roomId } = useParams();
+  const sessionQuery = trpc.sessions.get.useQuery({ id: roomId! });
+
+  if (sessionQuery.isLoading) return <div>Loading...</div>;
+  if (sessionQuery.error) return <div>Error: {sessionQuery.error.message}</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Video Grid - Placeholder for Phase 5 LiveKit integration */}
+          <div className="lg:col-span-2 bg-gray-800 rounded-lg p-6">
+            <div className="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
+              <p className="text-white">Video will be integrated in Phase 5</p>
+            </div>
+            <div className="mt-4 flex gap-4 justify-center">
+              <Button>Microphone</Button>
+              <Button>Camera</Button>
+              <Button>Screen Share</Button>
+            </div>
+          </div>
+
+          {/* Chat Sidebar */}
+          <div className="bg-white rounded-lg p-4">
+            <h3 className="font-semibold mb-4">Chat</h3>
+            <div className="space-y-2">
+              {sessionQuery.data?.messages.map((msg) => (
+                <div key={msg.id} className="p-2 bg-gray-50 rounded">
+                  <p className="text-sm">{msg.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Success Criteria**:
+- [ ] Meeting room UI renders correctly
+- [ ] Chat messages display
+- [ ] Placeholder for video integration
+- [ ] Controls UI ready for Phase 5
 
 ---
 
-## 🧪 Testing Strategy
+## 📅 Week 3: Testing + Optimization + Polish
 
-### Unit Tests (80% Coverage Target)
+### Day 15-16: Component Testing
 
+#### Task 3.1: Set Up Vitest for Component Testing
+
+**Files to Create**:
+
+**`apps/dashboard/vitest.config.ts`**:
 ```typescript
-// apps/dashboard/src/pages/Widgets.test.tsx
-import { render, screen } from '@testing-library/react';
-import { trpc } from '../utils/trpc';
-import Widgets from './Widgets';
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
-vi.mock('../utils/trpc');
-
-describe('Widgets Page', () => {
-  it('renders widget list', async () => {
-    const mockWidgets = [
-      { id: '1', name: 'Widget 1', config: {} },
-      { id: '2', name: 'Widget 2', config: {} },
-    ];
-
-    (trpc.widgets.list.useQuery as any).mockReturnValue({
-      data: mockWidgets,
-      isLoading: false,
-      error: null,
-    });
-
-    render(<Widgets />);
-
-    expect(screen.getByText('Widget 1')).toBeInTheDocument();
-    expect(screen.getByText('Widget 2')).toBeInTheDocument();
-  });
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: ['node_modules/', 'src/test/'],
+    },
+  },
 });
 ```
 
-### Component Tests
-
+**`apps/dashboard/src/test/setup.ts`**:
 ```typescript
-// packages/ui/src/components/Button.test.tsx
+import '@testing-library/jest-dom';
+```
+
+**`apps/dashboard/src/components/__tests__/Button.test.tsx`**:
+```typescript
 import { render, screen } from '@testing-library/react';
-import { Button } from './Button';
+import { Button } from '@platform/ui';
 
 describe('Button', () => {
-  it('renders with default variant', () => {
+  it('renders correctly', () => {
     render(<Button>Click me</Button>);
     expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 
-  it('applies variant classes correctly', () => {
-    render(<Button variant="destructive">Delete</Button>);
-    const button = screen.getByText('Delete');
-    expect(button.className).toContain('bg-destructive');
+  it('handles click events', () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    screen.getByText('Click me').click();
+    expect(handleClick).toHaveBeenCalledOnce();
   });
 });
 ```
 
-### Integration Tests
+**Success Criteria**:
+- [ ] 80%+ test coverage for components
+- [ ] All critical user flows tested
+- [ ] Integration tests for tRPC queries
+- [ ] Snapshot tests for UI components
 
-```bash
-# Test auth flow end-to-end
-pnpm test:e2e:auth
+### Day 17-18: E2E Testing with Playwright
 
-# Test widget embedding
-pnpm test:e2e:widget
+#### Task 3.2: Set Up Playwright
 
-# Test tRPC integration
-pnpm test:e2e:api
+**Files to Create**:
+
+**`playwright.config.ts`** (root):
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:5174',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+  ],
+  webServer: {
+    command: 'pnpm dev:dashboard',
+    url: 'http://localhost:5174',
+    reuseExistingServer: !process.env.CI,
+  },
+});
 ```
 
----
+**`e2e/auth.spec.ts`**:
+```typescript
+import { test, expect } from '@playwright/test';
 
-## 📊 Phase 4 Success Criteria
+test.describe('Authentication', () => {
+  test('login flow', async ({ page }) => {
+    await page.goto('/login');
+    await page.click('text=Sign in with Google');
+    // OAuth flow will redirect
+    await expect(page).toHaveURL('/dashboard');
+  });
 
-### Week 1 Validation
-```bash
-# All apps build
-pnpm build:apps
-# Expected: Success
-
-# All apps start
-pnpm dev:apps
-# Expected: 4 apps running on ports 5173-5176
-
-# TypeScript check
-pnpm typecheck
-# Expected: No errors
-
-# UI library exports
-node -e "const ui = require('./packages/ui/dist/index.js'); console.log(Object.keys(ui));"
-# Expected: Button, Input, Card, etc.
+  test('protected routes redirect', async ({ page }) => {
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL('/login');
+  });
+});
 ```
 
-### Week 2 Validation
-```bash
-# Auth flow works
-curl -I http://localhost:5174/api/auth/signin/google
-# Expected: 302 redirect to Google
+**`e2e/widgets.spec.ts`**:
+```typescript
+import { test, expect } from '@playwright/test';
 
-# tRPC query works
-curl http://localhost:3001/trpc/health.check
-# Expected: JSON health status
+test.describe('Widget Management', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login first
+    await page.goto('/login');
+    // ... login steps
+  });
 
-# Dashboard renders
-curl http://localhost:5174
-# Expected: 200 OK
+  test('create widget', async ({ page }) => {
+    await page.goto('/widgets');
+    await page.click('text=Create Widget');
+    await page.fill('input[placeholder="Widget name"]', 'Test Widget');
+    await page.click('text=Create');
+    await expect(page.locator('text=Test Widget')).toBeVisible();
+  });
+});
 ```
 
-### Week 3 Validation
+**Success Criteria**:
+- [ ] E2E tests for authentication flow
+- [ ] E2E tests for widget creation/editing
+- [ ] E2E tests for knowledge upload
+- [ ] E2E tests pass in CI/CD
+
+### Day 19-21: Performance Optimization and Production Build
+
+#### Task 3.3: Performance Optimization
+
+**Optimizations to Implement**:
+
+1. **Code Splitting**:
+```typescript
+// apps/dashboard/src/App.tsx
+import { lazy, Suspense } from 'react';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Widgets = lazy(() => import('./pages/Widgets'));
+const Knowledge = lazy(() => import('./pages/Knowledge'));
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/widgets" element={<Widgets />} />
+        <Route path="/knowledge" element={<Knowledge />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+2. **React Query Optimization**:
+```typescript
+// apps/dashboard/src/utils/trpc-client.ts
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000,   // 10 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+```
+
+3. **Bundle Size Analysis**:
 ```bash
-# Widget embeds
-# Open examples/basic.html in browser
-# Expected: Chat widget in bottom-right
+# Add to package.json
+"analyze": "vite-bundle-visualizer"
 
-# Full test suite
-pnpm test
-# Expected: All passing
+# Run analysis
+pnpm analyze
+```
 
-# Build all packages
+**Success Criteria**:
+- [ ] Initial bundle size <500KB
+- [ ] Code splitting implemented
+- [ ] Lazy loading for routes
+- [ ] React Query optimized
+- [ ] Lighthouse score >90
+
+#### Task 3.4: Production Build Validation
+
+**Validation Checklist**:
+```bash
+# Build all apps
 pnpm build
-# Expected: Success
+
+# Check bundle sizes
+du -sh apps/*/dist
+
+# Test production builds locally
+pnpm preview
+
+# Run all tests
+pnpm test
+
+# E2E tests
+pnpm test:e2e
+
+# Type checking
+pnpm typecheck
+
+# Linting
+pnpm lint
 ```
 
----
-
-## 🚨 Critical Path Dependencies
-
-**Must Complete in Order**:
-
-1. **Vite + React Setup** (Week 1, Day 1-2)
-   → Blocks all app development
-
-2. **Shared UI Library** (Week 1, Day 3-5)
-   → Blocks consistent design across apps
-
-3. **tRPC Client Integration** (Week 1, Day 6-7)
-   → Blocks API integration in all apps
-
-4. **Landing Page** (Week 2, Day 8-10)
-   → Can run parallel with dashboard
-
-5. **Dashboard App** (Week 2, Day 11-14)
-   → Blocks admin functionality
-
-6. **Meeting + Widget** (Week 3)
-   → Can run in parallel
+**Success Criteria**:
+- [ ] All apps build successfully
+- [ ] Bundle sizes within targets
+- [ ] All tests passing (80%+ coverage)
+- [ ] No TypeScript errors
+- [ ] No linting errors
+- [ ] Production preview working
 
 ---
 
-## 🎯 Ready to Start Phase 4
+## ✅ Phase 4 Success Criteria
 
-**Estimated Timeline**: 3 weeks (21 days)
-**Success Probability**: 95%+
+### Functional Requirements
+- [ ] All 4 apps (landing, dashboard, meeting, widget-sdk) running
+- [ ] Auth.js authentication flow working (OAuth + protected routes)
+- [ ] tRPC integration type-safe with all backend endpoints
+- [ ] Knowledge management: upload, list, delete documents
+- [ ] Widget configuration: create, edit, delete widgets
+- [ ] Meeting room basic UI (LiveKit integration in Phase 5)
+- [ ] Responsive design (mobile + desktop)
 
-**First Steps**:
-1. Install Vite + React dependencies
-2. Create Vite configuration for 4 apps
-3. Set up shared UI component library
-4. Integrate tRPC client
+### Technical Requirements
+- [ ] TypeScript strict mode with no errors
+- [ ] 80%+ test coverage (unit + integration)
+- [ ] E2E tests for critical flows
+- [ ] Lighthouse score >90
+- [ ] Bundle size <500KB initial load
+- [ ] Code splitting and lazy loading implemented
+- [ ] React Query optimization complete
 
-**Phase 4 Start Date**: TBD
-**Expected Completion**: TBD + 3 weeks
+### Performance Benchmarks
+- [ ] Initial page load <3s on 3G
+- [ ] Time to Interactive <5s
+- [ ] First Contentful Paint <2s
+- [ ] Largest Contentful Paint <2.5s
+- [ ] Cumulative Layout Shift <0.1
+
+### Quality Gates
+- [ ] All builds successful
+- [ ] All tests passing
+- [ ] No TypeScript errors
+- [ ] No linting errors
+- [ ] Production preview working
+- [ ] Documentation updated
 
 ---
 
-## 📚 References
+## 🚧 Known Considerations
 
-### Previous Phases
-- `phase-3-implementation.md` - Phase 3 completion summary
-- `docs/guides/roadmap.md` - Overall roadmap
+### LiveKit Integration (Phase 5)
+- Meeting room UI is placeholder only
+- LiveKit WebRTC integration in Phase 5
+- Budget approval required ($5K-10K+/month Enterprise plan)
 
-### Technical References
+### Real-time Chat (Phase 6)
+- WebSocket integration in Phase 6
+- Redis Streams for message broadcasting
+- Sticky sessions for load balancing
+
+### Widget SDK (Phase 7)
+- Basic structure in Phase 4
+- Full ShadowDOM isolation in Phase 7
+- NPM package and CDN distribution in Phase 7
+
+---
+
+## 📚 Reference Documentation
+
+### Implementation Guides
+- `docs/implementation/phase-3-implementation.md` - Backend API reference
 - `docs/reference/api.md` - tRPC API specifications
-- `packages/api-contract/src/router.ts` - Router definitions
-- Tailwind CSS docs: https://tailwindcss.com/docs
-- shadcn/ui: https://ui.shadcn.com/docs
-- tRPC React: https://trpc.io/docs/client/react
+- `docs/reference/database.md` - Database schema
 
-### Design References
-- Landing page examples: https://www.awwwards.com/
-- Dashboard patterns: https://dribbble.com/tags/dashboard
-- Widget inspiration: https://www.intercom.com/
+### Operational Guides
+- `docs/operations/deployment-guide.md` - Production deployment
+- `docs/operations/monitoring-setup.md` - Monitoring configuration
+- `docs/operations/runbook.md` - Troubleshooting guide
+
+### Code References
+- `packages/api-contract/src/router.ts` - tRPC router definitions
+- `packages/auth/src/lib/auth.ts` - Auth.js configuration
+- `packages/db/src/schema/` - Database schemas
 
 ---
 
-**Phase 4: Frontend Application - Ready to Start**
+## 🎯 Next Phase Preview: Phase 5
+
+**Goal**: AI Integration + LiveKit
+**Duration**: 3 weeks
+**Key Objectives**:
+- AI provider integration (OpenAI, Anthropic, Gemini)
+- RAG system implementation
+- LiveKit WebRTC integration (Enterprise plan)
+- Python LiveKit agent development
+- Multi-modal AI (voice, vision, text)
+
+**Prerequisites from Phase 4**:
+- Meeting room UI structure complete
+- Frontend tRPC integration working
+- Auth flow validated
+- Production build optimized
+
+---
+
+**Phase 4 Readiness Complete** ✅
+
+**Total Documentation Size**: 30KB
+**Status**: Ready to begin implementation
+**Next Action**: Start Week 1 Day 1 - App Structure and tRPC Integration

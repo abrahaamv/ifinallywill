@@ -8,7 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Current Status**: Foundation ready (Phase 1 complete). Database, auth, and implementation phases pending.
 
-**Tech Stack**: React 18 + Vite 6 (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, LiveKit (WebRTC), Python LiveKit agent
+**Tech Stack**: React 18 + Vite 6 + Tailwind CSS v4 + shadcn/ui (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, LiveKit (WebRTC), Python LiveKit agent
+
+> **🎨 UI/CSS DECISION**: Phase 4 Frontend Stack
+> - **UI Library**: shadcn/ui (copy-paste component library, full customization)
+> - **CSS Framework**: Tailwind CSS v4.1.14 (CSS-first configuration, 3.5x faster builds)
+> - **Hybrid Installation**: `@tailwindcss/cli` (UI package) + `@tailwindcss/vite` (apps)
+> - **Configuration**: CSS-only via `@theme` directive (no `tailwind.config.js`)
+> - **Cross-Package Scanning**: `@source` directive for monorepo components
+> - **Performance**: 100x faster incremental builds, <100ms hot reload
+> - **Reference**: See `docs/reference/tailwind-v4-setup.md` for complete setup guide
 
 > **🚨 SECURITY CRITICAL**: Before starting development, security patches required:
 > - **Redis**: Upgrade to 7.4.2+ (or 7.2.7+) - 4 RCE vulnerabilities (CVSS 7.0-8.8)

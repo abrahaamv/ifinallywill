@@ -436,13 +436,29 @@ PORT=3002 pnpm dev:api &
 
 **Goal**: Build React frontend applications with tRPC integration and responsive UI
 
+**Tech Stack**:
+- **Framework**: React 18.3.1 + Vite 6.0.13
+- **Language**: TypeScript 5.7.2 (strict mode)
+- **UI Library**: shadcn/ui (copy-paste components, full customization)
+- **CSS Framework**: Tailwind CSS v4.1.14 (CSS-first, 3.5x faster builds)
+  - **UI Package**: `@tailwindcss/cli` for standalone builds
+  - **Apps**: `@tailwindcss/vite` plugin for Vite integration
+  - **Configuration**: CSS-only via `@theme` directive (no `tailwind.config.js`)
+  - **Cross-Package Scanning**: `@source` directive for monorepo components
+- **API Client**: tRPC React hooks with @tanstack/react-query
+- **Routing**: React Router DOM v6
+- **Testing**: Vitest + Playwright (E2E)
+- **Build**: Turborepo + pnpm workspaces
+
 **Objectives**:
 - 4 React apps (landing, dashboard, meeting, widget-sdk)
 - tRPC integration with type-safe queries
-- Auth.js authentication flow
+- Auth.js authentication flow (Google, Microsoft OAuth)
 - Responsive design (mobile + desktop)
-- Shared UI component library
-- 80%+ test coverage
+- Shared UI component library (`packages/ui`)
+- Tailwind v4 design system with `@theme` configuration
+- 80%+ test coverage (unit + integration)
+- <100ms hot reload (Tailwind v4 + Vite HMR)
 
 **Timeline**: 3 weeks (21 days)
 
@@ -462,23 +478,31 @@ PORT=3002 pnpm dev:api &
 - `src/main.tsx` - React entry point
 - `src/App.tsx` - Root component
 - `src/utils/trpc.ts` - tRPC client setup
-- `tailwind.config.js` - TailwindCSS config
-- `postcss.config.js` - PostCSS config
+- ~~`tailwind.config.js`~~ - **OUTDATED** (v4 uses CSS-first `@theme` directive)
+- ~~`postcss.config.js`~~ - **NOT NEEDED** (v4 has Lightning CSS built-in)
 
-**Dependencies**:
+**Dependencies** (Updated for Tailwind v4):
 ```json
 {
   "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "react-router-dom": "^6.26.0",
-    "@trpc/client": "^11.0.0-rc.0",
-    "@trpc/react-query": "^11.0.0-rc.0",
-    "@tanstack/react-query": "^5.50.0",
-    "tailwindcss": "^4.0.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-router-dom": "6.30.0",
+    "@trpc/client": "11.0.0",
+    "@trpc/react-query": "11.0.0",
+    "@tanstack/react-query": "5.60.5",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "2.5.5"
+  },
+  "devDependencies": {
+    "tailwindcss": "4.1.14",
+    "@tailwindcss/vite": "4.1.14"
   }
 }
 ```
+
+**Note**: See `docs/reference/tailwind-v4-setup.md` for complete setup guide with hybrid installation pattern.
 
 **Validation**:
 ```bash
