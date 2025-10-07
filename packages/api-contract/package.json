@@ -15,6 +15,7 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
+    "@platform/auth": "workspace:^",
     "@platform/db": "workspace:*",
     "@platform/knowledge": "workspace:*",
     "@platform/shared": "workspace:*",

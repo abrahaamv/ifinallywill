@@ -43,3 +43,8 @@ export type { AuthContext } from './lib/middleware';
 
 // Re-export types for convenience
 export type { Session, User } from 'next-auth';
+
+// Export services (Phase 8)
+export { passwordService } from './services/password.service';
+export { MFAService } from './services/mfa.service';
+export type { MFASetupResult, MFAVerificationResult } from './services/mfa.service';

@@ -5,6 +5,7 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { z } from 'zod';
 import { passwordService } from './services/password.service';
+import { MFAService } from './services/mfa.service';
 
 /**
  * Auth.js Configuration - Phase 8 Security Hardening
@@ -134,10 +135,33 @@ export const authConfig: NextAuthConfig = {
             throw new Error('MFA_REQUIRED');
           }
 
-          // TODO: Verify MFA code (implement in Day 6-7)
-          // For now, reject if MFA is enabled
-          console.warn('MFA verification not yet implemented');
-          return null;
+          // Verify MFA code (TOTP or backup code)
+          const mfaResult = await MFAService.verifyCode(
+            mfaCode,
+            user.mfaSecret || '',
+            user.mfaBackupCodes || []
+          );
+
+          if (!mfaResult.valid) {
+            // MFA code invalid
+            console.warn('Invalid MFA code attempt:', { email });
+            return null;
+          }
+
+          // If backup code was used, remove it from user's backup codes
+          if (mfaResult.usedBackupCode) {
+            const updatedBackupCodes = await MFAService.removeUsedBackupCode(
+              user.mfaBackupCodes || [],
+              mfaCode
+            );
+
+            await db
+              .update(users)
+              .set({ mfaBackupCodes: updatedBackupCodes })
+              .where(eq(users.id, user.id));
+
+            console.info('Backup code used and removed:', { email });
+          }
         }
 
         // Reset failed login attempts on success
