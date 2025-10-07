@@ -4,7 +4,7 @@
  * Core tRPC configuration and procedure builders with auth integration.
  */
 
-import type { Context } from '@platform/api';
+import type { Context } from './context';
 import { TRPCError, initTRPC } from '@trpc/server';
 
 /**

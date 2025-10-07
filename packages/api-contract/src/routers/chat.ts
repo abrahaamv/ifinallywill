@@ -93,16 +93,41 @@ export const chatRouter = router({
           });
         }
 
-        // TODO: Phase 5 Week 1 Day 3-4
-        // Get conversation history for AI context
+        // Step 1: Get conversation history for AI context
+        // TODO: Uncomment when database schema is ready
         // const history = await ctx.db
         //   .select()
         //   .from(messages)
         //   .where(eq(messages.sessionId, input.sessionId))
         //   .orderBy(messages.timestamp)
         //   .limit(20); // Last 20 messages for context
-        //
-        // // Use AI router from @platform/ai-core
+
+        // Step 2: Execute RAG query to get relevant knowledge
+        const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
+        const ragResult = await executeRAGQuery(ctx.db as any, {
+          query: input.content,
+          tenantId: ctx.tenantId,
+          topK: 5,
+          minScore: 0.7,
+        });
+
+        // Step 3: Build enhanced prompt with RAG context
+        // Will be used when AI router is integrated
+        buildRAGPrompt(input.content, ragResult.context);
+
+        // Step 4: Convert history to AI format with RAG-enhanced system message
+        // TODO: Uncomment when database schema is ready
+        // const aiMessages = [
+        //   { role: 'system' as const, content: enhancedPrompt },
+        //   ...history.map((msg) => ({
+        //     role: msg.role as 'system' | 'user' | 'assistant',
+        //     content: msg.content,
+        //   })),
+        //   { role: 'user' as const, content: input.content },
+        // ];
+
+        // Step 5: Use AI router from @platform/ai-core
+        // TODO: Uncomment when API keys are configured
         // const { AIRouter } = await import('@platform/ai-core');
         // const aiRouter = new AIRouter({
         //   openaiApiKey: process.env.OPENAI_API_KEY!,
@@ -112,15 +137,9 @@ export const chatRouter = router({
         //   logRouting: true,
         // });
         //
-        // // Convert history to AI format
-        // const aiMessages = history.map((msg) => ({
-        //   role: msg.role as 'system' | 'user' | 'assistant',
-        //   content: msg.content,
-        // }));
-        //
         // const startTime = Date.now();
         //
-        // // Get AI response with cost-optimized routing
+        // Step 6: Get AI response with cost-optimized routing
         // const aiResponse = await aiRouter.complete({
         //   messages: aiMessages,
         //   temperature: 0.7,
@@ -129,9 +148,9 @@ export const chatRouter = router({
         //
         // const latencyMs = Date.now() - startTime;
 
-        // TEMPORARY: Mock AI response for Phase 5 development
+        // TEMPORARY: Mock AI response demonstrating RAG integration
         const aiResponse = {
-          content: 'This is a placeholder AI response. AI integration will be completed in Phase 5 Week 1 Day 3-4.',
+          content: `Based on the knowledge base context, I can provide this response:\n\n${ragResult.context}\n\nRAG system retrieved ${ragResult.totalChunks} relevant chunks in ${ragResult.processingTimeMs}ms. Full AI integration with cost-optimized routing will be completed in Phase 5 Week 2.`,
           model: 'gpt-4o-mini' as const,
           provider: 'openai' as const,
           usage: {
@@ -142,9 +161,9 @@ export const chatRouter = router({
           },
           finishReason: 'stop' as const,
         };
-        const latencyMs = 500;
+        const latencyMs = ragResult.processingTimeMs + 500;
 
-        // Store AI response
+        // Store AI response with RAG metadata
         const [assistantMessage] = await ctx.db
           .insert(messages)
           .values({
@@ -156,7 +175,10 @@ export const chatRouter = router({
               tokensUsed: aiResponse.usage.totalTokens,
               costUsd: aiResponse.usage.cost,
               latencyMs,
-            },
+              ragChunksRetrieved: ragResult.totalChunks,
+              ragProcessingTimeMs: ragResult.processingTimeMs,
+              ragTopRelevance: ragResult.chunks[0]?.relevance || 'none',
+            } as any,
           })
           .returning();
 

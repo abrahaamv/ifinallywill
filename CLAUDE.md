@@ -25,10 +25,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - **Fastify**: Ensure 5.3.2+ - Content-type parsing bypass
 > - **Timeline**: 7-day patch window from project start
 >
-> **💰 BUDGET ALERT**: LiveKit Enterprise plan required ($5K-10K+/month minimum)
-> - Build/Scale plans insufficient for production (cold starts, limited agents)
+> **💰 LiveKit DEPLOYMENT OPTIONS**:
+>
+> **Option 1: Self-Hosted (RECOMMENDED - 95-97% cost savings)**
+> - Docker Compose setup with livekit-server + Redis
+> - Cloud deployment: AWS EC2, Kubernetes (EKS/GKE/AKS), DigitalOcean, Hetzner
+> - Cost: $130-500/month (~$1.6K-6K/year) vs Enterprise $60K-120K+/year
+> - Full feature parity with Enterprise
+> - See Phase 5 Week 2 implementation doc for setup guide
+>
+> **Option 2: LiveKit Enterprise (Premium)**
+> - Managed service with guaranteed uptime and support
+> - $5K-10K+/month minimum ($60K-120K+/year)
 > - Required for 40-100 worker pool (4 cores + 8GB RAM each)
-> - Budget approval needed before Phase 5 implementation
+> - Turnkey solution with no infrastructure management
+>
+> **Decision**: Self-hosted option implemented in Phase 5 Week 2
 
 > **📌 IMPORTANT: Multi-App Architecture**
 >

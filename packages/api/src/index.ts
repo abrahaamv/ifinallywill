@@ -1,25 +1,9 @@
 /**
- * @platform/api - Fastify + tRPC API Server
+ * @platform/api - Backend API Package
  *
- * Provides type-safe API endpoints with authentication and tenant isolation.
+ * Simple export for running the Fastify server.
+ * All tRPC functionality is in @platform/api-contract.
  */
 
-// Export tRPC context
-export { createContext } from './context';
-export type { Context, TRPCContext } from './context';
-
-// Export authentication middleware
-export {
-  requireAuth,
-  requireTenant,
-  requireRole,
-  hasRole,
-} from './middleware/auth';
-
-// Export tenant context helpers
-export {
-  setTenantContext,
-  clearTenantContext,
-  getCurrentTenantContext,
-  verifyTenantContext,
-} from './middleware/tenant-context';
+// Main server export
+export * from './server';

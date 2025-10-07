@@ -7,6 +7,10 @@
 // Export app router and types
 export { appRouter, type AppRouter } from './router';
 
+// Export context
+export { createContext } from './context';
+export type { Context, TRPCContext } from './context';
+
 // Export tRPC helpers (for backend use)
 export {
   router,

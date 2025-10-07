@@ -1,0 +1,18 @@
+# LiveKit Agent Dependencies (Phase 5 - Week 3)
+# Python 3.11+ required
+
+# Core LiveKit libraries
+livekit==0.17.0
+livekit-agents==0.9.0
+livekit-plugins-deepgram==0.6.0
+
+# AI providers
+openai==1.58.1
+anthropic==0.40.0
+google-generativeai==0.8.3
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.27.0
+pydantic==2.6.0
+pillow==11.0.0

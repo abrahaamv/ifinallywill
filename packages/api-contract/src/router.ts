@@ -7,6 +7,7 @@
 import { chatRouter } from './routers/chat';
 import { healthRouter } from './routers/health';
 import { knowledgeRouter } from './routers/knowledge';
+import { livekitRouter } from './routers/livekit';
 import { sessionsRouter } from './routers/sessions';
 import { usersRouter } from './routers/users';
 import { widgetsRouter } from './routers/widgets';
@@ -22,6 +23,7 @@ export const appRouter = router({
   knowledge: knowledgeRouter,
   sessions: sessionsRouter,
   chat: chatRouter,
+  livekit: livekitRouter,
 });
 
 /**

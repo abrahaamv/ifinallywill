@@ -1,0 +1,154 @@
+/**
+ * Meeting Room Page with LiveKit Integration (Phase 5 - Week 2)
+ * Real video/audio/screen sharing with AI assistant
+ */
+
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  LiveKitRoom,
+  GridLayout,
+  ParticipantTile,
+  RoomAudioRenderer,
+  ControlBar,
+  useTracks,
+} from '@livekit/components-react';
+import { Track } from 'livekit-client';
+import '@livekit/components-styles';
+import { Button } from '@platform/ui';
+
+export function MeetingRoom() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const [token, _setToken] = useState<string | null>(null);
+  const [livekitUrl, _setLivekitUrl] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Request access token on mount
+  useEffect(() => {
+    const requestToken = async () => {
+      if (!roomId) {
+        setError('Room ID is required');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // TODO: Replace with actual tRPC call when backend is configured
+        // const result = await trpc.livekit.joinRoom.mutate({
+        //   roomName: roomId,
+        //   participantName: sessionStorage.getItem('displayName') || 'Guest',
+        // });
+        //
+        // setToken(result.token);
+        // setLivekitUrl(result.livekitUrl);
+
+        // TEMPORARY: Mock for development without LiveKit Cloud
+        console.warn('LiveKit not configured - using development mode');
+        setError('LiveKit not configured. Please set up LiveKit Cloud credentials to use video/audio features.');
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Failed to join room:', err);
+        setError('Failed to join meeting room');
+        setIsLoading(false);
+      }
+    };
+
+    requestToken();
+  }, [roomId]);
+
+  // Handle connection errors
+  const handleError = (error: Error) => {
+    console.error('LiveKit connection error:', error);
+    setError('Connection failed. Please try again.');
+  };
+
+  // Handle leaving room
+  const handleLeave = () => {
+    navigate('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <span className="text-lg">Joining meeting...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !token || !livekitUrl) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="text-center max-w-md">
+          <svg className="h-16 w-16 text-destructive mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-red-500 mb-4">{error || 'Failed to load meeting'}</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            LiveKit requires environment variables to be configured. See PHASE_5_WEEK_2_READINESS.md for setup instructions.
+          </p>
+          <Button onClick={() => navigate('/')}>
+            Return to Lobby
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col">
+      {/* Header */}
+      <div className="bg-gray-900 text-white p-4">
+        <h1 className="text-xl font-bold">Meeting: {roomId}</h1>
+      </div>
+
+      {/* LiveKit Room */}
+      <div className="flex-1">
+        <LiveKitRoom
+          token={token}
+          serverUrl={livekitUrl}
+          connect={true}
+          onError={handleError}
+          onDisconnected={handleLeave}
+          audio={true}
+          video={true}
+          screen={true}
+        >
+          {/* Video Grid */}
+          <VideoGrid />
+
+          {/* Audio Renderer */}
+          <RoomAudioRenderer />
+
+          {/* Control Bar */}
+          <ControlBar />
+        </LiveKitRoom>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Video Grid Component
+ * Displays all participants in grid layout
+ */
+function VideoGrid() {
+  // Subscribe to all video and screen share tracks
+  const tracks = useTracks(
+    [
+      { source: Track.Source.Camera, withPlaceholder: true },
+      { source: Track.Source.ScreenShare, withPlaceholder: false },
+    ],
+    { onlySubscribed: false }
+  );
+
+  return (
+    <GridLayout tracks={tracks} style={{ height: 'calc(100vh - 180px)' }}>
+      <ParticipantTile />
+    </GridLayout>
+  );
+}

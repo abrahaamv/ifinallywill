@@ -15,12 +15,13 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
-    "@trpc/server": "11.0.0",
-    "zod": "3.24.1",
-    "drizzle-orm": "0.44.6",
     "@platform/db": "workspace:*",
-    "@platform/api": "workspace:*",
-    "@platform/shared": "workspace:*"
+    "@platform/knowledge": "workspace:*",
+    "@platform/shared": "workspace:*",
+    "@trpc/server": "11.0.0",
+    "drizzle-orm": "0.44.6",
+    "livekit-server-sdk": "2.14.0",
+    "zod": "3.24.1"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
