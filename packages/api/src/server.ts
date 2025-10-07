@@ -1,9 +1,15 @@
 /**
- * Fastify + tRPC API Server (Phase 6 Integration)
+ * Fastify + tRPC API Server (Phase 8 Security Integration)
  *
  * Combines tRPC API with WebSocket server for real-time features.
- * Port 3001: HTTP + tRPC
+ * Port 3001: HTTP + tRPC + Auth.js
  * Port 3002: WebSocket server
+ *
+ * Phase 8 Security:
+ * - Auth.js session-based authentication
+ * - NIST-compliant session timeouts (8 hours + 30 minutes inactivity)
+ * - Argon2id password hashing with bcrypt migration
+ * - Account lockout protection (5 attempts = 15 minutes)
  */
 
 import Fastify from 'fastify';
@@ -11,6 +17,7 @@ import cors from '@fastify/cors';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { appRouter, createContext } from '@platform/api-contract';
 import { RealtimeServer } from '@platform/realtime';
+import { authPlugin } from './plugins/auth';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3002;
@@ -40,6 +47,10 @@ async function main() {
     origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
     credentials: true,
   });
+
+  // Register Auth.js plugin (BEFORE tRPC)
+  // This must come first to enable session management for tRPC context
+  await fastify.register(authPlugin);
 
   // Register tRPC plugin
   await fastify.register(fastifyTRPCPlugin, {
