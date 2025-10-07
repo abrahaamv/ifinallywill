@@ -48,3 +48,10 @@ export type { Session, User } from 'next-auth';
 export { passwordService } from './services/password.service';
 export { MFAService } from './services/mfa.service';
 export type { MFASetupResult, MFAVerificationResult } from './services/mfa.service';
+export { ApiKeyService } from './services/api-key.service';
+export type {
+	ApiKeyType,
+	ApiKeyPermission,
+	ApiKeyValidationResult,
+	GeneratedApiKey,
+} from './services/api-key.service';

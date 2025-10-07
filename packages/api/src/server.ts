@@ -18,6 +18,7 @@ import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { appRouter, createContext } from '@platform/api-contract';
 import { RealtimeServer } from '@platform/realtime';
 import { authPlugin } from './plugins/auth';
+import { rateLimitPlugin } from './plugins/rate-limit';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3002;
@@ -42,11 +43,38 @@ async function main() {
     maxParamLength: 5000,
   });
 
-  // Register CORS
+  // Register CORS with production security
   await fastify.register(cors, {
-    origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
+    origin: (origin, callback) => {
+      // Allowed origins (production + development)
+      const allowed: Array<string | RegExp> = [
+        process.env.MAIN_APP_URL || 'https://platform.com',
+        process.env.DASHBOARD_URL || 'https://dashboard.platform.com',
+        process.env.MEETING_URL || 'https://meet.platform.com',
+        // Subdomain wildcard regex (e.g., *.platform.com)
+        /^https:\/\/.*\.platform\.com$/,
+        // Development origins
+        ...(process.env.NODE_ENV === 'development'
+          ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176']
+          : []),
+      ];
+
+      // Check if origin is allowed
+      const isAllowed = allowed.some((pattern) =>
+        typeof pattern === 'string' ? pattern === origin : pattern instanceof RegExp && origin ? pattern.test(origin) : false
+      );
+
+      callback(null, isAllowed);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Api-Key', 'X-CSRF-Token'],
+    maxAge: 86400, // 24 hours preflight cache
   });
+
+  // Register rate limiting plugin (BEFORE Auth.js)
+  // Protects authentication endpoints from brute-force attacks
+  await fastify.register(rateLimitPlugin);
 
   // Register Auth.js plugin (BEFORE tRPC)
   // This must come first to enable session management for tRPC context
