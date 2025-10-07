@@ -1,8 +1,29 @@
-export default function App() {
+/**
+ * Landing Page App
+ * Public marketing site for AI Assistant Platform
+ * Features: Hero, features, pricing, testimonials, CTA
+ */
+
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { PricingPage } from './pages/PricingPage';
+import { FeaturesPage } from './pages/FeaturesPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { MainLayout } from './layouts/MainLayout';
+
+export function App() {
   return (
-    <div>
-      <h1>AI Assistant Platform - Landing Page</h1>
-      <p>Phase 1 Placeholder - Public marketing site (www.platform.com)</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="pricing" element={<PricingPage />} />
+          <Route path="features" element={<FeaturesPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="contact" element={<ContactPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }

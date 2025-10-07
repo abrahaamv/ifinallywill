@@ -1,8 +1,20 @@
-export default function App() {
+/**
+ * Meeting Rooms App
+ * LiveKit-powered video/audio conferencing with AI assistant
+ * Features: Real-time video, screen sharing, AI chat
+ */
+
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LobbyPage } from './pages/LobbyPage';
+import { RoomPage } from './pages/RoomPage';
+
+export function App() {
   return (
-    <div>
-      <h1>AI Assistant Platform - Meeting Rooms</h1>
-      <p>Phase 1 Placeholder - Real-time meetings (meet.platform.com)</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LobbyPage />} />
+        <Route path="/room/:roomId" element={<RoomPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
