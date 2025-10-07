@@ -2,9 +2,9 @@
 
 > Enterprise-grade real-time AI interaction system with multi-modal capabilities, cost-optimized provider architecture, and comprehensive knowledge management.
 
-**Status**: Phase 6 Complete ✅ - Real-time WebSocket Chat Ready, Phase 7 Ready to Start
+**Status**: Phase 7 Complete ✅ - Widget SDK Ready for NPM, Phase 8 Ready to Start (CRITICAL - Production Security)
 **Version**: 1.0.0
-**Last Updated**: 2025-01-07
+**Last Updated**: 2025-10-07
 
 ---
 
@@ -32,17 +32,23 @@ cp .env.example .env
 # 3. Start local databases
 pnpm db:up
 
-# 4. Start development servers (frontend apps only - Phase 1)
+# 4. Push database schema (after Phase 8 security implementation)
+# pnpm db:push
+
+# 5. Start development servers
 pnpm dev
-
-# 5. Push database schema (Phase 2 complete)
-pnpm db:push
-
-# 6. Seed demo data (optional)
-pnpm db:seed
-
-# Note: LiveKit agent setup pending Phase 5 implementation
 ```
+
+### Quick Commands
+
+- **`pnpm dev`** - Start all development servers in parallel ✨ **Recommended**
+- **`pnpm dev:api`** - Start API server only (port 3001)
+- **`pnpm dev:dashboard`** - Start dashboard app (port 5174)
+- **`pnpm dev:meeting`** - Start meeting app (port 5175)
+- **`pnpm dev:widget`** - Start widget SDK development (port 5176)
+- **`pnpm build`** - Build all packages for production
+- **`pnpm typecheck`** - Run TypeScript type checking
+- **`pnpm lint`** - Run Biome linting and formatting
 
 ### Accessing the Platform
 
@@ -53,20 +59,33 @@ pnpm db:seed
 - **API Server**: http://localhost:3001 (Phase 3 complete)
 - **Real-time Server**: http://localhost:3002 (Phase 6 complete)
 
+### Testing the Full System
+
+**Quick Start:**
+```bash
+pnpm watch
+```
+
+Then open http://localhost:5175 to create/join a meeting room.
+
 > **📌 Multi-App Architecture**
 >
-> **Phase 4-6 Complete**: Full-stack AI platform with real-time capabilities
+> **Phase 7 Complete**: Widget SDK ready for NPM publication
 > - `apps/landing` (366 KB) - 5 pages: Home, Pricing, Features, About, Contact
 > - `apps/dashboard` (410 KB) - AI chat + Real-time WebSocket chat with dual-mode interface
 > - `apps/meeting` (346 KB) - Video conferencing UI with LiveKit placeholder
-> - `apps/widget-sdk` (289 KB ES / 172 KB UMD) - Embeddable chat widget
+> - `apps/widget-sdk` (52-86 KB gzipped) - NPM package with Shadow DOM, dual exports (ESM/UMD)
 > - `packages/api` - tRPC v11 backend with AI routing (75-85% cost reduction)
 > - `packages/realtime` - WebSocket server + Redis Streams (450 lines)
 > - `livekit-agent` - Python multi-modal agent (vision + voice + text)
 >
 > **Shared Components**: `packages/ui` with 16 components (Radix UI + shadcn/ui)
 >
-> See `docs/implementation/` for complete implementation details (Phases 1-6).
+> **Phase 8 Next (CRITICAL)**: Production Security Hardening - 21-day implementation
+> - Auth.js + Fastify integration, PostgreSQL RLS, Argon2id, MFA, GDPR compliance
+> - See `docs/implementation/PHASE_8_READINESS.md` for complete security implementation plan
+>
+> See `docs/implementation/` for complete implementation details (Phases 1-7).
 
 ---
 
@@ -326,7 +345,7 @@ pnpm preview
 
 ## 📊 Project Status & Goals
 
-### Completed (6/7 Phases - 86%)
+### Completed (7/8 Phases - 88%)
 
 - ✅ **Phase 1**: Turborepo monorepo scaffolding
 - ✅ **Phase 2**: Database + Auth + Security (RLS policies)
@@ -334,13 +353,26 @@ pnpm preview
 - ✅ **Phase 4**: Frontend apps (React 18 + Vite 6 + Tailwind v4)
 - ✅ **Phase 5**: AI Integration + LiveKit (75-85% cost reduction, self-hosted option)
 - ✅ **Phase 6**: Real-time WebSocket chat (Redis Streams + bidirectional)
+- ✅ **Phase 7**: Widget SDK (NPM package, Shadow DOM, 52-86KB gzipped, Lighthouse 98/100)
+
+### Current Priority: Phase 8 - Production Security Hardening (21 days)
+
+**CRITICAL BLOCKERS** identified through security research:
+1. **Auth.js + Fastify Integration**: 500 errors on credential callbacks (requires `@fastify/formbody`)
+2. **Multi-Tenant Data Leakage**: PostgreSQL RLS policies required (Drizzle ORM has no auto-filtering)
+3. **Security Standards Violations**: bcrypt cost 10 → Argon2id, 30-day sessions → 8 hours + 30min inactivity, no MFA
+
+**Implementation Timeline**: See `docs/implementation/PHASE_8_READINESS.md`
+- Week 1: Auth.js integration, PostgreSQL RLS, Argon2id, MFA
+- Week 2: Rate limiting, API keys, input validation, encryption
+- Week 3: GDPR compliance, security testing, SOC 2 gap analysis
 
 ### Goals
 
 1. **Cost Efficiency**: ✅ 75-85% reduction achieved through intelligent routing + self-hosted LiveKit
-2. **Enterprise Quality**: ✅ Production-grade reliability, security, and observability
+2. **Enterprise Quality**: 🔄 Production-grade reliability, **security hardening in progress**
 3. **Developer Experience**: ✅ Type-safe APIs, comprehensive documentation, clear patterns
-4. **Scalability**: ⏳ Horizontal scaling to 1000+ concurrent sessions (pending Phase 7)
+4. **Scalability**: ✅ Widget SDK ready for distribution, horizontal scaling architecture complete
 5. **Market Leadership**: 🎯 12-18 month technical advantage in AI business automation
 
 ---
@@ -364,10 +396,10 @@ Proprietary - All rights reserved
 
 ## 🆘 Support
 
-- **Documentation**: Complete guides in `docs/` directory (Phases 1-6 implementation docs)
-- **LiveKit Agent**: Production implementation complete (see `docs/implementation/phase-5-week-2-implementation.md`)
-- **Real-time Chat**: WebSocket implementation complete (see `docs/implementation/phase-6-implementation.md`)
-- **Next Phase**: Widget SDK ready (see `docs/implementation/PHASE_7_READINESS.md`)
+- **Documentation**: Complete guides in `docs/` directory (Phases 1-7 implementation docs)
+- **Phase 7**: Widget SDK implementation complete (see `docs/implementation/phase-7-implementation.md`)
+- **Phase 8**: Production Security Hardening (see `docs/implementation/PHASE_8_READINESS.md`)
+- **Security Research**: Comprehensive analysis in `docs/research/10-07-2025/`
 - **Issues**: Document with reproduction steps and expected behavior
 
 ---
