@@ -18,14 +18,19 @@
     "@auth/core": "0.40.0",
     "@auth/drizzle-adapter": "1.10.0",
     "@platform/db": "workspace:*",
-    "bcryptjs": "^3.0.2",
+    "argon2": "0.31.2",
+    "bcryptjs": "2.4.3",
     "drizzle-orm": "0.44.6",
     "next-auth": "5.0.0-beta.29",
-    "zod": "3.24.1"
+    "otpauth": "9.3.4",
+    "qrcode": "1.5.4",
+    "zod": "3.24.1",
+    "zxcvbn": "4.4.2"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
+    "@types/bcryptjs": "2.4.6",
     "@types/node": "22.10.5",
+    "@types/qrcode": "1.5.5",
     "@vitest/coverage-v8": "2.1.8",
     "react": "18.3.1",
     "typescript": "5.7.2",

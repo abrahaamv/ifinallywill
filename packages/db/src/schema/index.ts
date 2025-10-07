@@ -50,6 +50,9 @@ export const users = pgTable('users', {
     .references(() => tenants.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  passwordAlgorithm: text('password_algorithm', { enum: ['bcrypt', 'argon2id'] })
+    .notNull()
+    .default('bcrypt'), // Phase 8: Argon2id migration support
   role: text('role', { enum: ['owner', 'admin', 'member'] })
     .notNull()
     .default('member'),
@@ -58,6 +61,15 @@ export const users = pgTable('users', {
   // Auth.js required columns (Migration 007)
   emailVerified: timestamp('email_verified', { withTimezone: true, mode: 'date' }),
   image: text('image'),
+  // Phase 8: MFA support
+  mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  mfaSecret: text('mfa_secret'), // Encrypted TOTP secret
+  mfaBackupCodes: jsonb('mfa_backup_codes').$type<string[]>(), // Encrypted backup codes
+  // Phase 8: Account security
+  failedLoginAttempts: integer('failed_login_attempts').notNull().default(0),
+  lockedUntil: timestamp('locked_until'),
+  lastLoginAt: timestamp('last_login_at'),
+  lastLoginIp: text('last_login_ip'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -110,6 +122,11 @@ export const authSessions = pgTable('auth_sessions', {
     withTimezone: true,
     mode: 'date',
   }).notNull(),
+  // Phase 8: Enhanced session security
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  lastActivityAt: timestamp('last_activity_at').notNull().defaultNow(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
 });
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({
@@ -454,6 +471,118 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
   tenant: one(tenants, {
     fields: [aiPersonalities.tenantId],
     references: [tenants.id],
+  }),
+}));
+
+// ==================== API KEYS (Phase 8) ====================
+
+export const apiKeys = pgTable('api_keys', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  keyType: text('key_type', { enum: ['publishable', 'secret'] }).notNull(),
+  keyHash: text('key_hash').notNull().unique(), // SHA-256 hash of the key
+  prefix: text('prefix').notNull(), // First 8 chars for display (pk_live_xxxx, sk_live_xxxx)
+  lastUsedAt: timestamp('last_used_at'),
+  expiresAt: timestamp('expires_at'),
+  revokedAt: timestamp('revoked_at'),
+  permissions: jsonb('permissions').$type<{
+    scopes: string[]; // ['widget:read', 'widget:write', 'meetings:create', etc.]
+    ipWhitelist?: string[];
+    rateLimit?: number;
+  }>(),
+  metadata: jsonb('metadata').$type<{
+    createdBy?: string;
+    environment?: 'development' | 'production';
+    description?: string;
+  }>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [apiKeys.tenantId],
+    references: [tenants.id],
+  }),
+}));
+
+// ==================== AUDIT LOGS (Phase 8) ====================
+
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(), // 'user.login', 'user.logout', 'data.export', etc.
+  resource: text('resource').notNull(), // Table or entity affected
+  resourceId: uuid('resource_id'), // ID of affected entity
+  status: text('status', { enum: ['success', 'failure', 'pending'] }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  changes: jsonb('changes').$type<{
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+    diff?: string[];
+  }>(),
+  metadata: jsonb('metadata').$type<{
+    reason?: string;
+    riskScore?: number;
+    geolocation?: string;
+  }>(),
+  timestamp: timestamp('timestamp').notNull().defaultNow(),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [auditLogs.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+// ==================== GDPR DATA REQUESTS (Phase 8) ====================
+
+export const dataRequests = pgTable('data_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  requestType: text('request_type', { enum: ['export', 'deletion'] }).notNull(),
+  status: text('status', {
+    enum: ['pending', 'processing', 'completed', 'failed', 'cancelled'],
+  })
+    .notNull()
+    .default('pending'),
+  requestedAt: timestamp('requested_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+  exportUrl: text('export_url'), // S3/storage URL for export files
+  expiresAt: timestamp('expires_at'), // Export file expiry (7 days)
+  metadata: jsonb('metadata').$type<{
+    requestSource?: string; // 'dashboard', 'email', 'api'
+    format?: 'json' | 'csv' | 'pdf';
+    includeRelated?: boolean;
+    legalHold?: boolean; // Prevents deletion during legal proceedings
+    processedBy?: string;
+  }>(),
+});
+
+export const dataRequestsRelations = relations(dataRequests, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [dataRequests.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [dataRequests.userId],
+    references: [users.id],
   }),
 }));
 

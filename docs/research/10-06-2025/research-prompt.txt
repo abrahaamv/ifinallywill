@@ -1,0 +1,397 @@
+# Enterprise-Grade Authentication & Security Research Prompt
+# For AI Assistant Platform - Production Deployment
+# Date: October 6, 2025
+
+---
+
+I'm building an enterprise AI Assistant Platform with the following architecture and need comprehensive guidance on implementing production-grade authentication and security:
+
+## SYSTEM ARCHITECTURE
+
+**Technology Stack:**
+- Frontend: React 18 + Vite 6 + TypeScript (ports 5173-5176)
+- Backend: Fastify 5.3.2+ + tRPC v11 (port 3001)
+- Database: PostgreSQL 16+ with Drizzle ORM
+- Cache/Queue: Redis 7.4.2+ (Streams for real-time)
+- Real-time: WebSocket server (port 3002) + Redis pub/sub
+- Video/Audio: LiveKit Cloud (WebRTC)
+- AI Providers: OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet, Google Gemini Flash 2.5
+- Python Agent: LiveKit agent for multi-modal AI processing
+
+**Current Auth Setup:**
+- Auth.js v5 (@auth/core) - framework-agnostic
+- Credentials provider (email/password with bcrypt)
+- OAuth providers planned (Google, Microsoft)
+- JWT session strategy (required for Credentials provider)
+- Session cookies (httpOnly, secure, sameSite)
+- Drizzle adapter for session storage
+- tRPC context with session validation
+
+**Multi-Tenant Architecture:**
+- Row-level tenant isolation via `tenant_id` column
+- Every user belongs to exactly one tenant
+- PostgreSQL Row-Level Security (RLS) policies required
+- Tenant context derived from authenticated session
+- LiveKit room names encode tenant information
+- Each tenant has unique API key for widgets
+
+## CRITICAL SECURITY QUESTIONS
+
+### 1. AUTH.JS IMPLEMENTATION (PRIORITY: CRITICAL)
+
+**Current Issue:** Getting 500 errors on `/api/auth/callback/credentials`
+
+**Integration Pattern:**
+```typescript
+// Auth handler bridges Fastify → Auth.js
+export async function authHandler(request: FastifyRequest, reply: FastifyReply) {
+  // Convert Fastify request → Web API Request
+  const authRequest = new Request(url, { method, headers, body });
+
+  // Call Auth.js
+  const authResponse = await Auth(authRequest, {
+    ...authConfig,
+    basePath: '/api/auth',
+    trustHost: true,
+  });
+
+  // Return Auth.js response
+}
+
+// Context reads JWT from Auth.js cookies
+const token = await getToken({ req: { headers }, secret: JWT_SECRET });
+```
+
+**Questions:**
+1. What's the correct way to integrate Auth.js v5 with Fastify 5.3.2+ or should we consider another option?
+2. How should we handle form data (`application/x-www-form-urlencoded`) for Auth.js callbacks? maybe this is incorrect since was generated on our implementation, mostly we need clear and unbiased but based on current documentation instructions
+
+3. What's the proper configuration for `pages` when frontend (5174) and backend (3001) are on different ports?
+4. Should we use `trustHost: true` in production or implement proper host validation?
+5. How do we prevent CSRF attacks with Auth.js in a decoupled architecture?
+6. What's the security implication of using `redirect: 'manual'` in fetch requests?
+7. Should we implement refresh tokens or rely on session extension?
+8. How do we handle session expiry gracefully (30-day sessions configured)?
+
+### 2. MULTI-TENANT SECURITY (PRIORITY: CRITICAL)
+
+**Current Risk:** Drizzle ORM has NO automatic tenant filtering - catastrophic data leakage potential
+
+**Questions:**
+1. What's the industry-standard approach for PostgreSQL Row-Level Security with Drizzle ORM?
+2. Should we implement a tenant wrapper for all queries or use Nile integration?
+3. How do we enforce `FORCE ROW LEVEL SECURITY` at the database level?
+4. What's the proper RLS policy structure for multi-tenant SaaS?
+5. How do we handle cross-tenant data access for admin/support scenarios?
+6. What testing strategy ensures tenant isolation (automated tests)?
+7. How do we prevent tenant enumeration attacks?
+8. Should we implement tenant-specific encryption keys?
+
+### 3. API SECURITY (PRIORITY: HIGH)
+
+**Current Setup:**
+- tRPC public procedures (no auth required)
+- tRPC protected procedures (require session)
+- tRPC admin procedures (require owner/admin role)
+- CORS configured for localhost origins
+- Content-type parsing for form data
+
+**Questions:**
+1. What rate limiting strategy for public vs authenticated endpoints?
+2. How do we implement API key authentication for widget SDK?
+3. Should we use different CORS policies for different app origins?
+4. What's the proper input validation strategy with Zod schemas?
+5. How do we prevent SQL injection with Drizzle ORM parameterized queries?
+6. What's the best practice for error messages (avoid leaking system info)?
+7. Should we implement request signing for sensitive operations?
+8. How do we handle file upload security (knowledge base documents)?
+
+### 4. SESSION MANAGEMENT (PRIORITY: HIGH)
+
+**Current Configuration:**
+```typescript
+session: {
+  strategy: 'jwt',
+  maxAge: 30 * 24 * 60 * 60, // 30 days
+}
+
+cookies: {
+  sessionToken: {
+    name: `${NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+    options: {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: NODE_ENV === 'production',
+    },
+  },
+}
+```
+
+**Questions:**
+1. Is 30-day session duration acceptable for enterprise SaaS?
+2. Should we implement sliding session expiry or fixed expiry?
+3. What's the security trade-off between `sameSite: 'lax'` vs 'strict'?
+4. How do we handle concurrent sessions (multiple devices)?
+5. Should we implement session revocation (logout from all devices)?
+6. What's the proper strategy for "Remember Me" functionality?
+7. How do we detect and prevent session hijacking?
+8. Should we implement device fingerprinting?
+
+### 5. PASSWORD SECURITY (PRIORITY: HIGH)
+
+**Current Implementation:**
+```typescript
+// Signup
+const passwordHash = await bcrypt.hash(input.password, 10);
+
+// Login (Auth.js Credentials provider)
+const isValid = await bcrypt.compare(password, user.passwordHash);
+```
+
+**Questions:**
+1. Is bcrypt with cost factor 10 sufficient for 2025 standards?
+2. Should we upgrade to Argon2id or scrypt for better security?
+3. What password complexity requirements for enterprise users?
+4. How do we implement password history (prevent reuse)?
+5. Should we enforce password rotation policies?
+6. What's the proper flow for password reset (security vs UX)?
+7. How do we prevent timing attacks in password comparison?
+8. Should we implement breach detection (HaveIBeenPwned integration)?
+
+### 6. ENCRYPTION & SECRETS MANAGEMENT (PRIORITY: CRITICAL)
+
+**Current Secrets:**
+- `NEXTAUTH_SECRET` - JWT signing
+- `DATABASE_URL` - PostgreSQL connection
+- `REDIS_URL` - Redis connection
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`
+- `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`
+- `DEEPGRAM_API_KEY`, `ELEVENLABS_API_KEY`, `VOYAGE_API_KEY`
+
+**Questions:**
+1. What's the best secrets management solution for production (AWS Secrets Manager, HashiCorp Vault, etc.)?
+2. How do we rotate secrets without downtime?
+3. Should we implement encryption at rest for sensitive user data?
+4. What's the proper key management strategy (KMS)?
+5. How do we handle encryption keys in multi-tenant architecture?
+6. Should we encrypt knowledge base documents separately per tenant?
+7. What's the security implication of storing API keys in environment variables?
+8. How do we prevent secrets leakage in logs and error messages?
+
+### 7. WEBSOCKET SECURITY (PRIORITY: HIGH)
+
+**Current Setup:**
+- WebSocket server on port 3002
+- Redis Streams for message broadcasting
+- Sticky sessions required for load balancing
+
+**Questions:**
+1. How do we authenticate WebSocket connections (token vs cookie)?
+2. Should we implement heartbeat/ping-pong for connection validation?
+3. What's the proper rate limiting for WebSocket messages?
+4. How do we prevent WebSocket DoS attacks?
+5. Should we implement message encryption for WebSocket traffic?
+6. What's the security consideration for Redis Streams in multi-tenant setup?
+7. How do we handle WebSocket reconnection security?
+8. Should we implement message signing/verification?
+
+### 8. LIVEKIT SECURITY (PRIORITY: HIGH)
+
+**Architecture:**
+- LiveKit Cloud Enterprise ($5K-10K+/month)
+- LiveKit rooms created via backend API
+- Python agent joins rooms for AI processing
+- 1 FPS screen capture (cost optimization)
+
+**Questions:**
+1. How do we generate secure LiveKit access tokens?
+2. What's the proper room name structure for tenant isolation?
+3. Should we implement room access control lists (ACLs)?
+4. How do we prevent unauthorized room access?
+5. What's the security implication of guest access to meetings?
+6. Should we implement room expiry/cleanup?
+7. How do we secure the Python agent's LiveKit credentials?
+8. What's the proper audit logging for LiveKit events?
+
+### 9. DATABASE SECURITY (PRIORITY: CRITICAL)
+
+**Current Setup:**
+- PostgreSQL 16+ (minimum 17.3/16.7/15.11 for security patches)
+- Drizzle ORM with parameterized queries
+- Connection pooling via PgBouncer (planned)
+
+**Questions:**
+1. What PostgreSQL security hardening steps for production?
+2. How do we implement database encryption at rest?
+3. Should we use SSL/TLS for database connections?
+4. What's the proper role-based access control (RBAC) for database users?
+5. How do we implement audit logging for database operations?
+6. Should we implement database query monitoring and anomaly detection?
+7. What's the backup encryption strategy?
+8. How do we handle database migrations securely (no downtime)?
+
+### 10. INPUT VALIDATION & SANITIZATION (PRIORITY: HIGH)
+
+**Current Validation:**
+- Zod schemas for tRPC inputs
+- Email validation via `.email()`
+- Password minimum length validation
+
+**Questions:**
+1. What comprehensive input validation strategy beyond Zod?
+2. How do we prevent XSS attacks in user-generated content?
+3. Should we implement HTML sanitization for knowledge base content?
+4. What's the proper validation for file uploads (MIME type, magic bytes)?
+5. How do we prevent path traversal attacks?
+6. Should we implement command injection prevention for AI prompts?
+7. What's the proper sanitization for user profile data?
+8. How do we validate and sanitize URLs (knowledge base links)?
+
+### 11. CORS & CSRF PROTECTION (PRIORITY: HIGH)
+
+**Current CORS:**
+```typescript
+await fastify.register(cors, {
+  origin: ['http://localhost:5173', 'http://localhost:5174',
+           'http://localhost:5175', 'http://localhost:5176'],
+  credentials: true,
+});
+```
+
+**Questions:**
+1. What's the production CORS configuration strategy?
+2. Should we use wildcard domains for widget deployments?
+3. How do we implement CSRF protection beyond Auth.js built-in?
+4. What's the proper preflight request handling?
+5. Should we implement Origin header validation?
+6. How do we handle mobile app CORS (future React Native apps)?
+7. What's the security implication of `credentials: true`?
+8. Should we implement CORS policy per route/endpoint?
+
+### 12. RATE LIMITING & DDoS PROTECTION (PRIORITY: HIGH)
+
+**Questions:**
+1. What rate limiting strategy for different endpoint types?
+   - Auth endpoints (login, signup): X requests/minute?
+   - AI chat endpoints: X requests/minute?
+   - Knowledge base uploads: X MB/minute?
+   - WebSocket messages: X messages/second?
+2. Should we use Redis for distributed rate limiting?
+3. How do we implement IP-based vs user-based rate limiting?
+4. What's the proper response for rate limit violations (429 vs soft limit)?
+5. Should we implement graduated rate limiting (warn → throttle → block)?
+6. How do we prevent credential stuffing attacks?
+7. What's the proper DDoS protection strategy (Cloudflare, AWS Shield)?
+8. Should we implement CAPTCHA for public endpoints?
+
+### 13. AUDIT LOGGING & MONITORING (PRIORITY: HIGH)
+
+**Questions:**
+1. What events must be logged for security auditing?
+   - Authentication attempts (success/failure)
+   - Authorization failures
+   - Data access patterns
+   - Configuration changes
+   - Privileged operations
+2. How do we implement structured logging (JSON)?
+3. Should we use centralized logging (ELK, Datadog, Splunk)?
+4. What's the log retention policy for compliance?
+5. How do we prevent log injection attacks?
+6. Should we implement real-time security monitoring and alerting?
+7. What metrics indicate security incidents?
+8. How do we implement audit trail for tenant data access?
+
+### 14. COMPLIANCE & STANDARDS (PRIORITY: HIGH)
+
+**Target Compliance:**
+- SOC 2 Type II (required for enterprise customers)
+- GDPR (EU users)
+- HIPAA (future healthcare customers)
+- CCPA (California users)
+
+**Questions:**
+1. What Auth.js configuration changes for GDPR compliance?
+2. How do we implement data retention policies?
+3. Should we provide data export functionality (user data portability)?
+4. What's the proper user consent management strategy?
+5. How do we implement right to deletion (GDPR Article 17)?
+6. Should we conduct regular security audits (frequency)?
+7. What's the incident response procedure for data breaches?
+8. How do we implement data residency requirements (EU data in EU)?
+
+### 15. AI PROVIDER SECURITY (PRIORITY: MEDIUM)
+
+**Integration:**
+- OpenAI, Anthropic, Google AI providers
+- Streaming responses to frontend
+- Cost tracking per tenant
+
+**Questions:**
+1. How do we prevent prompt injection attacks?
+2. Should we implement content filtering for AI inputs/outputs?
+3. What's the proper API key rotation strategy for AI providers?
+4. How do we prevent excessive API costs (runaway queries)?
+5. Should we implement AI response caching for security/cost?
+6. What's the proper error handling for AI provider failures?
+7. How do we sanitize user data sent to AI providers?
+8. Should we implement AI usage quotas per tenant?
+
+### 16. WIDGET SDK SECURITY (PRIORITY: MEDIUM)
+
+**Architecture:**
+- NPM package + CDN distribution
+- Embeddable on customer websites
+- Shadow DOM isolation
+- API key authentication
+
+**Questions:**
+1. How do we secure API key distribution to widget users?
+2. Should we implement domain whitelisting per tenant?
+3. What's the proper CSP (Content Security Policy) for widgets?
+4. How do we prevent XSS through widget configuration?
+5. Should we implement widget version pinning for security updates?
+6. What's the proper CORS policy for widget API calls?
+7. How do we handle iframe sandboxing?
+8. Should we implement widget usage analytics for abuse detection?
+
+### 17. INCIDENT RESPONSE & SECURITY TESTING (PRIORITY: HIGH)
+
+**Questions:**
+1. What's the proper security testing strategy before production?
+   - Penetration testing (internal/external)?
+   - Vulnerability scanning (OWASP Top 10)?
+   - Security code review (automated/manual)?
+2. Should we implement bug bounty program?
+3. What's the incident response procedure for security events?
+4. How do we conduct security drills?
+5. What's the disaster recovery plan for authentication system?
+6. Should we implement security regression testing (CI/CD)?
+7. How do we handle responsible disclosure from security researchers?
+8. What's the proper communication plan for security incidents?
+
+## ADDITIONAL CONTEXT
+
+**Error Currently Facing:**
+- 500 Internal Server Error on `/api/auth/callback/credentials`
+- Auth.js trying to redirect to API server (3001) instead of dashboard (5174)
+- Form data parsing issues between Fastify and Auth.js
+- Network errors: {"error":"Authentication error"}
+
+**Production Timeline:**
+- Targeting production deployment in 2-3 weeks
+- Need enterprise-grade security before launch
+- SOC 2 compliance required for enterprise sales
+
+**Request:**
+Please provide:
+1. Step-by-step implementation guide for each security concern
+2. Code examples with best practices (TypeScript preferred)
+3. Production configuration recommendations
+4. Testing strategies for security validation
+5. Common pitfalls and how to avoid them
+6. Security checklist before production deployment
+7. Monitoring and alerting setup for security events
+8. Incident response procedures
+
+Format the response in markdown with clear sections, prioritized by criticality (Critical → High → Medium). Include specific examples for our tech stack (Fastify, Auth.js, Drizzle ORM, PostgreSQL, Redis, LiveKit).
