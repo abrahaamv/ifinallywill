@@ -75,11 +75,19 @@ export const passwordService = {
       }
     } else {
       // Verify with Argon2id (already upgraded)
-      valid = await argon2.verify(hash, password);
+      try {
+        valid = await argon2.verify(hash, password);
 
-      if (valid) {
+        if (valid) {
+          return {
+            valid: true,
+            needsUpgrade: false,
+          };
+        }
+      } catch (error: unknown) {
+        // Invalid hash format - return invalid
         return {
-          valid: true,
+          valid: false,
           needsUpgrade: false,
         };
       }
