@@ -16,18 +16,32 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'AIWidget',
+      name: 'PlatformWidget',
       formats: ['es', 'umd'],
-      fileName: (format) => `widget.${format}.js`,
+      fileName: (format) => `widget-sdk.${format}`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
       output: {
+        exports: 'named',
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
         },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'style.css') return 'style.css';
+          return assetInfo.name ?? 'asset';
+        },
       },
     },
+    cssCodeSplit: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    sourcemap: true,
   },
 });

@@ -1,14 +1,55 @@
 {
   "name": "@platform/widget-sdk",
-  "private": true,
   "version": "1.0.0",
+  "description": "Embeddable AI chat widget with Shadow DOM isolation and cost-optimized AI routing",
   "type": "module",
+  "main": "./dist/widget-sdk.umd.js",
+  "module": "./dist/widget-sdk.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/widget-sdk.es.js",
+      "require": "./dist/widget-sdk.umd.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "ai-chat",
+    "widget",
+    "chatbot",
+    "react",
+    "shadow-dom",
+    "embeddable"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/platform.git",
+    "directory": "apps/widget-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/platform/issues"
+  },
+  "homepage": "https://github.com/yourusername/platform/tree/main/apps/widget-sdk#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "dev": "vite --port 5176",
     "build": "tsc -b && vite build",
+    "build:lib": "vite build --mode library",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
     "preview": "vite preview",
+    "prepublishOnly": "pnpm build:lib",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
@@ -23,6 +64,7 @@
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",
+    "terser": "5.37.0",
     "typescript": "5.7.2",
     "vite": "6.0.13"
   }
