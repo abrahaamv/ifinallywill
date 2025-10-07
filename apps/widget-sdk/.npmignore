@@ -1,0 +1,32 @@
+# Development files
+src/
+public/
+*.config.ts
+*.config.js
+tsconfig.json
+tsconfig.node.json
+.env
+.env.*
+
+# Build files not needed in package
+node_modules/
+.turbo/
+.vite/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Only include dist/ directory in NPM package

@@ -17,11 +17,14 @@
   "dependencies": {
     "@auth/core": "0.40.0",
     "@auth/drizzle-adapter": "1.10.0",
-    "next-auth": "5.0.0-beta.29",
+    "@platform/db": "workspace:*",
+    "bcryptjs": "^3.0.2",
     "drizzle-orm": "0.44.6",
-    "@platform/db": "workspace:*"
+    "next-auth": "5.0.0-beta.29",
+    "zod": "3.24.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "22.10.5",
     "@vitest/coverage-v8": "2.1.8",
     "react": "18.3.1",
