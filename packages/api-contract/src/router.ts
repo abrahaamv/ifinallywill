@@ -4,6 +4,7 @@
  * Main router that combines all feature routers.
  */
 
+import { chatRouter } from './routers/chat';
 import { healthRouter } from './routers/health';
 import { knowledgeRouter } from './routers/knowledge';
 import { sessionsRouter } from './routers/sessions';
@@ -20,6 +21,7 @@ export const appRouter = router({
   widgets: widgetsRouter,
   knowledge: knowledgeRouter,
   sessions: sessionsRouter,
+  chat: chatRouter,
 });
 
 /**

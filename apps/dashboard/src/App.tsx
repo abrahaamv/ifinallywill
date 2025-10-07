@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TRPCProvider } from './providers/TRPCProvider';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { HomePage } from './pages/HomePage';
+import { ChatPage } from './pages/ChatPage';
 import { KnowledgePage } from './pages/KnowledgePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
@@ -26,6 +27,7 @@ export function App() {
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<HomePage />} />
+            <Route path="chat" element={<ChatPage />} />
             <Route path="knowledge" element={<KnowledgePage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
