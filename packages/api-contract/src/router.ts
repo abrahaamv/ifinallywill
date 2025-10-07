@@ -4,6 +4,7 @@
  * Main router that combines all feature routers.
  */
 
+import { apiKeysRouter } from './routers/api-keys';
 import { chatRouter } from './routers/chat';
 import { healthRouter } from './routers/health';
 import { knowledgeRouter } from './routers/knowledge';
@@ -26,6 +27,7 @@ export const appRouter = router({
   chat: chatRouter,
   livekit: livekitRouter,
   mfa: mfaRouter, // Phase 8 Day 6-7
+  apiKeys: apiKeysRouter, // Phase 8 Day 8-10
 });
 
 /**
