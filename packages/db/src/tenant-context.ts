@@ -178,12 +178,17 @@ export class TenantContext {
       if (!allTablesProtected) {
         const unprotected = tables
           .filter((table) => !table.rls_enabled || !table.force_rls)
-          .map((table) => table.tablename);
+          .map((table) => {
+            const status = [];
+            if (!table.rls_enabled) status.push('RLS disabled');
+            if (!table.force_rls) status.push('FORCE disabled');
+            return `${table.tablename} (${status.join(', ')})`;
+          });
 
         return {
           active: false,
           tenantId,
-          message: `RLS not fully active! Unprotected tables: ${unprotected.join(', ')}`,
+          message: `RLS not fully active! Issues: ${unprotected.join(', ')}`,
         };
       }
 
