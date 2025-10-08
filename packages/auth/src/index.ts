@@ -55,3 +55,9 @@ export type {
 	ApiKeyValidationResult,
 	GeneratedApiKey,
 } from './services/api-key.service';
+
+// Export CSRF service (Phase 9)
+export { CSRFService } from './services/csrf.service';
+export type { CSRFToken } from './services/csrf.service';
+export { useCSRF, useAuthenticatedFetch } from './hooks/useCSRF';
+export type { UseCSRFResult } from './hooks/useCSRF';
