@@ -18,9 +18,10 @@
     "clean": "rm -rf dist node_modules .turbo coverage"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
+    "dotenv": "16.4.7",
     "drizzle-orm": "0.44.6",
-    "postgres": "3.4.6",
-    "dotenv": "16.4.7"
+    "postgres": "3.4.6"
   },
   "devDependencies": {
     "@types/node": "22.10.5",

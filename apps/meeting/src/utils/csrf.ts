@@ -3,7 +3,7 @@
  * Helper functions for LiveKit API calls with CSRF protection
  */
 
-import { CSRFService } from '@platform/auth';
+import { CSRFService } from '@platform/auth/client';
 
 /**
  * Create LiveKit meeting with CSRF protection

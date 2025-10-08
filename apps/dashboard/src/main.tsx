@@ -1,3 +1,6 @@
+// CRITICAL: Import polyfills FIRST before any other imports
+import './polyfills';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './main.css';

@@ -23,6 +23,8 @@ import { rateLimitPlugin } from './plugins/rate-limit';
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3002;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://platform:platform_dev_password@localhost:5432/platform';
 
 async function main() {
   // Create Fastify instance
@@ -41,6 +43,19 @@ async function main() {
           : undefined,
     },
     maxParamLength: 5000,
+    // Explicitly enable JSON body parsing for tRPC (Fastify 5.3.2+ security fix)
+    bodyLimit: 1048576, // 1MB
+    ignoreTrailingSlash: true,
+  });
+
+  // Register JSON parser for all content-types (required for tRPC batch requests)
+  fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      const json = JSON.parse(body as string);
+      done(null, json);
+    } catch (err: unknown) {
+      done(err instanceof Error ? err : new Error('Invalid JSON'), undefined);
+    }
   });
 
   // Register CORS with production security
@@ -109,6 +124,7 @@ async function main() {
   const realtimeServer = new RealtimeServer({
     port: WS_PORT,
     redisUrl: REDIS_URL,
+    databaseUrl: DATABASE_URL,
     heartbeatInterval: 30000, // 30 seconds
   });
 

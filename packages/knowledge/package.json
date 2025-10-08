@@ -12,6 +12,7 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
+    "@platform/db": "workspace:*",
     "drizzle-orm": "0.37.0"
   },
   "devDependencies": {

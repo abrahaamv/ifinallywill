@@ -39,7 +39,6 @@ export interface ChatMessage {
 
 export interface UseWebSocketOptions {
   sessionId: string;
-  token: string;
   url?: string;
   reconnectInterval?: number;
   heartbeatInterval?: number;
@@ -60,7 +59,6 @@ export interface UseWebSocketReturn {
 export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const {
     sessionId,
-    token,
     url = 'ws://localhost:3002/ws',
     reconnectInterval = 5000,
     heartbeatInterval = 30000,
@@ -81,7 +79,8 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   // Connect to WebSocket server
   const connect = useCallback(() => {
     try {
-      const wsUrl = `${url}?token=${token}&sessionId=${sessionId}`;
+      // Auth.js session cookie is automatically sent with WebSocket connection
+      const wsUrl = `${url}?sessionId=${sessionId}`;
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

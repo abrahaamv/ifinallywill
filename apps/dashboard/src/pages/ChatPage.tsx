@@ -170,7 +170,6 @@ export function ChatPage() {
           {sessionId ? (
             <ChatWindow
               sessionId={sessionId}
-              token="demo-token"
               wsUrl="ws://localhost:3002/ws"
             />
           ) : (

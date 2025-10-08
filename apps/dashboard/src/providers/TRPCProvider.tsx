@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
 import { trpc } from '../utils/trpc';
-import { CSRFService } from '@platform/auth';
+import { CSRFService } from '@platform/auth/client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 

@@ -16,14 +16,18 @@ import {
 import { Track } from 'livekit-client';
 import '@livekit/components-styles';
 import { Button } from '@platform/ui';
+import { trpc } from '../utils/trpc';
 
 export function MeetingRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const [token, _setToken] = useState<string | null>(null);
-  const [livekitUrl, _setLivekitUrl] = useState<string>('');
+  const [token, setToken] = useState<string | null>(null);
+  const [livekitUrl, setLivekitUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Join room mutation
+  const joinRoom = trpc.livekit.joinRoom.useMutation();
 
   // Request access token on mount
   useEffect(() => {
@@ -35,22 +39,21 @@ export function MeetingRoom() {
       }
 
       try {
-        // TODO: Replace with actual tRPC call when backend is configured
-        // const result = await trpc.livekit.joinRoom.mutate({
-        //   roomName: roomId,
-        //   participantName: sessionStorage.getItem('displayName') || 'Guest',
-        // });
-        //
-        // setToken(result.token);
-        // setLivekitUrl(result.livekitUrl);
+        // Get participant name from session storage or use default
+        const participantName = sessionStorage.getItem('displayName') || 'Guest';
 
-        // TEMPORARY: Mock for development without LiveKit Cloud
-        console.warn('LiveKit not configured - using development mode');
-        setError('LiveKit not configured. Please set up LiveKit Cloud credentials to use video/audio features.');
+        // Join room via tRPC API
+        const result = await joinRoom.mutateAsync({
+          roomName: roomId,
+          participantName,
+        });
+
+        setToken(result.token);
+        setLivekitUrl(result.livekitUrl);
         setIsLoading(false);
       } catch (err) {
         console.error('Failed to join room:', err);
-        setError('Failed to join meeting room');
+        setError(err instanceof Error ? err.message : 'Failed to join meeting room');
         setIsLoading(false);
       }
     };

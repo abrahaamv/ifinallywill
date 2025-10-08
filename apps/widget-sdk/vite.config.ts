@@ -13,6 +13,17 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  optimizeDeps: {
+    exclude: [
+      // Exclude Node.js native modules from auth package (server-side only)
+      'bcryptjs',
+      'argon2',
+      '@mapbox/node-pre-gyp',
+      'mock-aws-s3',
+      'aws-sdk',
+      'nock',
+    ],
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
@@ -21,7 +32,17 @@ export default defineConfig({
       fileName: (format) => `widget-sdk.${format}`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: [
+        'react',
+        'react-dom',
+        // Exclude Node.js native modules (server-side only)
+        'bcryptjs',
+        'argon2',
+        '@mapbox/node-pre-gyp',
+        'mock-aws-s3',
+        'aws-sdk',
+        'nock',
+      ],
       output: {
         exports: 'named',
         globals: {

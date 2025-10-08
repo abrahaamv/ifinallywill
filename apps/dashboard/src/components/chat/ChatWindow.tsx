@@ -11,14 +11,12 @@ import { MessageInput } from './MessageInput';
 
 export interface ChatWindowProps {
   sessionId: string;
-  token: string;
   wsUrl?: string;
   onClose?: () => void;
 }
 
 export function ChatWindow({
   sessionId,
-  token,
   wsUrl,
   onClose,
 }: ChatWindowProps) {
@@ -33,7 +31,6 @@ export function ChatWindow({
     error,
   } = useWebSocket({
     sessionId,
-    token,
     url: wsUrl,
   });
 

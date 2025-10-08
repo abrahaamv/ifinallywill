@@ -184,6 +184,8 @@ function App() {
 
       {/* Demo Widget */}
       <Widget
+        apiKey="demo-api-key"
+        apiUrl="http://localhost:3001/trpc"
         position="bottom-right"
         theme="auto"
         primaryColor="#6366f1"

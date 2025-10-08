@@ -13,6 +13,11 @@ import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
 import Redis from 'ioredis';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { eq } from 'drizzle-orm';
+import { parse as parseCookie } from 'cookie';
+import { messages, authSessions, users } from '@platform/db';
 
 /**
  * Message types for WebSocket communication
@@ -67,6 +72,7 @@ export class RealtimeServer {
   private redis: Redis;
   private redisSub: Redis;
   private serverId: string;
+  private db: ReturnType<typeof drizzle>;
 
   // Typing indicator tracking
   private typingUsers: Map<string, Set<string>> = new Map(); // sessionId -> Set<userId>
@@ -75,6 +81,7 @@ export class RealtimeServer {
     private readonly config: {
       port?: number;
       redisUrl: string;
+      databaseUrl: string;
       heartbeatInterval?: number;
     }
   ) {
@@ -83,6 +90,10 @@ export class RealtimeServer {
     // Initialize Redis connections
     this.redis = new Redis(config.redisUrl);
     this.redisSub = new Redis(config.redisUrl);
+
+    // Initialize database connection
+    const pgClient = postgres(config.databaseUrl);
+    this.db = drizzle(pgClient);
   }
 
   /**
@@ -121,25 +132,43 @@ export class RealtimeServer {
   /**
    * Handle new WebSocket connection
    */
-  private handleConnection(ws: WebSocket, request: IncomingMessage | undefined): void {
+  private async handleConnection(ws: WebSocket, request: IncomingMessage | undefined): Promise<void> {
     if (!request) {
       ws.close(1008, 'Missing request object');
       return;
     }
-    // Extract auth from query params or headers
+    // Extract chat session ID from query params
     const url = new URL(request.url || '', `http://${request.headers.host}`);
-    const token = url.searchParams.get('token') || '';
-    const sessionId = url.searchParams.get('sessionId') || '';
+    const chatSessionId = url.searchParams.get('sessionId') || '';
 
-    // TODO: Verify token with auth service
-    // For now, extract userId and tenantId from token (mock)
-    const userId = this.extractUserIdFromToken(token);
-    const tenantId = this.extractTenantIdFromToken(token);
-
-    if (!userId || !tenantId) {
-      ws.close(1008, 'Authentication required');
+    // Extract session token from cookies (Auth.js session cookie)
+    const cookieHeader = request.headers.cookie;
+    if (!cookieHeader) {
+      ws.close(1008, 'No authentication cookie found');
       return;
     }
+
+    const cookies = parseCookie(cookieHeader);
+
+    // Auth.js session cookie name (depends on NODE_ENV)
+    const sessionCookieName = process.env.NODE_ENV === 'production'
+      ? '__Secure-next-auth.session-token'
+      : 'next-auth.session-token';
+
+    const sessionToken = cookies[sessionCookieName];
+    if (!sessionToken) {
+      ws.close(1008, 'No session token in cookies');
+      return;
+    }
+
+    // Verify Auth.js session token
+    const verifiedSession = await this.verifySessionToken(sessionToken);
+    if (!verifiedSession) {
+      ws.close(1008, 'Invalid or expired session');
+      return;
+    }
+
+    const { userId, tenantId } = verifiedSession;
 
     const clientId = `${userId}-${Date.now()}`;
 
@@ -148,7 +177,7 @@ export class RealtimeServer {
       ws,
       userId,
       tenantId,
-      sessionId,
+      sessionId: chatSessionId,
       lastActivity: Date.now(),
     });
 
@@ -161,9 +190,9 @@ export class RealtimeServer {
     });
 
     // Broadcast user joined
-    this.broadcastToSession(sessionId, {
+    this.broadcastToSession(chatSessionId, {
       type: MessageType.USER_JOINED,
-      payload: { userId, sessionId },
+      payload: { userId, sessionId: chatSessionId },
     }, clientId);
 
     // Handle incoming messages
@@ -233,15 +262,13 @@ export class RealtimeServer {
     const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const timestamp = Date.now();
 
-    // TODO: Persist message to database
-    // await this.persistMessage({
-    //   id: messageId,
-    //   sessionId: client.sessionId,
-    //   userId: client.userId,
-    //   tenantId: client.tenantId,
-    //   content: message.payload,
-    //   timestamp,
-    // });
+    // Persist message to database
+    await this.persistMessage({
+      sessionId: client.sessionId,
+      userId: client.userId,
+      content: message.payload as string,
+      timestamp,
+    });
 
     // Broadcast via Redis for multi-instance support
     await this.redis.publish('chat:broadcast', JSON.stringify({
@@ -409,21 +436,82 @@ export class RealtimeServer {
   }
 
   /**
-   * Extract user ID from token (mock implementation)
+   * Verify Auth.js session token and extract user data
    */
-  private extractUserIdFromToken(token: string): string | null {
-    // TODO: Implement actual JWT verification
-    if (!token) return null;
-    return `user_${token.substring(0, 8)}`;
+  private async verifySessionToken(
+    sessionToken: string
+  ): Promise<{ userId: string; tenantId: string } | null> {
+    try {
+      if (!sessionToken) return null;
+
+      // Look up session in auth_sessions table
+      const sessionResults = await this.db
+        .select({
+          userId: authSessions.userId,
+          expires: authSessions.expires,
+        })
+        .from(authSessions)
+        .where(eq(authSessions.sessionToken, sessionToken))
+        .limit(1);
+
+      if (sessionResults.length === 0) {
+        return null;
+      }
+
+      const session = sessionResults[0];
+      if (!session) {
+        return null;
+      }
+
+      // Check if session has expired
+      if (session.expires && new Date(session.expires) < new Date()) {
+        return null;
+      }
+
+      // Get user's tenant ID
+      const userResults = await this.db
+        .select({
+          tenantId: users.tenantId,
+        })
+        .from(users)
+        .where(eq(users.id, session.userId))
+        .limit(1);
+
+      const user = userResults[0];
+      if (!user) {
+        return null;
+      }
+
+      return {
+        userId: session.userId,
+        tenantId: user.tenantId,
+      };
+    } catch (error) {
+      console.error('[WebSocket] Session verification failed:', error);
+      return null;
+    }
   }
 
   /**
-   * Extract tenant ID from token (mock implementation)
+   * Persist chat message to database
    */
-  private extractTenantIdFromToken(token: string): string | null {
-    // TODO: Implement actual JWT verification
-    if (!token) return null;
-    return `tenant_${token.substring(0, 8)}`;
+  private async persistMessage(data: {
+    sessionId: string;
+    userId: string;
+    content: string;
+    timestamp: number;
+  }): Promise<void> {
+    try {
+      await this.db.insert(messages).values({
+        sessionId: data.sessionId,
+        role: 'user', // Real-time messages are always from users
+        content: data.content,
+        metadata: {} as Record<string, unknown>, // WebSocket messages don't have AI metadata
+      });
+    } catch (error) {
+      console.error('[WebSocket] Failed to persist message:', error);
+      // Don't throw - message was already sent, just log the error
+    }
   }
 
   /**

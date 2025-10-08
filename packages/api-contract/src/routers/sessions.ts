@@ -448,8 +448,8 @@ export const sessionsRouter = router({
         });
       }
 
-      // Create message
-      const [newMessage] = await ctx.db
+      // Create user message
+      const [userMessage] = await ctx.db
         .insert(messages)
         .values({
           sessionId: input.sessionId,
@@ -460,24 +460,134 @@ export const sessionsRouter = router({
         })
         .returning();
 
-      if (!newMessage) {
+      if (!userMessage) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to send message',
         });
       }
 
-      // Note: AI response generation will be implemented in Phase 5
-      // via @platform/ai-core integration
+      // Generate AI response only for user messages
+      if (input.role === 'user') {
+        const aiStartTime = Date.now();
 
+        // Step 1: Execute RAG query to retrieve relevant knowledge
+        const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
+        const ragResult = await executeRAGQuery(ctx.db, {
+          query: input.content,
+          tenantId: ctx.tenantId,
+          topK: 5,
+          minScore: 0.7,
+        });
+
+        // Step 2: Build enhanced prompt with RAG context
+        const enhancedPrompt = ragResult.context
+          ? buildRAGPrompt(input.content, ragResult.context)
+          : input.content;
+
+        // Step 3: Get conversation history for context
+        const conversationHistory = await ctx.db
+          .select()
+          .from(messages)
+          .where(eq(messages.sessionId, input.sessionId))
+          .orderBy(messages.timestamp)
+          .limit(10);
+
+        // Step 4: Generate AI response with cost-optimized routing
+        const { AIRouter } = await import('@platform/ai-core');
+        const router = new AIRouter({
+          openaiApiKey: process.env.OPENAI_API_KEY || '',
+          anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+          googleApiKey: process.env.GOOGLE_API_KEY || '',
+          logRouting: true,
+          enableFallback: true,
+        });
+
+        // Build message array for AI
+        const aiMessages = [
+          {
+            role: 'system' as const,
+            content: 'You are a helpful AI assistant. Use the provided context to answer questions accurately.',
+          },
+          ...conversationHistory.slice(0, -1).map((msg) => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          })),
+          {
+            role: 'user' as const,
+            content: enhancedPrompt,
+          },
+        ];
+
+        const aiResponse = await router.complete({
+          messages: aiMessages,
+          temperature: 0.7,
+          maxTokens: 2048,
+        });
+
+        const aiLatencyMs = Date.now() - aiStartTime;
+
+        // Step 5: Create assistant message with AI response
+        const assistantMetadata: Record<string, unknown> = {
+          model: aiResponse.model,
+          tokensUsed: aiResponse.usage.totalTokens,
+          costUsd: aiResponse.usage.cost,
+          latencyMs: aiLatencyMs,
+          ragChunks: ragResult.totalChunks,
+          ragProcessingMs: ragResult.processingTimeMs,
+        };
+
+        const [assistantMessage] = await ctx.db
+          .insert(messages)
+          .values({
+            sessionId: input.sessionId,
+            role: 'assistant',
+            content: aiResponse.content,
+            metadata: assistantMetadata,
+          })
+          .returning();
+
+        // Step 6: Update session cost
+        const newSessionCost = parseFloat(session.costUsd || '0') + aiResponse.usage.cost;
+        await ctx.db
+          .update(sessions)
+          .set({ costUsd: newSessionCost.toFixed(6) })
+          .where(eq(sessions.id, input.sessionId));
+
+        // Return both messages
+        return {
+          userMessage: {
+            id: userMessage.id,
+            sessionId: userMessage.sessionId,
+            role: userMessage.role,
+            content: userMessage.content,
+            attachments: userMessage.attachments,
+            metadata: userMessage.metadata,
+            timestamp: userMessage.timestamp,
+          },
+          assistantMessage: assistantMessage ? {
+            id: assistantMessage.id,
+            sessionId: assistantMessage.sessionId,
+            role: assistantMessage.role,
+            content: assistantMessage.content,
+            attachments: assistantMessage.attachments,
+            metadata: assistantMessage.metadata,
+            timestamp: assistantMessage.timestamp,
+          } : undefined,
+        };
+      }
+
+      // For system/assistant messages, just return the message
       return {
-        id: newMessage.id,
-        sessionId: newMessage.sessionId,
-        role: newMessage.role,
-        content: newMessage.content,
-        attachments: newMessage.attachments,
-        metadata: newMessage.metadata,
-        timestamp: newMessage.timestamp,
+        userMessage: {
+          id: userMessage.id,
+          sessionId: userMessage.sessionId,
+          role: userMessage.role,
+          content: userMessage.content,
+          attachments: userMessage.attachments,
+          metadata: userMessage.metadata,
+          timestamp: userMessage.timestamp,
+        },
       };
     } catch (error) {
       if (error instanceof TRPCError) throw error;

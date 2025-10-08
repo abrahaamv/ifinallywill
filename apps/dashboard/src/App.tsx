@@ -11,6 +11,9 @@ import { ChatPage } from './pages/ChatPage';
 import { KnowledgePage } from './pages/KnowledgePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 /**
  * Main App Component with routing
@@ -22,6 +25,8 @@ export function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Protected routes with layout */}
           <Route path="/" element={<DashboardLayout />}>
@@ -30,6 +35,7 @@ export function App() {
             <Route path="chat" element={<ChatPage />} />
             <Route path="knowledge" element={<KnowledgePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
 
           {/* 404 redirect */}

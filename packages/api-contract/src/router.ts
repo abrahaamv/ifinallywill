@@ -5,6 +5,7 @@
  */
 
 import { apiKeysRouter } from './routers/api-keys';
+import { authRouter } from './routers/auth';
 import { chatRouter } from './routers/chat';
 import { healthRouter } from './routers/health';
 import { knowledgeRouter } from './routers/knowledge';
@@ -20,6 +21,7 @@ import { router } from './trpc';
  */
 export const appRouter = router({
   health: healthRouter,
+  auth: authRouter, // Public auth endpoints (register, verify, reset)
   users: usersRouter,
   widgets: widgetsRouter,
   knowledge: knowledgeRouter,

@@ -5,7 +5,7 @@
  */
 
 import { createContext, useContext, type ReactNode } from 'react';
-import { useCSRF, useAuthenticatedFetch, type UseCSRFResult } from '@platform/auth';
+import { useCSRF, useAuthenticatedFetch, type UseCSRFResult } from '@platform/auth/client';
 
 interface CSRFContextValue {
   csrf: UseCSRFResult;

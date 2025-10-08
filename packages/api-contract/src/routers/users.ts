@@ -49,10 +49,97 @@ const deleteUserSchema = z.object({
   id: z.string().uuid('Invalid user ID'),
 });
 
+const updateMeSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  avatarUrl: z.string().url().optional(),
+});
+
 /**
  * Users router with RLS enforcement
  */
 export const usersRouter = router({
+  /**
+   * Get current user's profile
+   *
+   * Returns the authenticated user's profile information
+   */
+  me: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const [user] = await ctx.db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      console.error('Failed to get current user:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to retrieve user profile',
+        cause: error,
+      });
+    }
+  }),
+
+  /**
+   * Update current user's profile
+   *
+   * Users can only update their own name and avatar
+   */
+  updateMe: protectedProcedure.input(updateMeSchema).mutation(async ({ ctx, input }) => {
+    try {
+      const [updated] = await ctx.db
+        .update(users)
+        .set({
+          name: input.name,
+          avatarUrl: input.avatarUrl,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, ctx.userId))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update profile',
+        });
+      }
+
+      return {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        role: updated.role,
+        avatarUrl: updated.avatarUrl,
+        updatedAt: updated.updatedAt,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      console.error('Failed to update profile:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to update profile',
+        cause: error,
+      });
+    }
+  }),
+
   /**
    * List users in current tenant
    *

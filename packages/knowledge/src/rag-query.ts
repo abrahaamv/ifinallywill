@@ -3,10 +3,10 @@
  * Hybrid retrieval with semantic search + keyword matching + reranking
  */
 
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-// @ts-expect-error - Imports used in commented-out implementation
-import { sql, and, eq, desc } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
 import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
+import { createVoyageProvider } from './embeddings';
 
 /**
  * Execute RAG query with hybrid retrieval
@@ -16,110 +16,97 @@ import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
  * 2. Keyword search (PostgreSQL full-text search)
  * 3. Reranking (score normalization and weighting)
  *
- * @param db - Drizzle database instance
+ * @param db - Drizzle database instance (any type for compatibility)
  * @param options - Query options
  * @returns RAG result with context and chunks
  */
 export async function executeRAGQuery(
-  _db: PostgresJsDatabase,
+  db: any,
   options: RAGQueryOptions
 ): Promise<RAGResult> {
   const startTime = Date.now();
 
   const {
-    query: _query,
-    tenantId: _tenantId,
-    topK: _topK = 5,
-    minScore: _minScore = 0.7,
-    hybridWeights: _hybridWeights = { semantic: 0.7, keyword: 0.3 },
-    useReranking: _useReranking = true,
+    query,
+    tenantId,
+    topK = 5,
+    minScore = 0.7,
+    hybridWeights = { semantic: 0.7, keyword: 0.3 },
+    useReranking = true,
   } = options;
 
   try {
-    // TODO: Phase 5 Week 1 Day 5 - Real implementation
     // Step 1: Generate query embedding using Voyage AI
-    // const embedding = await voyageClient.embed(query);
-    //
+    const voyageProvider = createVoyageProvider();
+    const queryEmbedding = await voyageProvider.embed(query, 'query');
+
     // Step 2: Semantic search with pgvector
-    // const semanticResults = await db.execute(sql`
-    //   SELECT
-    //     id,
-    //     document_id,
-    //     content,
-    //     metadata,
-    //     chunk_index,
-    //     1 - (embedding <=> ${embedding}::vector) as semantic_score
-    //   FROM knowledge_chunks
-    //   WHERE tenant_id = ${tenantId}
-    //   ORDER BY embedding <=> ${embedding}::vector
-    //   LIMIT ${topK * 2}
-    // `);
-    //
+    // Use cosine distance operator (<=>)
+    // Convert to similarity score: 1 - distance
+    const semanticResults = await db.execute(sql`
+      SELECT
+        kc.id,
+        kc.document_id,
+        kc.content,
+        kc.metadata,
+        kc.position as chunk_index,
+        1 - (kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as semantic_score
+      FROM ${knowledgeChunks} kc
+      INNER JOIN ${knowledgeDocuments} kd ON kc.document_id = kd.id
+      WHERE kd.tenant_id = ${tenantId}
+      ORDER BY kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+      LIMIT ${topK * 2}
+    `) as any[];
+
     // Step 3: Keyword search with PostgreSQL full-text search
-    // const keywordResults = await db.execute(sql`
-    //   SELECT
-    //     id,
-    //     document_id,
-    //     content,
-    //     metadata,
-    //     chunk_index,
-    //     ts_rank(to_tsvector('english', content), plainto_tsquery('english', ${query})) as keyword_score
-    //   FROM knowledge_chunks
-    //   WHERE tenant_id = ${tenantId}
-    //     AND to_tsvector('english', content) @@ plainto_tsquery('english', ${query})
-    //   ORDER BY keyword_score DESC
-    //   LIMIT ${topK * 2}
-    // `);
-    //
+    const keywordResults = await db.execute(sql`
+      SELECT
+        kc.id,
+        kc.document_id,
+        kc.content,
+        kc.metadata,
+        kc.position as chunk_index,
+        ts_rank(to_tsvector('english', kc.content), plainto_tsquery('english', ${query})) as keyword_score
+      FROM ${knowledgeChunks} kc
+      INNER JOIN ${knowledgeDocuments} kd ON kc.document_id = kd.id
+      WHERE kd.tenant_id = ${tenantId}
+        AND to_tsvector('english', kc.content) @@ plainto_tsquery('english', ${query})
+      ORDER BY keyword_score DESC
+      LIMIT ${topK * 2}
+    `) as any[];
+
     // Step 4: Merge and rerank results
-    // const mergedResults = mergeAndRerank(semanticResults, keywordResults, hybridWeights);
-    //
-    // Step 5: Filter by minimum score
-    // const filteredResults = mergedResults.filter(r => r.score >= minScore).slice(0, topK);
-    //
+    const mergedResults = useReranking
+      ? mergeAndRerank(semanticResults, keywordResults, hybridWeights)
+      : semanticResults.map((r: any) => ({
+          chunk: {
+            id: r.id,
+            documentId: r.document_id,
+            content: r.content,
+            embedding: [], // Don't return full embedding
+            metadata: r.metadata || {},
+            chunkIndex: r.chunk_index || 0,
+          },
+          score: r.semantic_score,
+          relevance: r.semantic_score >= 0.8 ? 'high' as const : r.semantic_score >= 0.6 ? 'medium' as const : 'low' as const,
+        }));
+
+    // Step 5: Filter by minimum score and limit to topK
+    const filteredResults = mergedResults
+      .filter((r) => r.score >= minScore)
+      .slice(0, topK);
+
     // Step 6: Build context from top chunks
-    // const context = filteredResults
-    //   .map((r, i) => `[${i + 1}] ${r.chunk.content}`)
-    //   .join('\n\n');
-
-    // TEMPORARY: Mock results for Phase 5 Week 1 development
-    const mockChunks: SearchResult[] = [
-      {
-        chunk: {
-          id: '1',
-          documentId: 'doc-1',
-          content: 'This is a sample knowledge chunk about the AI assistant platform.',
-          embedding: [],
-          metadata: { source: 'documentation.md' },
-          chunkIndex: 0,
-        },
-        score: 0.95,
-        relevance: 'high',
-      },
-      {
-        chunk: {
-          id: '2',
-          documentId: 'doc-1',
-          content: 'The platform uses cost-optimized AI routing to reduce expenses.',
-          embedding: [],
-          metadata: { source: 'documentation.md' },
-          chunkIndex: 1,
-        },
-        score: 0.88,
-        relevance: 'high',
-      },
-    ];
-
-    const context = mockChunks
-      .map((r, i) => `[${i + 1}] ${r.chunk.content}`)
-      .join('\n\n');
+    const context = filteredResults.length > 0
+      ? filteredResults.map((r, i) => `[${i + 1}] ${r.chunk.content}`).join('\n\n')
+      : '';
 
     const processingTimeMs = Date.now() - startTime;
 
     return {
       context,
-      chunks: mockChunks,
-      totalChunks: mockChunks.length,
+      chunks: filteredResults,
+      totalChunks: filteredResults.length,
       processingTimeMs,
     };
   } catch (error) {
@@ -133,7 +120,6 @@ export async function executeRAGQuery(
  *
  * Normalizes scores to [0, 1] range and applies weighted combination
  */
-// @ts-expect-error - Function will be used when real implementation is added
 function mergeAndRerank(
   semanticResults: any[],
   keywordResults: any[],
@@ -165,19 +151,25 @@ function mergeAndRerank(
     }
   }
 
+  // Normalize keyword scores to [0, 1] range
+  const maxKeywordScore = Math.max(...Array.from(scoreMap.values()).map(d => d.keywordScore), 0);
+
   // Calculate hybrid scores
   const results: SearchResult[] = [];
   for (const [_id, data] of scoreMap) {
+    // Normalize keyword score if max > 0
+    const normalizedKeywordScore = maxKeywordScore > 0 ? data.keywordScore / maxKeywordScore : 0;
+
     const hybridScore =
       data.semanticScore * weights.semantic +
-      data.keywordScore * weights.keyword;
+      normalizedKeywordScore * weights.keyword;
 
     results.push({
       chunk: {
         id: data.chunk.id,
         documentId: data.chunk.document_id,
         content: data.chunk.content,
-        embedding: data.chunk.embedding || [],
+        embedding: [], // Don't return full embedding
         metadata: data.chunk.metadata || {},
         chunkIndex: data.chunk.chunk_index || 0,
       },

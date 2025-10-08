@@ -3,7 +3,7 @@
  * Helper functions for form submissions with CSRF protection
  */
 
-import { CSRFService } from '@platform/auth';
+import { CSRFService } from '@platform/auth/client';
 
 /**
  * Submit form with CSRF protection

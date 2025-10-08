@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from '@platform/ui';
+import { createWidgetTRPCClient } from './utils/trpc';
 
 interface Message {
   id: string;
@@ -15,8 +16,8 @@ interface Message {
 }
 
 interface WidgetProps {
-  apiKey?: string;
-  tenantId?: string;
+  apiKey: string;
+  apiUrl?: string;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   theme?: 'light' | 'dark' | 'auto';
   primaryColor?: string;
@@ -26,6 +27,8 @@ interface WidgetProps {
 }
 
 export function Widget({
+  apiKey,
+  apiUrl = 'http://localhost:3001/trpc',
   position = 'bottom-right',
   theme = 'auto',
   primaryColor = '#6366f1',
@@ -37,7 +40,29 @@ export function Widget({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Create tRPC client
+  const trpcClient = createWidgetTRPCClient(apiKey, apiUrl);
+
+  // Create session on mount
+  useEffect(() => {
+    const createSession = async () => {
+      try {
+        const session = await trpcClient.sessions.create.mutate({
+          mode: 'text',
+        });
+        setSessionId(session.id);
+      } catch (err) {
+        console.error('Failed to create session:', err);
+        setError('Failed to initialize chat. Please check your API key.');
+      }
+    };
+
+    createSession();
+  }, []);
 
   // Initialize with greeting message
   useEffect(() => {
@@ -70,7 +95,7 @@ export function Widget({
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !sessionId) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -82,19 +107,41 @@ export function Widget({
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setError(null);
 
-    // TODO: Replace with actual API call in Phase 5
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
+    try {
+      // Real API call to sessions.sendMessage endpoint with RAG
+      const response = await trpcClient.sessions.sendMessage.mutate({
+        sessionId,
+        role: 'user',
+        content: userMessage.content,
+      });
+
+      // Response includes userMessage (echo) and assistantMessage (AI response)
+      if ('assistantMessage' in response && response.assistantMessage) {
+        const assistantMessage: Message = {
+          id: response.assistantMessage.id,
+          role: 'assistant',
+          content: response.assistantMessage.content,
+          timestamp: new Date(response.assistantMessage.timestamp),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setError('Failed to send message. Please try again.');
+
+      // Add error message to chat
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'This is a placeholder response. Real AI integration will be added in Phase 5.',
+        content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const positionClasses = {
@@ -129,6 +176,13 @@ export function Widget({
                 </svg>
               </Button>
             </CardHeader>
+
+            {/* Error Banner */}
+            {error && (
+              <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
 
             {/* Messages */}
             <CardContent className="flex h-[350px] flex-col space-y-4 overflow-y-auto p-4">

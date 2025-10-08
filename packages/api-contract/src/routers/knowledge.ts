@@ -9,11 +9,24 @@
  * - RLS policies filter all SELECT/UPDATE/DELETE operations
  * - UUID validation prevents SQL injection
  * - Role hierarchy enforced: owner > admin > member
+ *
+ * Priority 2 Enhancements:
+ * - File upload with base64 encoding
+ * - Automatic document chunking
+ * - Voyage AI embeddings generation
+ * - Vector similarity search integration
  */
 
-import { knowledgeDocuments } from '@platform/db';
+import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
+import {
+  VoyageEmbeddingProvider,
+  chunkDocument,
+  estimateTokens,
+  validateChunkOptions,
+  type ChunkOptions,
+} from '@platform/knowledge';
 import { TRPCError } from '@trpc/server';
-import { count, eq, ilike } from 'drizzle-orm';
+import { count, eq, ilike, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { adminProcedure, ownerProcedure, protectedProcedure, router } from '../trpc';
 
@@ -58,12 +71,38 @@ const deleteDocumentSchema = z.object({
 });
 
 /**
- * RAG operation schemas (placeholders for future implementation)
+ * Priority 2: File upload schema with chunking options
+ */
+const uploadDocumentSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500, 'Title too long'),
+  content: z.string().min(1, 'Content is required'),
+  category: z.string().max(100).optional(),
+  metadata: documentMetadataSchema.optional(),
+  file: z
+    .object({
+      name: z.string(),
+      type: z.string(),
+      size: z.number(),
+      data: z.string(), // base64 encoded file content
+    })
+    .optional(),
+  chunkOptions: z
+    .object({
+      chunkSize: z.number().int().min(100).max(2000).optional(),
+      overlapSize: z.number().int().min(0).optional(),
+      preserveSentences: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+/**
+ * RAG operation schemas
  */
 const searchKnowledgeSchema = z.object({
   query: z.string().min(1, 'Query is required'),
   limit: z.number().int().min(1).max(20).default(5),
   category: z.string().optional(),
+  minScore: z.number().min(0).max(1).default(0.7).optional(),
 });
 
 /**
@@ -318,27 +357,279 @@ export const knowledgeRouter = router({
     }
   }),
 
+  /**
+   * Upload document with automatic chunking and embeddings (Priority 2)
+   *
+   * Process:
+   * 1. Decode and extract file content if provided
+   * 2. Create document record
+   * 3. Chunk document content
+   * 4. Generate embeddings for chunks (batch)
+   * 5. Store chunks with embeddings
+   *
+   * Admin/owner only
+   */
+  upload: adminProcedure.input(uploadDocumentSchema).mutation(async ({ ctx, input }) => {
+    try {
+      // Extract content from file if provided
+      let documentContent = input.content;
+      if (input.file) {
+        try {
+          // Decode base64 file data
+          const buffer = Buffer.from(input.file.data, 'base64');
+          documentContent = buffer.toString('utf-8');
+
+          // Validate file type (text-based only)
+          const textMimeTypes = [
+            'text/plain',
+            'text/markdown',
+            'application/json',
+            'text/csv',
+          ];
+          if (!textMimeTypes.includes(input.file.type)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Unsupported file type: ${input.file.type}. Only text-based files are supported.`,
+            });
+          }
+
+          // File size limit: 10MB
+          if (input.file.size > 10 * 1024 * 1024) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'File size must be less than 10MB',
+            });
+          }
+        } catch (error) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          });
+        }
+      }
+
+      // Validate chunk options if provided
+      if (input.chunkOptions) {
+        const validation = validateChunkOptions(input.chunkOptions as ChunkOptions);
+        if (!validation.valid) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Invalid chunk options: ${validation.errors.join(', ')}`,
+          });
+        }
+      }
+
+      // 1. Create document record
+      const documentMetadata: Record<string, unknown> = {
+        ...(input.metadata || {}),
+      };
+
+      if (input.file) {
+        documentMetadata.uploadedFileName = input.file.name;
+        documentMetadata.uploadedFileType = input.file.type;
+        documentMetadata.uploadedFileSize = input.file.size;
+        documentMetadata.uploadedAt = new Date().toISOString();
+      }
+
+      const [newDocument] = await ctx.db
+        .insert(knowledgeDocuments)
+        .values({
+          tenantId: ctx.tenantId,
+          title: input.title,
+          content: documentContent,
+          category: input.category,
+          metadata: documentMetadata,
+        })
+        .returning();
+
+      if (!newDocument) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create document',
+        });
+      }
+
+      // 2. Chunk the document
+      const chunks = chunkDocument(documentContent, input.chunkOptions as ChunkOptions);
+
+      if (chunks.length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Document is empty or could not be chunked',
+        });
+      }
+
+      // 3. Generate embeddings for all chunks (batch)
+      let embeddings: number[][] = [];
+      try {
+        // Initialize Voyage AI provider
+        if (!process.env.VOYAGE_API_KEY) {
+          throw new Error(
+            'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.'
+          );
+        }
+
+        const voyageProvider = new VoyageEmbeddingProvider({
+          apiKey: process.env.VOYAGE_API_KEY,
+        });
+
+        // Generate embeddings in batch (more efficient)
+        const chunkTexts = chunks.map((chunk) => chunk.content);
+        embeddings = await voyageProvider.embedBatch(chunkTexts, 'document');
+
+        // Verify embeddings count matches chunks
+        if (embeddings.length !== chunks.length) {
+          throw new Error(
+            `Embedding count mismatch: expected ${chunks.length}, got ${embeddings.length}`
+          );
+        }
+      } catch (error) {
+        console.error('Failed to generate embeddings:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Embedding generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+
+      // 4. Store chunks with embeddings
+      const chunkRecords = chunks.map((chunk, index) => ({
+        documentId: newDocument.id,
+        content: chunk.content,
+        embedding: sql`${JSON.stringify(embeddings[index])}::vector`,
+        position: chunk.position,
+        metadata: chunk.metadata,
+      }));
+
+      await ctx.db.insert(knowledgeChunks).values(chunkRecords);
+
+      // 5. Calculate and return summary
+      const totalTokens = chunks.reduce((sum, chunk) => sum + estimateTokens(chunk.content), 0);
+      const estimatedCost = new VoyageEmbeddingProvider({
+        apiKey: process.env.VOYAGE_API_KEY || '',
+      }).estimateCost(documentContent.length);
+
+      return {
+        id: newDocument.id,
+        title: newDocument.title,
+        category: newDocument.category,
+        metadata: newDocument.metadata,
+        createdAt: newDocument.createdAt,
+        processingStats: {
+          chunksCreated: chunks.length,
+          totalTokens,
+          estimatedCost,
+          avgChunkSize: Math.round(
+            chunks.reduce((sum, chunk) => sum + chunk.content.length, 0) / chunks.length
+          ),
+        },
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      console.error('Failed to upload document:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to upload document',
+        cause: error,
+      });
+    }
+  }),
+
   // ==================== RAG OPERATIONS ====================
   // These endpoints will be fully implemented in Phase 5 with @platform/knowledge integration
 
   /**
-   * Semantic search (Phase 5 - placeholder)
+   * Semantic search with vector similarity (Priority 2)
    *
-   * Future implementation will:
-   * - Generate query embedding via Voyage API
-   * - Perform vector similarity search using pgvector
-   * - Return ranked results with relevance scores
-   * - Apply reranking for hybrid retrieval
+   * Process:
+   * 1. Generate query embedding via Voyage API
+   * 2. Perform vector similarity search using pgvector (<=> operator)
+   * 3. Return ranked results with relevance scores
+   * 4. Filter by category if specified
    */
-  search: protectedProcedure.input(searchKnowledgeSchema).query(async ({ input }) => {
-    // Placeholder implementation - returns empty results
-    // Full implementation in Phase 5 will integrate with @platform/knowledge
-    console.log('RAG search placeholder called with query:', input.query);
+  search: protectedProcedure.input(searchKnowledgeSchema).query(async ({ ctx, input }) => {
+    try {
+      // 1. Generate query embedding
+      if (!process.env.VOYAGE_API_KEY) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Semantic search not configured. VOYAGE_API_KEY required.',
+        });
+      }
 
-    return {
-      results: [],
-      total: 0,
-      message: 'RAG semantic search will be implemented in Phase 5',
-    };
+      const voyageProvider = new VoyageEmbeddingProvider({
+        apiKey: process.env.VOYAGE_API_KEY,
+      });
+
+      const [queryEmbedding] = await voyageProvider.embedBatch([input.query], 'query');
+
+      if (!queryEmbedding) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to generate query embedding',
+        });
+      }
+
+      // 2. Vector similarity search with pgvector
+      // RLS automatically filters by tenant_id
+      // <=> is cosine distance operator (0 = identical, 2 = opposite)
+      // 1 - distance = similarity score (0 to 1, higher is better)
+
+      const similarityQuery = sql`
+        SELECT
+          kc.id,
+          kc.document_id,
+          kc.content,
+          kc.position,
+          kc.metadata,
+          kd.title as document_title,
+          kd.category as document_category,
+          1 - (kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as similarity_score
+        FROM knowledge_chunks kc
+        INNER JOIN knowledge_documents kd ON kc.document_id = kd.id
+        WHERE kd.tenant_id = ${ctx.tenantId}
+        ${input.category ? sql`AND kd.category = ${input.category}` : sql``}
+        ORDER BY kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
+        LIMIT ${input.limit}
+      `;
+
+      const results = await ctx.db.execute(similarityQuery);
+
+      // 3. Filter by minimum score and format results
+      const filteredResults = (results.rows as any[])
+        .filter((row) => Number(row.similarity_score) >= (input.minScore || 0.7))
+        .map((row) => ({
+          id: row.id,
+          documentId: row.document_id,
+          documentTitle: row.document_title,
+          category: row.document_category,
+          content: row.content,
+          position: row.position,
+          metadata: row.metadata,
+          similarityScore: Number(row.similarity_score).toFixed(4),
+          relevance:
+            Number(row.similarity_score) >= 0.85
+              ? 'high'
+              : Number(row.similarity_score) >= 0.7
+                ? 'medium'
+                : 'low',
+        }));
+
+      return {
+        results: filteredResults,
+        total: filteredResults.length,
+        query: input.query,
+        minScore: input.minScore || 0.7,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      console.error('Semantic search failed:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        cause: error,
+      });
+    }
   }),
 });

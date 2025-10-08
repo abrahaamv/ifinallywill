@@ -15,3 +15,25 @@ export {
   executeRAGQuery,
   buildRAGPrompt,
 } from './rag-query';
+
+// Document chunking (Priority 2)
+export type {
+  ChunkOptions,
+  TextChunk,
+} from './chunking';
+
+export {
+  chunkDocument,
+  estimateTokens,
+  validateChunkOptions,
+} from './chunking';
+
+// Voyage AI embeddings (Priority 2)
+export type {
+  VoyageConfig,
+} from './embeddings';
+
+export {
+  VoyageEmbeddingProvider,
+  createVoyageProvider,
+} from './embeddings';

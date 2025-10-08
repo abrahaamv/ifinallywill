@@ -5,14 +5,15 @@
 
 export interface WidgetConfig {
   /**
-   * API key for authentication (required for production)
+   * API key for authentication (required)
    */
-  apiKey?: string;
+  apiKey: string;
 
   /**
-   * Tenant ID for multi-tenant isolation
+   * Backend API URL for chat
+   * @default 'http://localhost:3001/trpc'
    */
-  tenantId?: string;
+  apiUrl?: string;
 
   /**
    * Widget position on screen
@@ -57,12 +58,6 @@ export interface WidgetConfig {
    * @default 'open'
    */
   shadowMode?: 'open' | 'closed';
-
-  /**
-   * Backend API URL for chat
-   * @default 'https://api.platform.com'
-   */
-  apiUrl?: string;
 
   /**
    * Enable debug logging

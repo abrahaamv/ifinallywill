@@ -3,7 +3,7 @@
  * Handles CSRF tokens for embeddable widget API calls
  */
 
-import { CSRFService } from '@platform/auth';
+import { CSRFService } from '@platform/auth/client';
 
 /**
  * Singleton CSRF token manager for widget

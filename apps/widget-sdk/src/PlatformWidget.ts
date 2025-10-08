@@ -148,7 +148,7 @@ export class PlatformWidget {
     this.root.render(
       createElement(Widget, {
         apiKey: this.config.apiKey,
-        tenantId: this.config.tenantId,
+        apiUrl: this.config.apiUrl || 'http://localhost:3001/trpc',
         position: this.config.position || 'bottom-right',
         theme: this.config.theme || 'auto',
         primaryColor: this.config.primaryColor || '#6366f1',

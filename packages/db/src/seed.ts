@@ -7,14 +7,23 @@ export async function seed() {
   console.log('🌱 Seeding database...');
 
   try {
-    // Set a placeholder tenant ID to satisfy RLS policies during seeding
-    // This is required because FORCE RLS is enabled on all tables
-    // Use SET SESSION (not SET LOCAL) since we're not in an explicit transaction
+    // Temporarily disable RLS for all tables during seeding
+    // This is safe because seed script is only run in development
+    await db.execute(sql`ALTER TABLE tenants DISABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE users DISABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE auth_sessions DISABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE widgets DISABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE knowledge_documents DISABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE ai_personalities DISABLE ROW LEVEL SECURITY`);
+    console.log('✅ Disabled RLS for seeding');
+
+    // Set a placeholder tenant ID to satisfy application logic
+    // (not required for RLS since it's disabled, but good for consistency)
     const placeholderTenantId = '00000000-0000-0000-0000-000000000000';
     await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${placeholderTenantId}'`));
     console.log('✅ Set placeholder tenant context');
 
-    // Create demo tenant (INSERT policy allows this without tenant context)
+    // Create demo tenant
     const tenantResult = await db
       .insert(schema.tenants)
       .values({
@@ -40,28 +49,98 @@ export async function seed() {
     await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${tenant.id}'`));
     console.log('✅ Updated tenant context to:', tenant.id);
 
-    // Create demo user
+    // Create demo users with proper Argon2id password hashing
     // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)
     // Password hash only needed for development/testing
-    const hashedPassword = crypto.createHash('sha256').update('password123').digest('hex');
 
-    const userResult = await db
+    // Import password service for proper hashing
+    const { hash } = await import('@node-rs/argon2');
+
+    // Admin user (owner role)
+    const adminPassword = await hash('Admin@123!', {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
+    });
+
+    const adminResult = await db
       .insert(schema.users)
       .values({
         tenantId: tenant.id,
         email: 'admin@acme.com',
-        passwordHash: hashedPassword,
+        passwordHash: adminPassword,
+        passwordAlgorithm: 'argon2id',
         role: 'owner',
         name: 'John Doe',
+        emailVerified: new Date(), // Mark as verified for testing
       })
       .returning();
 
-    const user = userResult[0];
-    if (!user) {
-      throw new Error('Failed to create user');
+    const admin = adminResult[0];
+    if (!admin) {
+      throw new Error('Failed to create admin user');
     }
 
-    console.log('✅ Created user:', user.email);
+    console.log('✅ Created admin user:', admin.email, '(password: Admin@123!)');
+
+    // Regular user (member role)
+    const memberPassword = await hash('Member@123!', {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
+    });
+
+    const memberResult = await db
+      .insert(schema.users)
+      .values({
+        tenantId: tenant.id,
+        email: 'user@acme.com',
+        passwordHash: memberPassword,
+        passwordAlgorithm: 'argon2id',
+        role: 'member',
+        name: 'Jane Smith',
+        emailVerified: new Date(),
+      })
+      .returning();
+
+    const member = memberResult[0];
+    if (!member) {
+      throw new Error('Failed to create member user');
+    }
+
+    console.log('✅ Created member user:', member.email, '(password: Member@123!)');
+
+    // Team admin (admin role)
+    const teamAdminPassword = await hash('TeamAdmin@123!', {
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
+    });
+
+    const teamAdminResult = await db
+      .insert(schema.users)
+      .values({
+        tenantId: tenant.id,
+        email: 'teamadmin@acme.com',
+        passwordHash: teamAdminPassword,
+        passwordAlgorithm: 'argon2id',
+        role: 'admin',
+        name: 'Bob Johnson',
+        emailVerified: new Date(),
+      })
+      .returning();
+
+    const teamAdmin = teamAdminResult[0];
+    if (!teamAdmin) {
+      throw new Error('Failed to create team admin user');
+    }
+
+    console.log('✅ Created team admin user:', teamAdmin.email, '(password: TeamAdmin@123!)');
+
+    const user = admin; // Use admin for subsequent operations
 
     // Create demo Auth.js session (optional, for testing)
     const sessionToken = crypto.randomUUID();
@@ -143,9 +222,32 @@ export async function seed() {
 
     console.log('✅ Created AI personality:', personality.id);
 
+    // Re-enable RLS for all tables after seeding
+    await db.execute(sql`ALTER TABLE tenants ENABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE users ENABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
+    await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
+    console.log('✅ Re-enabled RLS after seeding');
+
     console.log('🎉 Seeding complete!');
   } catch (error) {
     console.error('❌ Seeding failed:', error);
+
+    // Ensure RLS is re-enabled even if seeding fails
+    try {
+      await db.execute(sql`ALTER TABLE tenants ENABLE ROW LEVEL SECURITY`);
+      await db.execute(sql`ALTER TABLE users ENABLE ROW LEVEL SECURITY`);
+      await db.execute(sql`ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY`);
+      await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
+      await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
+      await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
+      console.log('✅ Re-enabled RLS in error handler');
+    } catch (rlsError) {
+      console.error('❌ Failed to re-enable RLS:', rlsError);
+    }
+
     throw error;
   }
 }

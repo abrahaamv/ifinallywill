@@ -94,13 +94,12 @@ export const chatRouter = router({
         }
 
         // Step 1: Get conversation history for AI context
-        // TODO: Uncomment when database schema is ready
-        // const history = await ctx.db
-        //   .select()
-        //   .from(messages)
-        //   .where(eq(messages.sessionId, input.sessionId))
-        //   .orderBy(messages.timestamp)
-        //   .limit(20); // Last 20 messages for context
+        const history = await ctx.db
+          .select()
+          .from(messages)
+          .where(eq(messages.sessionId, input.sessionId))
+          .orderBy(messages.timestamp)
+          .limit(20); // Last 20 messages for context
 
         // Step 2: Execute RAG query to get relevant knowledge
         const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
@@ -112,56 +111,38 @@ export const chatRouter = router({
         });
 
         // Step 3: Build enhanced prompt with RAG context
-        // Will be used when AI router is integrated
-        buildRAGPrompt(input.content, ragResult.context);
+        const enhancedPrompt = buildRAGPrompt(input.content, ragResult.context);
 
         // Step 4: Convert history to AI format with RAG-enhanced system message
-        // TODO: Uncomment when database schema is ready
-        // const aiMessages = [
-        //   { role: 'system' as const, content: enhancedPrompt },
-        //   ...history.map((msg) => ({
-        //     role: msg.role as 'system' | 'user' | 'assistant',
-        //     content: msg.content,
-        //   })),
-        //   { role: 'user' as const, content: input.content },
-        // ];
+        const aiMessages = [
+          { role: 'system' as const, content: enhancedPrompt },
+          ...history.slice(0, -1).map((msg) => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          })),
+          { role: 'user' as const, content: input.content },
+        ];
 
         // Step 5: Use AI router from @platform/ai-core
-        // TODO: Uncomment when API keys are configured
-        // const { AIRouter } = await import('@platform/ai-core');
-        // const aiRouter = new AIRouter({
-        //   openaiApiKey: process.env.OPENAI_API_KEY!,
-        //   anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
-        //   googleApiKey: process.env.GOOGLE_API_KEY!,
-        //   enableFallback: true,
-        //   logRouting: true,
-        // });
-        //
-        // const startTime = Date.now();
-        //
-        // Step 6: Get AI response with cost-optimized routing
-        // const aiResponse = await aiRouter.complete({
-        //   messages: aiMessages,
-        //   temperature: 0.7,
-        //   maxTokens: 2048,
-        // });
-        //
-        // const latencyMs = Date.now() - startTime;
+        const { AIRouter } = await import('@platform/ai-core');
+        const aiRouter = new AIRouter({
+          openaiApiKey: process.env.OPENAI_API_KEY!,
+          anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
+          googleApiKey: process.env.GOOGLE_API_KEY!,
+          enableFallback: true,
+          logRouting: true,
+        });
 
-        // TEMPORARY: Mock AI response demonstrating RAG integration
-        const aiResponse = {
-          content: `Based on the knowledge base context, I can provide this response:\n\n${ragResult.context}\n\nRAG system retrieved ${ragResult.totalChunks} relevant chunks in ${ragResult.processingTimeMs}ms. Full AI integration with cost-optimized routing will be completed in Phase 5 Week 2.`,
-          model: 'gpt-4o-mini' as const,
-          provider: 'openai' as const,
-          usage: {
-            inputTokens: 100,
-            outputTokens: 50,
-            totalTokens: 150,
-            cost: 0.000045,
-          },
-          finishReason: 'stop' as const,
-        };
-        const latencyMs = ragResult.processingTimeMs + 500;
+        const startTime = Date.now();
+
+        // Step 6: Get AI response with cost-optimized routing
+        const aiResponse = await aiRouter.complete({
+          messages: aiMessages,
+          temperature: 0.7,
+          maxTokens: 2048,
+        });
+
+        const latencyMs = Date.now() - startTime;
 
         // Store AI response with RAG metadata
         const [assistantMessage] = await ctx.db

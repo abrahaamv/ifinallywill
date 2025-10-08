@@ -6,11 +6,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Input, Label } from '@platform/ui';
+import { trpc } from '../utils/trpc';
 
 export function LobbyPage() {
   const navigate = useNavigate();
   const [roomId, setRoomId] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Create room mutation
+  const createRoom = trpc.livekit.createRoom.useMutation();
 
   const handleJoinRoom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +29,38 @@ export function LobbyPage() {
     navigate(`/room/${roomId}`);
   };
 
-  const handleCreateRoom = () => {
-    const newRoomId = `room-${Date.now()}`;
-    setRoomId(newRoomId);
+  const handleCreateRoom = async () => {
+    setError(null);
+
+    if (!displayName.trim()) {
+      setError('Display name is required');
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      // Generate room ID
+      const newRoomId = `room-${Date.now()}`;
+
+      // Create room via tRPC
+      await createRoom.mutateAsync({
+        roomName: newRoomId,
+        metadata: {
+          createdBy: displayName.trim(),
+        },
+      });
+
+      // Store display name in session storage
+      sessionStorage.setItem('displayName', displayName.trim());
+
+      // Navigate to room
+      navigate(`/room/${newRoomId}`);
+    } catch (err) {
+      console.error('Failed to create room:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create room');
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -137,14 +172,19 @@ export function LobbyPage() {
                 </ul>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col space-y-4">
+              {error && (
+                <div className="w-full rounded-lg bg-red-50 border border-red-200 p-3">
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
               <Button
                 type="button"
                 className="w-full"
                 onClick={handleCreateRoom}
-                disabled={!displayName}
+                disabled={!displayName || isCreating}
               >
-                Create New Room
+                {isCreating ? 'Creating Room...' : 'Create New Room'}
               </Button>
             </CardFooter>
           </Card>

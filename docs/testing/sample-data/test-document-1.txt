@@ -1,0 +1,16 @@
+Platform Documentation
+
+Introduction
+This is a test document for the Knowledge Base Upload feature. It demonstrates the document chunking and embedding generation process using Voyage Multimodal-3 embeddings.
+
+Features
+The platform supports multi-modal AI interactions with real-time communication. Users can upload documents to enhance the AI's knowledge base through RAG (Retrieval-Augmented Generation).
+
+Architecture
+The system uses a microservices architecture with separate API and WebSocket servers. The database layer uses PostgreSQL with pgvector extension for efficient vector similarity search.
+
+Performance
+The chunking algorithm splits documents into 800-character chunks with 100-character overlap. This ensures semantic coherence while optimizing for embedding quality.
+
+Conclusion
+This test document validates the end-to-end upload flow from file selection through chunking, embedding generation, and database storage.
