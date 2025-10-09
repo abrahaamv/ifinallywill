@@ -137,11 +137,19 @@ export const authRouter = router({
         });
       }
 
-      // Verify MFA code (implementation in @platform/auth MFA service)
-      // For now, this is a placeholder - actual MFA verification needs to be implemented
-      const isMfaValid = input.mfaCode.length === 6; // Placeholder validation
+      // Verify MFA code using real MFA service
+      if (!user.mfaSecret) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'MFA secret not configured for this account',
+        });
+      }
 
-      if (!isMfaValid) {
+      // Import MFA service dynamically to avoid circular dependencies
+      const { MFAService } = await import('@platform/auth');
+      const verification = await MFAService.verifyTOTP(user.mfaSecret, input.mfaCode);
+
+      if (!verification.valid) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Invalid MFA code',
@@ -508,30 +516,8 @@ export const authRouter = router({
    * Returns user data if authenticated, null otherwise
    */
   getSession: publicProcedure.query(async ({ ctx }) => {
-    // Auth.js middleware adds session to context
-    // Check if user is authenticated via context
-    // During development, mock values will return null session
-    if (!ctx.userId || !ctx.tenantId || ctx.userId === 'mock-user-id') {
-      return { user: null };
-    }
-
-    // Fetch user details
-    const [user] = await ctx.db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
-
-    if (!user) {
-      return { user: null };
-    }
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        tenantId: user.tenantId,
-        role: user.role,
-        emailVerified: user.emailVerified,
-      },
-    };
+    // Return session directly from context (already populated by createContext)
+    return { user: ctx.session?.user || null };
   }),
 
   /**

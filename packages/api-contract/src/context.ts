@@ -4,7 +4,8 @@
  * Provides authentication state and tenant context for tRPC procedures.
  */
 
-import { db } from '@platform/db';
+import { auth } from '@platform/auth';
+import { db, eq, users } from '@platform/db';
 import type * as schema from '@platform/db';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
@@ -18,6 +19,7 @@ export interface User {
   name?: string;
   image?: string;
   tenantId?: string; // Platform extension: user's primary tenant
+  role?: 'owner' | 'admin' | 'member';
 }
 
 /**
@@ -34,9 +36,9 @@ export interface Session {
  *
  * Available in all tRPC procedures and includes:
  * - session: Auth.js session (null if not authenticated)
- * - tenantId: Current tenant ID (from session)
- * - userId: Current user ID (from session)
- * - role: User's role in current tenant ('owner' | 'admin' | 'member')
+ * - tenantId: Current tenant ID (from session, empty string if not authenticated)
+ * - userId: Current user ID (from session, empty string if not authenticated)
+ * - role: User's role in current tenant ('owner' | 'admin' | 'member', 'member' if not authenticated)
  * - db: Database instance (for tenant-scoped queries)
  */
 export interface Context {
@@ -55,21 +57,68 @@ export type TRPCContext = Context;
 /**
  * Create tRPC context from request
  *
- * This will be called on each request to build the context object.
- * In production, this should:
- * 1. Extract session from Auth.js
- * 2. Extract tenant context from session or request headers
- * 3. Validate tenant membership and permissions
+ * PRODUCTION IMPLEMENTATION:
+ * 1. Gets Auth.js session from request
+ * 2. Extracts tenant context from user record in database
+ * 3. Returns authenticated context or safe defaults for unauthenticated requests
  */
 export async function createContext(): Promise<Context> {
-  // TODO: Implement actual authentication context creation
-  // For now, return mock context for development with real database
+  // Get Auth.js session (works with both OAuth and credentials)
+  const session = await auth();
 
+  // If no session, return safe defaults (unauthenticated state)
+  if (!session?.user?.email) {
+    return {
+      session: null,
+      tenantId: '',
+      userId: '',
+      role: 'member',
+      db,
+    };
+  }
+
+  // Fetch full user record from database to get tenant context
+  const [userRecord] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .limit(1);
+
+  // If user doesn't exist in database yet (OAuth first-time login), return partial session
+  if (!userRecord) {
+    return {
+      session: {
+        user: {
+          id: '',
+          email: session.user.email,
+          name: session.user.name || undefined,
+          image: session.user.image || undefined,
+        },
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      tenantId: '',
+      userId: '',
+      role: 'member',
+      db,
+    };
+  }
+
+  // Return full authenticated context with tenant isolation
   return {
-    session: null,
-    tenantId: 'mock-tenant-id',
-    userId: 'mock-user-id',
-    role: 'admin',
-    db, // Real Drizzle database client
+    session: {
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name || undefined,
+        image: userRecord.image || undefined,
+        tenantId: userRecord.tenantId,
+        role: userRecord.role,
+      },
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    tenantId: userRecord.tenantId,
+    userId: userRecord.id,
+    role: userRecord.role,
+    db,
   };
 }

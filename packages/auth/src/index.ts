@@ -23,8 +23,9 @@
  * @see https://authjs.dev/
  */
 
-// Export configuration
+// Export configuration and Auth.js functions
 export { authConfig } from './config';
+export { auth, handlers, signIn, signOut } from './lib/auth';
 
 // Export helper functions
 export {
