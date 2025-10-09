@@ -147,7 +147,11 @@ export const authRouter = router({
 
       // Import MFA service dynamically to avoid circular dependencies
       const { MFAService } = await import('@platform/auth');
-      const verification = await MFAService.verifyTOTP(user.mfaSecret, input.mfaCode);
+      const verification = await MFAService.verifyCode(
+        input.mfaCode,
+        user.mfaSecret,
+        user.mfaBackupCodes || []
+      );
 
       if (!verification.valid) {
         throw new TRPCError({
