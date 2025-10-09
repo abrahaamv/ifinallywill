@@ -3,8 +3,17 @@
  * File upload with automatic chunking and vector embeddings
  */
 
-import { useState, useRef } from 'react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Label } from '@platform/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from '@platform/ui';
+import { useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 interface UploadFormData {
@@ -95,7 +104,12 @@ export function KnowledgePage() {
       const reader = new FileReader();
       reader.onload = async () => {
         try {
-          const base64Data = (reader.result as string).split(',')[1];
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+
+          if (!base64Data) {
+            throw new Error('Failed to read file data');
+          }
 
           setUploadProgress('Uploading and processing...');
 
@@ -161,9 +175,7 @@ export function KnowledgePage() {
                 type="text"
                 placeholder="Enter document title"
                 value={uploadFormData.title}
-                onChange={(e) =>
-                  setUploadFormData({ ...uploadFormData, title: e.target.value })
-                }
+                onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
                 disabled={isUploading}
               />
             </div>
@@ -175,9 +187,7 @@ export function KnowledgePage() {
                 type="text"
                 placeholder="e.g., documentation, guides, faq"
                 value={uploadFormData.category}
-                onChange={(e) =>
-                  setUploadFormData({ ...uploadFormData, category: e.target.value })
-                }
+                onChange={(e) => setUploadFormData({ ...uploadFormData, category: e.target.value })}
                 disabled={isUploading}
               />
             </div>
@@ -198,9 +208,7 @@ export function KnowledgePage() {
             </div>
 
             {uploadProgress && (
-              <div className="p-4 bg-blue-50 text-blue-800 rounded-md">
-                {uploadProgress}
-              </div>
+              <div className="p-4 bg-blue-50 text-blue-800 rounded-md">{uploadProgress}</div>
             )}
 
             {uploadError && (
@@ -236,9 +244,7 @@ export function KnowledgePage() {
                 >
                   <div className="flex-1">
                     <h3 className="font-medium">{doc.title}</h3>
-                    {doc.category && (
-                      <span className="text-sm text-gray-500">{doc.category}</span>
-                    )}
+                    {doc.category && <span className="text-sm text-gray-500">{doc.category}</span>}
                     <p className="text-xs text-gray-400 mt-1">
                       Created: {new Date(doc.createdAt).toLocaleDateString()}
                     </p>
@@ -259,9 +265,7 @@ export function KnowledgePage() {
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-muted-foreground mb-4">No documents uploaded yet</p>
-              <p className="text-sm text-gray-500">
-                Upload your first document to get started
-              </p>
+              <p className="text-sm text-gray-500">Upload your first document to get started</p>
             </div>
           )}
         </CardContent>

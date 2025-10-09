@@ -3,8 +3,8 @@
  * Tailwind CSS v4 with design tokens
  */
 
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 /**
  * Design Tokens

@@ -25,10 +25,10 @@
  * Reference: docs/research/10-07-2025/research-10-07-2025.md lines 225-256
  */
 
-import { db } from './client';
 import { sql } from 'drizzle-orm';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
+import { db } from './client';
 
 /**
  * Transaction type with tenant context set
@@ -112,7 +112,7 @@ export class TenantContext {
       throw new Error(`Invalid tenant ID format: ${tenantId} (expected UUID)`);
     }
 
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async (tx: TenantTransaction) => {
       // Set tenant context for this transaction
       // SET LOCAL: Variable only exists within this transaction
       // Automatically clears when transaction commits/rolls back
@@ -165,11 +165,15 @@ export class TenantContext {
       `);
 
       // Check if all tables have RLS enabled with FORCE
-      const tables = (result as unknown as { rows: Array<{
-        tablename: string;
-        rls_enabled: boolean;
-        force_rls: boolean;
-      }> }).rows;
+      const tables = (
+        result as unknown as {
+          rows: Array<{
+            tablename: string;
+            rls_enabled: boolean;
+            force_rls: boolean;
+          }>;
+        }
+      ).rows;
 
       const allTablesProtected = tables.every(
         (table) => table.rls_enabled === true && table.force_rls === true

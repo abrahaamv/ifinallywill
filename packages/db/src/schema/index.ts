@@ -137,16 +137,20 @@ export const authSessionsRelations = relations(authSessions, ({ one }) => ({
 }));
 
 // Migration 007: Composite primary key (identifier, token)
-export const verificationTokens = pgTable('verification_tokens', {
-  identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires', {
-    withTimezone: true,
-    mode: 'date',
-  }).notNull(),
-}, (table) => ({
-  compoundKey: primaryKey({ columns: [table.identifier, table.token] }),
-}));
+export const verificationTokens = pgTable(
+  'verification_tokens',
+  {
+    identifier: text('identifier').notNull(),
+    token: text('token').notNull(),
+    expires: timestamp('expires', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
+  },
+  (table) => ({
+    compoundKey: primaryKey({ columns: [table.identifier, table.token] }),
+  })
+);
 
 // ==================== WIDGETS ====================
 

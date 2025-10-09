@@ -19,11 +19,11 @@
 
 import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
 import {
+  type ChunkOptions,
   VoyageEmbeddingProvider,
   chunkDocument,
   estimateTokens,
   validateChunkOptions,
-  type ChunkOptions,
 } from '@platform/knowledge';
 import { TRPCError } from '@trpc/server';
 import { count, eq, ilike, sql } from 'drizzle-orm';
@@ -380,12 +380,7 @@ export const knowledgeRouter = router({
           documentContent = buffer.toString('utf-8');
 
           // Validate file type (text-based only)
-          const textMimeTypes = [
-            'text/plain',
-            'text/markdown',
-            'application/json',
-            'text/csv',
-          ];
+          const textMimeTypes = ['text/plain', 'text/markdown', 'application/json', 'text/csv'];
           if (!textMimeTypes.includes(input.file.type)) {
             throw new TRPCError({
               code: 'BAD_REQUEST',

@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { MeetingRoom } from './MeetingRoom';
 
 export function RoomPage() {

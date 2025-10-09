@@ -4,13 +4,13 @@
  * Features: Hero, features, pricing, testimonials, CTA
  */
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { HomePage } from './pages/HomePage';
-import { PricingPage } from './pages/PricingPage';
-import { FeaturesPage } from './pages/FeaturesPage';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { MainLayout } from './layouts/MainLayout';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
-import { MainLayout } from './layouts/MainLayout';
+import { FeaturesPage } from './pages/FeaturesPage';
+import { HomePage } from './pages/HomePage';
+import { PricingPage } from './pages/PricingPage';
 
 export function App() {
   return (

@@ -4,8 +4,8 @@
  * for all Meeting app components
  */
 
-import { createContext, useContext, type ReactNode } from 'react';
-import { useCSRF, useAuthenticatedFetch, type UseCSRFResult } from '@platform/auth/client';
+import { type UseCSRFResult, useAuthenticatedFetch, useCSRF } from '@platform/auth/client';
+import { type ReactNode, createContext, useContext } from 'react';
 
 interface CSRFContextValue {
   csrf: UseCSRFResult;
@@ -23,9 +23,7 @@ export function CSRFProvider({ children }: { children: ReactNode }) {
   const { fetch: authenticatedFetch } = useAuthenticatedFetch();
 
   return (
-    <CSRFContext.Provider value={{ csrf, authenticatedFetch }}>
-      {children}
-    </CSRFContext.Provider>
+    <CSRFContext.Provider value={{ csrf, authenticatedFetch }}>{children}</CSRFContext.Provider>
   );
 }
 

@@ -17,11 +17,11 @@
  * - Backup codes shown only once, then hashed
  */
 
-import { z } from 'zod';
-import { router, protectedProcedure } from '../trpc';
-import { TRPCError } from '@trpc/server';
-import { db, users, eq } from '@platform/db';
 import { MFAService, passwordService } from '@platform/auth';
+import { db, eq, users } from '@platform/db';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
 
 export const mfaRouter = router({
   /**
@@ -81,7 +81,10 @@ export const mfaRouter = router({
   enable: protectedProcedure
     .input(
       z.object({
-        verificationCode: z.string().length(6).regex(/^\d{6}$/),
+        verificationCode: z
+          .string()
+          .length(6)
+          .regex(/^\d{6}$/),
         password: z.string().min(8),
       })
     )
@@ -284,10 +287,7 @@ export const mfaRouter = router({
       const hashedBackupCodes = await MFAService.hashBackupCodes(setup.backupCodes);
 
       // Update backup codes
-      await db
-        .update(users)
-        .set({ mfaBackupCodes: hashedBackupCodes })
-        .where(eq(users.id, userId));
+      await db.update(users).set({ mfaBackupCodes: hashedBackupCodes }).where(eq(users.id, userId));
 
       return {
         backupCodes: setup.backupCodes,

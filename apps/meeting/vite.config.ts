@@ -1,7 +1,7 @@
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -19,7 +19,7 @@ export default defineConfig({
   },
   define: {
     // Polyfill Node.js globals for browser (polyfills.ts handles Buffer and process)
-    'global': 'globalThis',
+    global: 'globalThis',
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
   optimizeDeps: {

@@ -4,14 +4,14 @@
  */
 
 import OpenAI from 'openai';
+import { calculateCost } from '../pricing';
 import type {
-  AIProviderInterface,
   AICompletionRequest,
   AICompletionResponse,
+  AIModel,
+  AIProviderInterface,
   ProviderConfig,
-  AIModel
 } from '../types';
-import { calculateCost } from '../pricing';
 
 export class OpenAIProvider implements AIProviderInterface {
   private client: OpenAI;
@@ -30,7 +30,7 @@ export class OpenAIProvider implements AIProviderInterface {
     try {
       const completion = await this.client.chat.completions.create({
         model: model as string,
-        messages: request.messages.map(msg => ({
+        messages: request.messages.map((msg) => ({
           role: msg.role === 'system' ? 'system' : msg.role === 'user' ? 'user' : 'assistant',
           content: msg.content,
         })),
@@ -48,11 +48,7 @@ export class OpenAIProvider implements AIProviderInterface {
         throw new Error('No usage data returned');
       }
 
-      const cost = calculateCost(
-        model,
-        usage.prompt_tokens,
-        usage.completion_tokens
-      );
+      const cost = calculateCost(model, usage.prompt_tokens, usage.completion_tokens);
 
       return {
         content: choice.message.content || '',
@@ -64,7 +60,8 @@ export class OpenAIProvider implements AIProviderInterface {
           totalTokens: usage.total_tokens,
           cost,
         },
-        finishReason: (choice.finish_reason as any) || 'stop',
+        finishReason:
+          (choice.finish_reason as 'stop' | 'length' | 'content_filter' | null) || 'stop',
       };
     } catch (error) {
       if (error instanceof Error) {
@@ -74,12 +71,14 @@ export class OpenAIProvider implements AIProviderInterface {
     }
   }
 
-  async *streamComplete(request: AICompletionRequest): AsyncGenerator<string, AICompletionResponse> {
+  async *streamComplete(
+    request: AICompletionRequest
+  ): AsyncGenerator<string, AICompletionResponse> {
     const model = request.model || this.defaultModel;
 
     const stream = await this.client.chat.completions.create({
       model: model as string,
-      messages: request.messages.map(msg => ({
+      messages: request.messages.map((msg) => ({
         role: msg.role === 'system' ? 'system' : msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content,
       })),
@@ -102,9 +101,7 @@ export class OpenAIProvider implements AIProviderInterface {
     }
 
     // Approximate input tokens (1 token ~= 4 chars)
-    inputTokens = Math.ceil(
-      request.messages.reduce((sum, msg) => sum + msg.content.length, 0) / 4
-    );
+    inputTokens = Math.ceil(request.messages.reduce((sum, msg) => sum + msg.content.length, 0) / 4);
 
     const cost = calculateCost(model, inputTokens, outputTokens);
 

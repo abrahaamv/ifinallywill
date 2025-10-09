@@ -4,11 +4,11 @@
  * Automatically includes CSRF tokens in all requests
  */
 
-import { useState, useEffect } from 'react';
+import { CSRFService } from '@platform/auth/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
+import { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
-import { CSRFService } from '@platform/auth/client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -42,7 +42,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             refetchOnWindowFocus: false,
           },
         },
-      }),
+      })
   );
 
   const [trpcClient] = useState(() =>
@@ -75,7 +75,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           },
         }),
       ],
-    }),
+    })
   );
 
   return (

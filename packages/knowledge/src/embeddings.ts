@@ -103,7 +103,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
           model: this.model,
@@ -115,9 +115,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Voyage API error (${response.status}): ${errorText}`
-        );
+        throw new Error(`Voyage API error (${response.status}): ${errorText}`);
       }
 
       const data = (await response.json()) as VoyageResponse;
@@ -128,16 +126,12 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
       }
 
       // Extract embeddings in original order
-      const embeddings = data.data
-        .sort((a, b) => a.index - b.index)
-        .map((item) => item.embedding);
+      const embeddings = data.data.sort((a, b) => a.index - b.index).map((item) => item.embedding);
 
       // Verify dimensions
       for (const embedding of embeddings) {
         if (embedding.length !== 1024) {
-          throw new Error(
-            `Invalid embedding dimension: expected 1024, got ${embedding.length}`
-          );
+          throw new Error(`Invalid embedding dimension: expected 1024, got ${embedding.length}`);
         }
       }
 
@@ -170,10 +164,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
    */
   static validateApiKey(apiKey: string): boolean {
     // Voyage keys start with "pa-" (production) or "pk-test-" (test)
-    return (
-      apiKey.startsWith('pa-') ||
-      apiKey.startsWith('pk-test-')
-    );
+    return apiKey.startsWith('pa-') || apiKey.startsWith('pk-test-');
   }
 }
 
@@ -192,9 +183,7 @@ export function createVoyageProvider(): VoyageEmbeddingProvider {
   }
 
   if (!VoyageEmbeddingProvider.validateApiKey(apiKey)) {
-    throw new Error(
-      'Invalid Voyage API key format. Keys should start with "pa-" or "pk-test-"'
-    );
+    throw new Error('Invalid Voyage API key format. Keys should start with "pa-" or "pk-test-"');
   }
 
   return new VoyageEmbeddingProvider({

@@ -5,7 +5,7 @@
  * message handling, typing indicators, and presence tracking.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export enum MessageType {
   CHAT_MESSAGE = 'chat_message',
@@ -91,11 +91,13 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
         // Resend pending messages
         for (const [messageId, message] of pendingMessagesRef.current) {
-          ws.send(JSON.stringify({
-            type: MessageType.CHAT_MESSAGE,
-            payload: message.content,
-            messageId,
-          }));
+          ws.send(
+            JSON.stringify({
+              type: MessageType.CHAT_MESSAGE,
+              payload: message.content,
+              messageId,
+            })
+          );
         }
 
         // Start heartbeat
@@ -139,7 +141,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         connect();
       }, reconnectInterval);
     }
-  }, [url, token, sessionId, reconnectInterval, isReconnecting]);
+  }, [url, sessionId, reconnectInterval, isReconnecting]);
 
   // Handle incoming messages
   const handleMessage = useCallback((message: WSMessage) => {
@@ -161,9 +163,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
           pendingMessagesRef.current.delete(message.payload.messageId);
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === message.payload.messageId
-                ? { ...msg, status: 'sent' as const }
-                : msg
+              msg.id === message.payload.messageId ? { ...msg, status: 'sent' as const } : msg
             )
           );
         }
@@ -249,20 +249,24 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
     pendingMessagesRef.current.set(messageId, message);
 
     // Send to server
-    wsRef.current.send(JSON.stringify({
-      type: MessageType.CHAT_MESSAGE,
-      payload: content,
-      messageId,
-    }));
+    wsRef.current.send(
+      JSON.stringify({
+        type: MessageType.CHAT_MESSAGE,
+        payload: content,
+        messageId,
+      })
+    );
   }, []);
 
   // Send typing indicator
   const sendTyping = useCallback((isTyping: boolean) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: isTyping ? MessageType.USER_TYPING : MessageType.USER_STOPPED_TYPING,
-        payload: {},
-      }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: isTyping ? MessageType.USER_TYPING : MessageType.USER_STOPPED_TYPING,
+          payload: {},
+        })
+      );
     }
   }, []);
 

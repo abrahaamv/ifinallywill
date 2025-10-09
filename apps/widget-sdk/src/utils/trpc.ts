@@ -5,8 +5,8 @@
  * Widget uses direct tRPC calls without React Query hooks.
  */
 
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '@platform/api-contract';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 
 /**
  * Create tRPC client for widget

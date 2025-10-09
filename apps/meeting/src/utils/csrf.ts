@@ -40,10 +40,7 @@ export async function createMeetingWithCSRF(
  * @param message - Message text
  * @returns Response from server
  */
-export async function sendMessageWithCSRF(
-  roomId: string,
-  message: string
-): Promise<Response> {
+export async function sendMessageWithCSRF(roomId: string, message: string): Promise<Response> {
   const { token: csrfToken } = await CSRFService.getToken();
 
   return fetch('/api/meetings/message', {

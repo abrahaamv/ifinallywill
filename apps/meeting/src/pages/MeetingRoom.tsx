@@ -3,17 +3,17 @@
  * Real video/audio/screen sharing with AI assistant
  */
 
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import {
-  LiveKitRoom,
+  ControlBar,
   GridLayout,
+  LiveKitRoom,
   ParticipantTile,
   RoomAudioRenderer,
-  ControlBar,
   useTracks,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import '@livekit/components-styles';
 import { Button } from '@platform/ui';
 import { trpc } from '../utils/trpc';
@@ -87,16 +87,25 @@ export function MeetingRoom() {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="text-center max-w-md">
-          <svg className="h-16 w-16 text-destructive mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-16 w-16 text-destructive mx-auto mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <p className="text-red-500 mb-4">{error || 'Failed to load meeting'}</p>
           <p className="text-sm text-muted-foreground mb-6">
-            LiveKit requires environment variables to be configured. See PHASE_5_WEEK_2_READINESS.md for setup instructions.
+            LiveKit requires environment variables to be configured. See PHASE_5_WEEK_2_READINESS.md
+            for setup instructions.
           </p>
-          <Button onClick={() => navigate('/')}>
-            Return to Lobby
-          </Button>
+          <Button onClick={() => navigate('/')}>Return to Lobby</Button>
         </div>
       </div>
     );

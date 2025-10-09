@@ -39,7 +39,7 @@ export function formatBytes(bytes: number, decimals = 2): string {
  */
 export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number,
+  wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -55,7 +55,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  */
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
-  limit: number,
+  limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
 
@@ -103,8 +103,7 @@ export function safeJSONParse<T>(json: string, fallback: T): T {
 /**
  * Check if running in browser environment
  */
-export const isBrowser =
-  typeof window !== 'undefined' && typeof window.document !== 'undefined';
+export const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
 
 /**
  * Check if running in development mode

@@ -17,5 +17,5 @@ createRoot(rootElement).render(
     <TRPCProvider>
       <App />
     </TRPCProvider>
-  </StrictMode>,
+  </StrictMode>
 );

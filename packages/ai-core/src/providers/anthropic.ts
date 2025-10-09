@@ -4,14 +4,14 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { calculateCost } from '../pricing';
 import type {
-  AIProviderInterface,
   AICompletionRequest,
   AICompletionResponse,
+  AIModel,
+  AIProviderInterface,
   ProviderConfig,
-  AIModel
 } from '../types';
-import { calculateCost } from '../pricing';
 
 export class AnthropicProvider implements AIProviderInterface {
   private client: Anthropic;
@@ -27,8 +27,8 @@ export class AnthropicProvider implements AIProviderInterface {
     const model = request.model || this.defaultModel;
 
     // Separate system message from conversation
-    const systemMessage = request.messages.find(m => m.role === 'system');
-    const conversationMessages = request.messages.filter(m => m.role !== 'system');
+    const systemMessage = request.messages.find((m) => m.role === 'system');
+    const conversationMessages = request.messages.filter((m) => m.role !== 'system');
 
     try {
       const completion = await this.client.messages.create({
@@ -36,7 +36,7 @@ export class AnthropicProvider implements AIProviderInterface {
         max_tokens: request.maxTokens ?? 4096,
         temperature: request.temperature ?? 0.7,
         system: systemMessage?.content,
-        messages: conversationMessages.map(msg => ({
+        messages: conversationMessages.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
         })),
@@ -66,8 +66,12 @@ export class AnthropicProvider implements AIProviderInterface {
           totalTokens: completion.usage.input_tokens + completion.usage.output_tokens,
           cost,
         },
-        finishReason: completion.stop_reason === 'end_turn' ? 'stop' :
-                      completion.stop_reason === 'max_tokens' ? 'length' : 'stop',
+        finishReason:
+          completion.stop_reason === 'end_turn'
+            ? 'stop'
+            : completion.stop_reason === 'max_tokens'
+              ? 'length'
+              : 'stop',
       };
     } catch (error) {
       if (error instanceof Error) {
@@ -77,18 +81,20 @@ export class AnthropicProvider implements AIProviderInterface {
     }
   }
 
-  async *streamComplete(request: AICompletionRequest): AsyncGenerator<string, AICompletionResponse> {
+  async *streamComplete(
+    request: AICompletionRequest
+  ): AsyncGenerator<string, AICompletionResponse> {
     const model = request.model || this.defaultModel;
 
-    const systemMessage = request.messages.find(m => m.role === 'system');
-    const conversationMessages = request.messages.filter(m => m.role !== 'system');
+    const systemMessage = request.messages.find((m) => m.role === 'system');
+    const conversationMessages = request.messages.filter((m) => m.role !== 'system');
 
     const stream = await this.client.messages.stream({
       model: model as string,
       max_tokens: request.maxTokens ?? 4096,
       temperature: request.temperature ?? 0.7,
       system: systemMessage?.content,
-      messages: conversationMessages.map(msg => ({
+      messages: conversationMessages.map((msg) => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
       })),

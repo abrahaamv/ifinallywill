@@ -10,10 +10,10 @@
  * Coverage: password.service.ts
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { passwordService } from '../services/password.service';
-import * as bcrypt from 'bcryptjs';
 import * as argon2 from 'argon2';
+import * as bcrypt from 'bcryptjs';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { passwordService } from '../services/password.service';
 
 describe('Password Service', () => {
   describe('hashPassword', () => {
@@ -39,9 +39,7 @@ describe('Password Service', () => {
       expect(params).toBeDefined();
 
       if (params) {
-        const paramsParsed = Object.fromEntries(
-          params.split(',').map((p) => p.split('='))
-        );
+        const paramsParsed = Object.fromEntries(params.split(',').map((p) => p.split('=')));
 
         // Memory cost: 19456 KB (19 MB)
         expect(paramsParsed.m).toBe('19456');
@@ -123,11 +121,7 @@ describe('Password Service', () => {
     });
 
     it('should verify valid bcrypt password and provide upgrade', async () => {
-      const result = await passwordService.verifyAndUpgrade(
-        testPassword,
-        bcryptHash,
-        'bcrypt'
-      );
+      const result = await passwordService.verifyAndUpgrade(testPassword, bcryptHash, 'bcrypt');
 
       expect(result.valid).toBe(true);
       expect(result.needsUpgrade).toBe(true);
@@ -144,11 +138,7 @@ describe('Password Service', () => {
     });
 
     it('should reject invalid bcrypt password', async () => {
-      const result = await passwordService.verifyAndUpgrade(
-        'WrongPassword!',
-        bcryptHash,
-        'bcrypt'
-      );
+      const result = await passwordService.verifyAndUpgrade('WrongPassword!', bcryptHash, 'bcrypt');
 
       expect(result.valid).toBe(false);
       expect(result.needsUpgrade).toBe(false);
@@ -156,17 +146,9 @@ describe('Password Service', () => {
     });
 
     it('should generate consistent Argon2id hash after migration', async () => {
-      const result1 = await passwordService.verifyAndUpgrade(
-        testPassword,
-        bcryptHash,
-        'bcrypt'
-      );
+      const result1 = await passwordService.verifyAndUpgrade(testPassword, bcryptHash, 'bcrypt');
 
-      const result2 = await passwordService.verifyAndUpgrade(
-        testPassword,
-        bcryptHash,
-        'bcrypt'
-      );
+      const result2 = await passwordService.verifyAndUpgrade(testPassword, bcryptHash, 'bcrypt');
 
       // Both should be valid
       expect(result1.valid).toBe(true);
@@ -319,11 +301,7 @@ describe('Password Service', () => {
       const strongPassword = 'Str0ng!P@ssw0rd#2024$Complex%';
       const bcryptHash = await bcrypt.hash(strongPassword, 10);
 
-      const result = await passwordService.verifyAndUpgrade(
-        strongPassword,
-        bcryptHash,
-        'bcrypt'
-      );
+      const result = await passwordService.verifyAndUpgrade(strongPassword, bcryptHash, 'bcrypt');
 
       expect(result.valid).toBe(true);
       expect(result.newHash).toBeDefined();

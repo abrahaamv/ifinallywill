@@ -4,10 +4,10 @@
  * Features: Real-time video, screen sharing, AI chat
  */
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { CSRFProvider } from './providers/CSRFProvider';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { LobbyPage } from './pages/LobbyPage';
 import { RoomPage } from './pages/RoomPage';
+import { CSRFProvider } from './providers/CSRFProvider';
 
 export function App() {
   return (

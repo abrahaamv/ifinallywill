@@ -3,8 +3,8 @@
  * Header, navigation, footer for landing pages
  */
 
-import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Button } from '@platform/ui';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 export function MainLayout() {
   const location = useLocation();
@@ -20,7 +20,12 @@ export function MainLayout() {
           <Link to="/" className="flex items-center space-x-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
             <span className="text-xl font-bold">AI Assistant</span>
@@ -103,10 +108,26 @@ export function MainLayout() {
             <div>
               <h4 className="mb-4 text-sm font-semibold">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/features" className="hover:text-foreground">Features</Link></li>
-                <li><Link to="/pricing" className="hover:text-foreground">Pricing</Link></li>
-                <li><a href="http://localhost:5174" className="hover:text-foreground">Dashboard</a></li>
-                <li><a href="http://localhost:5175" className="hover:text-foreground">Meeting Rooms</a></li>
+                <li>
+                  <Link to="/features" className="hover:text-foreground">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/pricing" className="hover:text-foreground">
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <a href="http://localhost:5174" className="hover:text-foreground">
+                    Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a href="http://localhost:5175" className="hover:text-foreground">
+                    Meeting Rooms
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -114,10 +135,26 @@ export function MainLayout() {
             <div>
               <h4 className="mb-4 text-sm font-semibold">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/about" className="hover:text-foreground">About</Link></li>
-                <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Careers</a></li>
+                <li>
+                  <Link to="/about" className="hover:text-foreground">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-foreground">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Blog
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Careers
+                  </a>
+                </li>
               </ul>
             </div>
 
@@ -125,10 +162,26 @@ export function MainLayout() {
             <div>
               <h4 className="mb-4 text-sm font-semibold">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-foreground">Cookie Policy</a></li>
-                <li><a href="#" className="hover:text-foreground">Security</a></li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Cookie Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-foreground">
+                    Security
+                  </a>
+                </li>
               </ul>
             </div>
           </div>

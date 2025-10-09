@@ -29,8 +29,7 @@ export interface CSRFToken {
  * CSRF Service for frontend CSRF token management
  */
 export class CSRFService {
-  private static readonly API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  private static readonly API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
   /**
    * Fetch CSRF token from Auth.js /api/auth/csrf endpoint
@@ -49,7 +48,7 @@ export class CSRFService {
    */
   static async getToken(): Promise<CSRFToken> {
     try {
-      const response = await fetch(`${this.API_BASE_URL}/api/auth/csrf`, {
+      const response = await fetch(`${CSRFService.API_BASE_URL}/api/auth/csrf`, {
         credentials: 'include', // Include cookies for session
       });
 
@@ -111,10 +110,7 @@ export class CSRFService {
    * }));
    * ```
    */
-  static addTokenToRequest(
-    token: string,
-    options: RequestInit = {}
-  ): RequestInit {
+  static addTokenToRequest(token: string, options: RequestInit = {}): RequestInit {
     return {
       ...options,
       headers: {
@@ -163,10 +159,10 @@ export class CSRFService {
   static async createAuthenticatedFetch(): Promise<
     (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
   > {
-    const { token } = await this.getToken();
+    const { token } = await CSRFService.getToken();
 
     return (input: RequestInfo | URL, init?: RequestInit) => {
-      const modifiedInit = this.addTokenToRequest(token, init);
+      const modifiedInit = CSRFService.addTokenToRequest(token, init);
       return fetch(input, modifiedInit);
     };
   }

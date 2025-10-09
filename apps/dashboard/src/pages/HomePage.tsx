@@ -3,7 +3,7 @@
  * Overview and quick actions
  */
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@platform/ui';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@platform/ui';
 
 export function HomePage() {
   return (

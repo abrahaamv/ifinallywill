@@ -28,13 +28,13 @@ export { authConfig } from './config';
 
 // Export helper functions
 export {
-	getSession,
-	getUserId,
-	getTenantId,
-	requireAuth,
-	requireTenant,
-	hasRole,
-	requireRole,
+  getSession,
+  getUserId,
+  getTenantId,
+  requireAuth,
+  requireTenant,
+  hasRole,
+  requireRole,
 } from './helpers';
 
 // Export middleware (Phase 3 - Request-scoped RLS context)
@@ -50,10 +50,10 @@ export { MFAService } from './services/mfa.service';
 export type { MFASetupResult, MFAVerificationResult } from './services/mfa.service';
 export { ApiKeyService } from './services/api-key.service';
 export type {
-	ApiKeyType,
-	ApiKeyPermission,
-	ApiKeyValidationResult,
-	GeneratedApiKey,
+  ApiKeyType,
+  ApiKeyPermission,
+  ApiKeyValidationResult,
+  GeneratedApiKey,
 } from './services/api-key.service';
 
 // Export CSRF service (Phase 9)

@@ -5,12 +5,12 @@
  * Replaces deprecated Lucia v4 with industry standard.
  */
 
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import { db } from '@platform/db';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
 import Google from 'next-auth/providers/google';
 import Microsoft from 'next-auth/providers/microsoft-entra-id';
-import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db } from '@platform/db';
 
 /**
  * Auth.js configuration with OAuth providers
@@ -176,12 +176,15 @@ export const authConfig: NextAuthConfig = {
 const nextAuth = NextAuth(authConfig);
 
 // Export with explicit types to fix TypeScript inference issues
-// Using 'any' for handler request type since Next.js types not available in Fastify context
+// Using Request type from Web API standard since Next.js types not available in Fastify context
 export const handlers: {
-	GET: (req: any) => Promise<Response>;
-	POST: (req: any) => Promise<Response>;
-} = nextAuth.handlers as any;
+  GET: (req: Request) => Promise<Response>;
+  POST: (req: Request) => Promise<Response>;
+} = nextAuth.handlers as {
+  GET: (req: Request) => Promise<Response>;
+  POST: (req: Request) => Promise<Response>;
+};
 
-export const auth: () => Promise<Session | null> = nextAuth.auth as any;
+export const auth: () => Promise<Session | null> = nextAuth.auth as () => Promise<Session | null>;
 export const signIn: typeof nextAuth.signIn = nextAuth.signIn;
 export const signOut: typeof nextAuth.signOut = nextAuth.signOut;

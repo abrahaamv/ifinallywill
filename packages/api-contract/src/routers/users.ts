@@ -173,7 +173,7 @@ export const usersRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
-        users: results.map((user: any) => ({
+        users: results.map((user) => ({
           id: user.id,
           email: user.email,
           name: user.name,

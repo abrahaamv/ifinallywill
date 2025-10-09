@@ -12,38 +12,38 @@
  * ```
  */
 
-import { auth } from './auth';
-import {
-	extractTenantFromSession,
-	extractRoleFromSession,
-	isValidTenantId,
-	hasRole as checkRole,
-} from './tenant-context';
 import { sql } from '@platform/db';
 import type { Session } from 'next-auth';
+import { auth } from './auth';
+import {
+  hasRole as checkRole,
+  extractRoleFromSession,
+  extractTenantFromSession,
+  isValidTenantId,
+} from './tenant-context';
 
 /**
  * Auth context attached to each request
  */
 export interface AuthContext {
-	session: Session;
-	tenantId: string;
-	userId: string;
-	role: 'owner' | 'admin' | 'member';
+  session: Session;
+  tenantId: string;
+  userId: string;
+  role: 'owner' | 'admin' | 'member';
 }
 
 /**
  * Auth error with specific error codes
  */
 export class AuthError extends Error {
-	constructor(
-		message: string,
-		public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'INVALID_TENANT' | 'SESSION_EXPIRED',
-		public statusCode: number = 401,
-	) {
-		super(message);
-		this.name = 'AuthError';
-	}
+  constructor(
+    message: string,
+    public code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'INVALID_TENANT' | 'SESSION_EXPIRED',
+    public statusCode = 401
+  ) {
+    super(message);
+    this.name = 'AuthError';
+  }
 }
 
 /**
@@ -61,58 +61,58 @@ export class AuthError extends Error {
  * @throws AuthError if session invalid or tenant context missing
  */
 export async function authMiddleware(_req: Request): Promise<AuthContext> {
-	// 1. Get session from Auth.js
-	const session = await auth();
+  // 1. Get session from Auth.js
+  const session = await auth();
 
-	if (!session || !session.user) {
-		throw new AuthError('No active session - please sign in', 'UNAUTHORIZED', 401);
-	}
+  if (!session || !session.user) {
+    throw new AuthError('No active session - please sign in', 'UNAUTHORIZED', 401);
+  }
 
-	// 2. Extract tenant ID from session
-	const tenantId = extractTenantFromSession(session);
+  // 2. Extract tenant ID from session
+  const tenantId = extractTenantFromSession(session);
 
-	if (!tenantId) {
-		throw new AuthError(
-			'Missing tenant context - user not assigned to tenant',
-			'INVALID_TENANT',
-			403,
-		);
-	}
+  if (!tenantId) {
+    throw new AuthError(
+      'Missing tenant context - user not assigned to tenant',
+      'INVALID_TENANT',
+      403
+    );
+  }
 
-	// 3. Validate tenant ID format (UUID v4)
-	if (!isValidTenantId(tenantId)) {
-		throw new AuthError('Invalid tenant ID format - security violation', 'INVALID_TENANT', 403);
-	}
+  // 3. Validate tenant ID format (UUID v4)
+  if (!isValidTenantId(tenantId)) {
+    throw new AuthError('Invalid tenant ID format - security violation', 'INVALID_TENANT', 403);
+  }
 
-	// 4. Set tenant context for RLS (request-scoped with set_config)
-	// This is CRITICAL for multi-tenant security
-	// Using set_config() with is_local=true for transaction-scoped setting
-	try {
-		await sql.unsafe(`SELECT set_config('app.current_tenant_id', '${tenantId}', true)`);
-	} catch (error) {
-		console.error('Failed to set tenant context:', error);
-		throw new AuthError('Failed to initialize request context', 'INVALID_TENANT', 500);
-	}
+  // 4. Set tenant context for RLS (request-scoped with set_config)
+  // This is CRITICAL for multi-tenant security
+  // Using set_config() with is_local=true for transaction-scoped setting
+  try {
+    await sql.unsafe(`SELECT set_config('app.current_tenant_id', '${tenantId}', true)`);
+  } catch (error) {
+    console.error('Failed to set tenant context:', error);
+    throw new AuthError('Failed to initialize request context', 'INVALID_TENANT', 500);
+  }
 
-	// 5. Extract role for RBAC
-	const role = extractRoleFromSession(session);
+  // 5. Extract role for RBAC
+  const role = extractRoleFromSession(session);
 
-	if (!role) {
-		throw new AuthError('Missing user role - access denied', 'FORBIDDEN', 403);
-	}
+  if (!role) {
+    throw new AuthError('Missing user role - access denied', 'FORBIDDEN', 403);
+  }
 
-	// 6. Validate user ID exists
-	if (!session.user.id) {
-		throw new AuthError('Missing user ID in session', 'UNAUTHORIZED', 401);
-	}
+  // 6. Validate user ID exists
+  if (!session.user.id) {
+    throw new AuthError('Missing user ID in session', 'UNAUTHORIZED', 401);
+  }
 
-	// 7. Return auth context for downstream use
-	return {
-		session,
-		tenantId,
-		userId: session.user.id,
-		role,
-	};
+  // 7. Return auth context for downstream use
+  return {
+    session,
+    tenantId,
+    userId: session.user.id,
+    role,
+  };
 }
 
 /**
@@ -126,20 +126,20 @@ export async function authMiddleware(_req: Request): Promise<AuthContext> {
  * @throws AuthError if user lacks required role
  */
 export async function requireRole(
-	req: Request,
-	requiredRole: 'owner' | 'admin' | 'member',
+  req: Request,
+  requiredRole: 'owner' | 'admin' | 'member'
 ): Promise<AuthContext> {
-	const context = await authMiddleware(req);
+  const context = await authMiddleware(req);
 
-	if (!checkRole(context.session, requiredRole)) {
-		throw new AuthError(
-			`Insufficient permissions - ${requiredRole} role required`,
-			'FORBIDDEN',
-			403,
-		);
-	}
+  if (!checkRole(context.session, requiredRole)) {
+    throw new AuthError(
+      `Insufficient permissions - ${requiredRole} role required`,
+      'FORBIDDEN',
+      403
+    );
+  }
 
-	return context;
+  return context;
 }
 
 /**
@@ -149,12 +149,12 @@ export async function requireRole(
  * Auth.js handles automatic session refresh based on updateAge config.
  */
 export async function refreshSession(_req: Request): Promise<void> {
-	const session = await auth();
+  const session = await auth();
 
-	if (!session) return;
+  if (!session) return;
 
-	// Auth.js handles automatic session refresh based on updateAge config (24h)
-	// No manual action needed - this is a no-op placeholder for future enhancements
+  // Auth.js handles automatic session refresh based on updateAge config (24h)
+  // No manual action needed - this is a no-op placeholder for future enhancements
 }
 
 /**
@@ -163,9 +163,9 @@ export async function refreshSession(_req: Request): Promise<void> {
  * Ensures tenant context is cleared after logout.
  */
 export async function logoutCleanup(): Promise<void> {
-	try {
-		await sql.unsafe(`RESET app.current_tenant_id`);
-	} catch (error) {
-		console.error('Failed to cleanup tenant context:', error);
-	}
+  try {
+    await sql.unsafe('RESET app.current_tenant_id');
+  } catch (error) {
+    console.error('Failed to cleanup tenant context:', error);
+  }
 }

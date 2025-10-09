@@ -3,8 +3,8 @@
  * Provides navigation sidebar and content area
  */
 
-import { Outlet, NavLink } from 'react-router-dom';
 import { Button } from '@platform/ui';
+import { NavLink, Outlet } from 'react-router-dom';
 
 export function DashboardLayout() {
   return (
@@ -53,6 +53,45 @@ export function DashboardLayout() {
             }
           >
             Knowledge Base
+          </NavLink>
+
+          <NavLink
+            to="/rooms"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+              }`
+            }
+          >
+            Meeting Rooms
+          </NavLink>
+
+          <NavLink
+            to="/api-keys"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+              }`
+            }
+          >
+            API Keys
+          </NavLink>
+
+          <NavLink
+            to="/widget-config"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+              }`
+            }
+          >
+            Widget Configuration
           </NavLink>
 
           <NavLink

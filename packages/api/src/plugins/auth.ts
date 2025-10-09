@@ -1,6 +1,6 @@
+import { Auth } from '@auth/core';
 import fastifyCookie from '@fastify/cookie';
 import fastifyFormbody from '@fastify/formbody';
-import { Auth } from '@auth/core';
 import { authConfig } from '@platform/auth';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
@@ -100,8 +100,9 @@ export async function authPlugin(app: FastifyInstance) {
 
   app.addHook('preHandler', async (request) => {
     // Check if session exists via cookie
-    const sessionToken = request.cookies['next-auth.session-token'] ||
-                        request.cookies['__Secure-next-auth.session-token'];
+    const sessionToken =
+      request.cookies['next-auth.session-token'] ||
+      request.cookies['__Secure-next-auth.session-token'];
 
     if (sessionToken) {
       // Session validation is handled by Auth.js

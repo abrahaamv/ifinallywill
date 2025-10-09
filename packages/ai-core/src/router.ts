@@ -4,6 +4,11 @@
  * Target: 75-85% cost reduction vs Claude-only baseline
  */
 
+import { analyzeComplexity, requiresVisionModel, shouldUseMiniModel } from './complexity';
+import { calculateSavings } from './pricing';
+import { AnthropicProvider } from './providers/anthropic';
+import { GoogleProvider } from './providers/google';
+import { OpenAIProvider } from './providers/openai';
 import type {
   AICompletionRequest,
   AICompletionResponse,
@@ -11,11 +16,6 @@ import type {
   AIProvider,
   Message,
 } from './types';
-import { OpenAIProvider } from './providers/openai';
-import { AnthropicProvider } from './providers/anthropic';
-import { GoogleProvider } from './providers/google';
-import { analyzeComplexity, shouldUseMiniModel, requiresVisionModel } from './complexity';
-import { calculateSavings } from './pricing';
 
 export interface RouterConfig {
   openaiApiKey: string;
@@ -71,15 +71,14 @@ export class AIRouter {
         reasoning: `Low complexity (${complexity.score.toFixed(2)}): ${complexity.reasoning}`,
         complexityScore: complexity.score,
       };
-    } else {
-      // 30% of requests: Complex reasoning/creativity
-      return {
-        provider: 'openai',
-        model: 'gpt-4o',
-        reasoning: `High complexity (${complexity.score.toFixed(2)}): ${complexity.reasoning}`,
-        complexityScore: complexity.score,
-      };
     }
+    // 30% of requests: Complex reasoning/creativity
+    return {
+      provider: 'openai',
+      model: 'gpt-4o',
+      reasoning: `High complexity (${complexity.score.toFixed(2)}): ${complexity.reasoning}`,
+      complexityScore: complexity.score,
+    };
   }
 
   /**
@@ -147,7 +146,9 @@ export class AIRouter {
   /**
    * Execute streaming completion with intelligent routing
    */
-  async *streamComplete(request: AICompletionRequest): AsyncGenerator<string, AICompletionResponse> {
+  async *streamComplete(
+    request: AICompletionRequest
+  ): AsyncGenerator<string, AICompletionResponse> {
     const decision = this.selectProvider(request.messages);
 
     if (this.config.logRouting) {
@@ -164,17 +165,17 @@ export class AIRouter {
           ...request,
           model: decision.model,
         });
-      } else if (decision.provider === 'google') {
+      }
+      if (decision.provider === 'google') {
         return yield* this.google.streamComplete({
           ...request,
           model: decision.model,
         });
-      } else {
-        return yield* this.anthropic.streamComplete({
-          ...request,
-          model: decision.model,
-        });
       }
+      return yield* this.anthropic.streamComplete({
+        ...request,
+        model: decision.model,
+      });
     } catch (error) {
       // Fallback to Anthropic streaming if enabled
       if (this.config.enableFallback && decision.provider !== 'anthropic') {

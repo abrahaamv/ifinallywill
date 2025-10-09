@@ -96,7 +96,7 @@ export const widgetsRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
-        widgets: results.map((widget: any) => ({
+        widgets: results.map((widget) => ({
           id: widget.id,
           name: widget.name,
           domainWhitelist: widget.domainWhitelist,

@@ -11,10 +11,10 @@
  * Coverage: mfa.service.ts
  */
 
-import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { MFAService } from '../services/mfa.service';
-import { TOTP, Secret } from 'otpauth';
 import * as bcrypt from 'bcryptjs';
+import { Secret, TOTP } from 'otpauth';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { MFAService } from '../services/mfa.service';
 
 describe('MFA Service', () => {
   describe('generateSetup', () => {
@@ -227,28 +227,44 @@ describe('MFA Service', () => {
     });
 
     it('should verify valid backup code', async () => {
-      const result = await MFAService.verifyCode('ABCD1234', dummyEncryptedSecret, hashedBackupCodes);
+      const result = await MFAService.verifyCode(
+        'ABCD1234',
+        dummyEncryptedSecret,
+        hashedBackupCodes
+      );
 
       expect(result.valid).toBe(true);
       expect(result.usedBackupCode).toBe(true);
     });
 
     it('should verify backup code case-insensitively', async () => {
-      const result = await MFAService.verifyCode('abcd1234', dummyEncryptedSecret, hashedBackupCodes);
+      const result = await MFAService.verifyCode(
+        'abcd1234',
+        dummyEncryptedSecret,
+        hashedBackupCodes
+      );
 
       expect(result.valid).toBe(true);
       expect(result.usedBackupCode).toBe(true);
     });
 
     it('should verify backup code with whitespace', async () => {
-      const result = await MFAService.verifyCode('ABCD 1234', dummyEncryptedSecret, hashedBackupCodes);
+      const result = await MFAService.verifyCode(
+        'ABCD 1234',
+        dummyEncryptedSecret,
+        hashedBackupCodes
+      );
 
       expect(result.valid).toBe(true);
       expect(result.usedBackupCode).toBe(true);
     });
 
     it('should reject invalid backup code', async () => {
-      const result = await MFAService.verifyCode('FFFFFFFF', dummyEncryptedSecret, hashedBackupCodes);
+      const result = await MFAService.verifyCode(
+        'FFFFFFFF',
+        dummyEncryptedSecret,
+        hashedBackupCodes
+      );
 
       expect(result.valid).toBe(false);
       expect(result.usedBackupCode).toBeUndefined();
@@ -351,10 +367,7 @@ describe('MFA Service', () => {
     it('should handle removing non-existent code', async () => {
       const nonExistentCode = 'FFFFFFFF';
 
-      const updated = await MFAService.removeUsedBackupCode(
-        hashedBackupCodes,
-        nonExistentCode
-      );
+      const updated = await MFAService.removeUsedBackupCode(hashedBackupCodes, nonExistentCode);
 
       // Should return all original codes (nothing removed)
       expect(updated).toHaveLength(3);
@@ -502,32 +515,20 @@ describe('MFA Service', () => {
       const totpCode = totp.generate();
 
       // 4. Verify TOTP code during setup
-      const setupResult = await MFAService.verifyCode(
-        totpCode,
-        setup.secret,
-        hashedBackupCodes
-      );
+      const setupResult = await MFAService.verifyCode(totpCode, setup.secret, hashedBackupCodes);
 
       expect(setupResult.valid).toBe(true);
       expect(setupResult.usedBackupCode).toBe(false);
 
       // 5. User logs in later - verify TOTP code
       const loginCode = totp.generate();
-      const loginResult = await MFAService.verifyCode(
-        loginCode,
-        setup.secret,
-        hashedBackupCodes
-      );
+      const loginResult = await MFAService.verifyCode(loginCode, setup.secret, hashedBackupCodes);
 
       expect(loginResult.valid).toBe(true);
 
       // 6. User loses phone - use backup code
       const backupCode = setup.backupCodes[0]!;
-      const backupResult = await MFAService.verifyCode(
-        backupCode,
-        setup.secret,
-        hashedBackupCodes
-      );
+      const backupResult = await MFAService.verifyCode(backupCode, setup.secret, hashedBackupCodes);
 
       expect(backupResult.valid).toBe(true);
       expect(backupResult.usedBackupCode).toBe(true);
@@ -570,9 +571,7 @@ describe('MFA Service', () => {
       const setup2 = await MFAService.generateSetup('user2@example.com');
 
       // No backup codes should overlap between users
-      const intersection = setup1.backupCodes.filter((code) =>
-        setup2.backupCodes.includes(code)
-      );
+      const intersection = setup1.backupCodes.filter((code) => setup2.backupCodes.includes(code));
       expect(intersection).toHaveLength(0);
     });
 

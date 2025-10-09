@@ -110,15 +110,8 @@ export function MessageList({
         const showAvatar = index === 0 || messages[index - 1]?.userId !== message.userId;
 
         return (
-          <div
-            key={message.id}
-            className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`flex gap-2 max-w-[70%] ${
-                isOwn ? 'flex-row-reverse' : 'flex-row'
-              }`}
-            >
+          <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+            <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
               {/* Avatar */}
               {showAvatar && (
                 <div
@@ -138,22 +131,16 @@ export function MessageList({
               >
                 {/* User name (only for other users' first message) */}
                 {!isOwn && showAvatar && (
-                  <div className="text-xs text-gray-500 mb-1 px-1">
-                    {message.userId}
-                  </div>
+                  <div className="text-xs text-gray-500 mb-1 px-1">{message.userId}</div>
                 )}
 
                 {/* Message content */}
                 <div
                   className={`rounded-lg px-4 py-2 ${
-                    isOwn
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-900'
+                    isOwn ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words">
-                    {message.content}
-                  </p>
+                  <p className="whitespace-pre-wrap break-words">{message.content}</p>
                 </div>
 
                 {/* Timestamp and status */}
@@ -162,9 +149,7 @@ export function MessageList({
                     {formatTimestamp(message.timestamp)}
                   </span>
                   {isOwn && message.status && (
-                    <span className="text-xs">
-                      {getStatusIndicator(message.status)}
-                    </span>
+                    <span className="text-xs">{getStatusIndicator(message.status)}</span>
                   )}
                 </div>
               </div>
@@ -178,9 +163,18 @@ export function MessageList({
         <div className="flex justify-start">
           <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: '0ms' }}
+              ></span>
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: '150ms' }}
+              ></span>
+              <span
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: '300ms' }}
+              ></span>
             </div>
             <span className="text-sm text-gray-500">
               {typingUsers.size === 1

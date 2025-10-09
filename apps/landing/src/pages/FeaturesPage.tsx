@@ -3,7 +3,7 @@
  * Detailed feature descriptions and use cases
  */
 
-import { Card, CardHeader, CardTitle, CardDescription } from '@platform/ui';
+import { Card, CardDescription, CardHeader, CardTitle } from '@platform/ui';
 
 export function FeaturesPage() {
   return (
@@ -36,8 +36,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Vision Analysis</CardTitle>
                 <CardDescription>
-                  Screen sharing and image analysis with optimized 1 FPS capture.
-                  96% cost reduction compared to standard 30 FPS processing.
+                  Screen sharing and image analysis with optimized 1 FPS capture. 96% cost reduction
+                  compared to standard 30 FPS processing.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -56,8 +56,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>File Sharing</CardTitle>
                 <CardDescription>
-                  Share documents, images, and files during conversations.
-                  AI analyzes and incorporates content into responses.
+                  Share documents, images, and files during conversations. AI analyzes and
+                  incorporates content into responses.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -72,8 +72,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Cost-Optimized Routing</CardTitle>
                 <CardDescription>
-                  Intelligent provider selection: Gemini Flash 2.5 for 85% of routine tasks,
-                  Claude 3.5 Sonnet for 15% complex reasoning. Achieves $0.50/1M tokens.
+                  Intelligent provider selection: Gemini Flash 2.5 for 85% of routine tasks, Claude
+                  3.5 Sonnet for 15% complex reasoning. Achieves $0.50/1M tokens.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -82,8 +82,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Knowledge Enhancement (RAG)</CardTitle>
                 <CardDescription>
-                  Upload documents and images for context-aware responses.
-                  Hybrid retrieval with semantic search, keyword matching, and reranking.
+                  Upload documents and images for context-aware responses. Hybrid retrieval with
+                  semantic search, keyword matching, and reranking.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -92,8 +92,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Context Awareness</CardTitle>
                 <CardDescription>
-                  AI maintains conversation history and references previous messages.
-                  Understands multi-turn dialogues and complex instructions.
+                  AI maintains conversation history and references previous messages. Understands
+                  multi-turn dialogues and complex instructions.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -102,8 +102,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Multi-Language Support</CardTitle>
                 <CardDescription>
-                  Supports 100+ languages for text and 30+ for voice transcription.
-                  Automatic language detection and translation.
+                  Supports 100+ languages for text and 30+ for voice transcription. Automatic
+                  language detection and translation.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -118,8 +118,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Multi-Tenant Isolation</CardTitle>
                 <CardDescription>
-                  Complete data separation with PostgreSQL Row-Level Security (RLS).
-                  Tenant context enforced at database level.
+                  Complete data separation with PostgreSQL Row-Level Security (RLS). Tenant context
+                  enforced at database level.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -128,8 +128,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>OAuth Authentication</CardTitle>
                 <CardDescription>
-                  Secure authentication with Auth.js supporting Google, Microsoft, and custom providers.
-                  Session-based with PKCE flow for security hardening.
+                  Secure authentication with Auth.js supporting Google, Microsoft, and custom
+                  providers. Session-based with PKCE flow for security hardening.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -138,8 +138,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Data Encryption</CardTitle>
                 <CardDescription>
-                  End-to-end encryption for data in transit (TLS 1.3) and at rest (AES-256).
-                  Secure key management with rotation policies.
+                  End-to-end encryption for data in transit (TLS 1.3) and at rest (AES-256). Secure
+                  key management with rotation policies.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -148,8 +148,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Audit Logging</CardTitle>
                 <CardDescription>
-                  Comprehensive audit trails for compliance and security monitoring.
-                  Tracks all user actions and system events.
+                  Comprehensive audit trails for compliance and security monitoring. Tracks all user
+                  actions and system events.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -164,8 +164,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>REST + tRPC APIs</CardTitle>
                 <CardDescription>
-                  Type-safe APIs with tRPC for TypeScript projects.
-                  REST endpoints for broad compatibility.
+                  Type-safe APIs with tRPC for TypeScript projects. REST endpoints for broad
+                  compatibility.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -184,8 +184,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Embeddable Widget</CardTitle>
                 <CardDescription>
-                  NPM package and CDN-hosted widget for embedding AI assistant in your apps.
-                  Shadow DOM isolation and customizable theming.
+                  NPM package and CDN-hosted widget for embedding AI assistant in your apps. Shadow
+                  DOM isolation and customizable theming.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -194,8 +194,8 @@ export function FeaturesPage() {
               <CardHeader>
                 <CardTitle>Comprehensive Docs</CardTitle>
                 <CardDescription>
-                  Detailed API documentation, code examples, and integration guides.
-                  Interactive playground for testing.
+                  Detailed API documentation, code examples, and integration guides. Interactive
+                  playground for testing.
                 </CardDescription>
               </CardHeader>
             </Card>

@@ -4,11 +4,30 @@
  * Provides authentication state and tenant context for tRPC procedures.
  */
 
+import { db } from '@platform/db';
+import type * as schema from '@platform/db';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from '@platform/db';
 
-// TODO: Replace with actual Auth.js Session type when integrated
-type Session = Record<string, any>;
+/**
+ * Auth.js User type
+ * Extended with platform-specific fields
+ */
+export interface User {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  tenantId?: string; // Platform extension: user's primary tenant
+}
+
+/**
+ * Auth.js Session type
+ * Matches the structure from Auth.js sessions
+ */
+export interface Session {
+  user: User;
+  expires: string;
+}
 
 /**
  * tRPC Context
@@ -44,16 +63,13 @@ export type TRPCContext = Context;
  */
 export async function createContext(): Promise<Context> {
   // TODO: Implement actual authentication context creation
-  // For now, return mock context for development
-
-  // Mock database instance (will be replaced with actual DB connection)
-  const mockDb = {} as NodePgDatabase<typeof schema>;
+  // For now, return mock context for development with real database
 
   return {
     session: null,
     tenantId: 'mock-tenant-id',
     userId: 'mock-user-id',
     role: 'admin',
-    db: mockDb,
+    db, // Real Drizzle database client
   };
 }

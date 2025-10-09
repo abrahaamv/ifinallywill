@@ -36,7 +36,7 @@
  * ```
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CSRFService, type CSRFToken } from '../services/csrf.service';
 
 export interface UseCSRFResult {

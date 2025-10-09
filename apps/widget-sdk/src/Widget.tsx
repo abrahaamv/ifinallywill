@@ -4,8 +4,8 @@
  * Supports customizable theming and position
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, Badge } from '@platform/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@platform/ui';
+import { useEffect, useRef, useState } from 'react';
 import { createWidgetTRPCClient } from './utils/trpc';
 
 interface Message {
@@ -62,7 +62,7 @@ export function Widget({
     };
 
     createSession();
-  }, []);
+  }, [trpcClient]);
 
   // Initialize with greeting message
   useEffect(() => {
@@ -86,7 +86,10 @@ export function Widget({
   // Apply theme
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (
+      theme === 'dark' ||
+      (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
@@ -166,13 +169,14 @@ export function Widget({
                 />
                 <CardTitle className="text-lg">{title}</CardTitle>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </Button>
             </CardHeader>
@@ -193,9 +197,7 @@ export function Widget({
                 >
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                      message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
                     }`}
                     style={
                       message.role === 'user'
@@ -236,7 +238,12 @@ export function Widget({
                   style={{ backgroundColor: primaryColor }}
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
                   </svg>
                 </Button>
               </form>
@@ -254,11 +261,21 @@ export function Widget({
       >
         {isOpen ? (
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         ) : (
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+            />
           </svg>
         )}
       </Button>

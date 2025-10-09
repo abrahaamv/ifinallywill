@@ -4,9 +4,9 @@
  * Text input with typing indicator and send functionality.
  */
 
-import { useState, useRef, useCallback } from 'react';
-import type { KeyboardEvent, ChangeEvent } from 'react';
 import { Button } from '@platform/ui';
+import { useCallback, useRef, useState } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 
 export interface MessageInputProps {
   onSendMessage: (content: string) => void;
@@ -50,15 +50,18 @@ export function MessageInput({
   }, [isTyping, onTyping]);
 
   // Handle input change
-  const handleChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      const newContent = e.target.value;
 
-    // Enforce max length
-    if (newContent.length <= maxLength) {
-      setContent(newContent);
-      handleTyping();
-    }
-  }, [maxLength, handleTyping]);
+      // Enforce max length
+      if (newContent.length <= maxLength) {
+        setContent(newContent);
+        handleTyping();
+      }
+    },
+    [maxLength, handleTyping]
+  );
 
   // Handle send
   const handleSend = useCallback(() => {
@@ -85,13 +88,16 @@ export function MessageInput({
   }, [content, disabled, onSendMessage, onTyping, isTyping]);
 
   // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Send on Enter (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      // Send on Enter (without Shift)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   // Auto-resize textarea
   const handleTextareaResize = useCallback(() => {
@@ -102,10 +108,13 @@ export function MessageInput({
   }, []);
 
   // Resize on content change
-  const handleContentChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
-    handleChange(e);
-    handleTextareaResize();
-  }, [handleChange, handleTextareaResize]);
+  const handleContentChange = useCallback(
+    (e: ChangeEvent<HTMLTextAreaElement>) => {
+      handleChange(e);
+      handleTextareaResize();
+    },
+    [handleChange, handleTextareaResize]
+  );
 
   const remainingChars = maxLength - content.length;
   const isOverLimit = remainingChars < 0;

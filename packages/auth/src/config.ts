@@ -1,11 +1,11 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db, users, eq } from '@platform/db';
+import { db, eq, users } from '@platform/db';
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { z } from 'zod';
-import { passwordService } from './services/password.service';
 import { MFAService } from './services/mfa.service';
+import { passwordService } from './services/password.service';
 
 /**
  * Auth.js Configuration - Phase 8 Security Hardening
@@ -67,11 +67,7 @@ export const authConfig: NextAuthConfig = {
         const { email, password, mfaCode } = parsedCredentials.data;
 
         // Find user by email
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email))
-          .limit(1);
+        const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (!user) {
           // User not found - return null to prevent user enumeration

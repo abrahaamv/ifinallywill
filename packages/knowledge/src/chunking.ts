@@ -42,10 +42,7 @@ const DEFAULT_OPTIONS: Required<ChunkOptions> = {
  * @param options - Chunking configuration
  * @returns Array of text chunks with metadata
  */
-export function chunkDocument(
-  text: string,
-  options: ChunkOptions = {}
-): TextChunk[] {
+export function chunkDocument(text: string, options: ChunkOptions = {}): TextChunk[] {
   const config = { ...DEFAULT_OPTIONS, ...options };
   const chunks: TextChunk[] = [];
 
@@ -126,10 +123,7 @@ export function chunkDocument(
             position++;
 
             // Add overlap
-            if (
-              config.overlapSize > 0 &&
-              currentChunk.length > config.overlapSize
-            ) {
+            if (config.overlapSize > 0 && currentChunk.length > config.overlapSize) {
               const overlapText = currentChunk.slice(-config.overlapSize);
               currentChunk = overlapText + ' ' + sentence;
               chunkStart = chunkStart + currentChunk.length - config.overlapSize;
@@ -209,10 +203,7 @@ export function validateChunkOptions(options: ChunkOptions): {
     if (options.overlapSize < 0) {
       errors.push('overlapSize cannot be negative');
     }
-    if (
-      options.chunkSize &&
-      options.overlapSize >= options.chunkSize
-    ) {
+    if (options.chunkSize && options.overlapSize >= options.chunkSize) {
       errors.push('overlapSize must be less than chunkSize');
     }
   }

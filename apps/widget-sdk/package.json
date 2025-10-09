@@ -14,19 +14,8 @@
     },
     "./styles.css": "./dist/style.css"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "keywords": [
-    "ai-chat",
-    "widget",
-    "chatbot",
-    "react",
-    "shadow-dom",
-    "embeddable"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
+  "keywords": ["ai-chat", "widget", "chatbot", "react", "shadow-dom", "embeddable"],
   "author": "Your Name <your.email@example.com>",
   "license": "MIT",
   "repository": {

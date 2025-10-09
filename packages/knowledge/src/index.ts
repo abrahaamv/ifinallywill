@@ -29,9 +29,7 @@ export {
 } from './chunking';
 
 // Voyage AI embeddings (Priority 2)
-export type {
-  VoyageConfig,
-} from './embeddings';
+export type { VoyageConfig } from './embeddings';
 
 export {
   VoyageEmbeddingProvider,

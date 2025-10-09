@@ -4,14 +4,14 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { calculateCost } from '../pricing';
 import type {
-  AIProviderInterface,
   AICompletionRequest,
   AICompletionResponse,
+  AIModel,
+  AIProviderInterface,
   ProviderConfig,
-  AIModel
 } from '../types';
-import { calculateCost } from '../pricing';
 
 export class GoogleProvider implements AIProviderInterface {
   private client: GoogleGenerativeAI;
@@ -30,7 +30,7 @@ export class GoogleProvider implements AIProviderInterface {
       });
 
       // Convert messages to Gemini format
-      const history = request.messages.slice(0, -1).map(msg => ({
+      const history = request.messages.slice(0, -1).map((msg) => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }],
       }));
@@ -80,14 +80,16 @@ export class GoogleProvider implements AIProviderInterface {
     }
   }
 
-  async *streamComplete(request: AICompletionRequest): AsyncGenerator<string, AICompletionResponse> {
+  async *streamComplete(
+    request: AICompletionRequest
+  ): AsyncGenerator<string, AICompletionResponse> {
     const model = request.model || this.defaultModel;
 
     const genModel = this.client.getGenerativeModel({
       model: model as string,
     });
 
-    const history = request.messages.slice(0, -1).map(msg => ({
+    const history = request.messages.slice(0, -1).map((msg) => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }],
     }));

@@ -8,8 +8,7 @@ import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
-export interface ProgressProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
   max?: number;
   indeterminate?: boolean;
@@ -27,16 +26,14 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         aria-valuemax={max}
         aria-valuenow={indeterminate ? undefined : value}
         aria-valuetext={indeterminate ? 'Loading...' : `${Math.round(percentage)}%`}
-        className={cn(
-          'relative h-4 w-full overflow-hidden rounded-full bg-secondary',
-          className,
-        )}
+        tabIndex={0}
+        className={cn('relative h-4 w-full overflow-hidden rounded-full bg-secondary', className)}
         {...props}
       >
         <div
           className={cn(
             'h-full w-full flex-1 bg-primary transition-all',
-            indeterminate && 'animate-pulse',
+            indeterminate && 'animate-pulse'
           )}
           style={{
             transform: `translateX(-${100 - percentage}%)`,
@@ -44,7 +41,7 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
         />
       </div>
     );
-  },
+  }
 );
 Progress.displayName = 'Progress';
 

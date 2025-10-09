@@ -4,8 +4,8 @@
  * Provides imperative API via toast() function
  */
 
-import * as React from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
+import * as React from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -22,7 +22,7 @@ const toastVariants = cva(
     defaultVariants: {
       variant: 'default',
     },
-  },
+  }
 );
 
 export interface ToastProps
@@ -36,37 +36,30 @@ export interface ToastProps
 const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
   ({ className, variant, title, description, action, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={cn(toastVariants({ variant }), className)}
-        {...props}
-      >
+      <div ref={ref} className={cn(toastVariants({ variant }), className)} {...props}>
         <div className="grid gap-1">
           {title && <div className="text-sm font-semibold">{title}</div>}
-          {description && (
-            <div className="text-sm opacity-90">{description}</div>
-          )}
+          {description && <div className="text-sm opacity-90">{description}</div>}
         </div>
         {action && <div className="ml-auto">{action}</div>}
       </div>
     );
-  },
+  }
 );
 Toast.displayName = 'Toast';
 
-const ToastViewport = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      'fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]',
-      className,
-    )}
-    {...props}
-  />
-));
+const ToastViewport = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(
+        'fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]',
+        className
+      )}
+      {...props}
+    />
+  )
+);
 ToastViewport.displayName = 'ToastViewport';
 
 export { Toast, ToastViewport, toastVariants };

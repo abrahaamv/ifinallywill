@@ -33,7 +33,7 @@ export interface ComponentHealth {
   status: 'up' | 'down' | 'degraded';
   message?: string;
   responseTime?: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 /**
@@ -49,7 +49,7 @@ async function checkDatabase(): Promise<ComponentHealth> {
 
   try {
     // Test basic connectivity
-    await sql.unsafe(`SELECT 1 AS health_check`);
+    await sql.unsafe('SELECT 1 AS health_check');
 
     const responseTime = Date.now() - start;
 

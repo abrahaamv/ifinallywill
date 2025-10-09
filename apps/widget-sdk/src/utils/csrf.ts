@@ -10,7 +10,7 @@ import { CSRFService } from '@platform/auth/client';
  */
 class WidgetCSRFManager {
   private token: string | null = null;
-  private tokenExpiry: number = 0;
+  private tokenExpiry = 0;
   private refreshing: Promise<void> | null = null;
 
   /**
@@ -65,10 +65,7 @@ const csrfManager = new WidgetCSRFManager();
  * @param options - Fetch options
  * @returns Response from server
  */
-export async function widgetFetch(
-  url: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function widgetFetch(url: string, options: RequestInit = {}): Promise<Response> {
   // Get CSRF token
   const csrfToken = await csrfManager.getToken();
 

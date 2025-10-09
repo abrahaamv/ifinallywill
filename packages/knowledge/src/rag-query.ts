@@ -3,10 +3,35 @@
  * Hybrid retrieval with semantic search + keyword matching + reranking
  */
 
-import { sql } from 'drizzle-orm';
 import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
-import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
+import { sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { createVoyageProvider } from './embeddings';
+import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
+
+/**
+ * Result shape from semantic search SQL query
+ */
+interface SemanticSearchRow {
+  id: string;
+  document_id: string;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  chunk_index: number;
+  semantic_score: number;
+}
+
+/**
+ * Result shape from keyword search SQL query
+ */
+interface KeywordSearchRow {
+  id: string;
+  document_id: string;
+  content: string;
+  metadata: Record<string, unknown> | null;
+  chunk_index: number;
+  keyword_score: number;
+}
 
 /**
  * Execute RAG query with hybrid retrieval
@@ -16,12 +41,12 @@ import { createVoyageProvider } from './embeddings';
  * 2. Keyword search (PostgreSQL full-text search)
  * 3. Reranking (score normalization and weighting)
  *
- * @param db - Drizzle database instance (any type for compatibility)
+ * @param db - Drizzle database instance
  * @param options - Query options
  * @returns RAG result with context and chunks
  */
-export async function executeRAGQuery(
-  db: any,
+export async function executeRAGQuery<T extends Record<string, unknown>>(
+  db: NodePgDatabase<T>,
   options: RAGQueryOptions
 ): Promise<RAGResult> {
   const startTime = Date.now();
@@ -43,7 +68,7 @@ export async function executeRAGQuery(
     // Step 2: Semantic search with pgvector
     // Use cosine distance operator (<=>)
     // Convert to similarity score: 1 - distance
-    const semanticResults = await db.execute(sql`
+    const semanticResults = (await db.execute(sql`
       SELECT
         kc.id,
         kc.document_id,
@@ -56,10 +81,10 @@ export async function executeRAGQuery(
       WHERE kd.tenant_id = ${tenantId}
       ORDER BY kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
       LIMIT ${topK * 2}
-    `) as any[];
+    `)) as unknown as SemanticSearchRow[];
 
     // Step 3: Keyword search with PostgreSQL full-text search
-    const keywordResults = await db.execute(sql`
+    const keywordResults = (await db.execute(sql`
       SELECT
         kc.id,
         kc.document_id,
@@ -73,12 +98,12 @@ export async function executeRAGQuery(
         AND to_tsvector('english', kc.content) @@ plainto_tsquery('english', ${query})
       ORDER BY keyword_score DESC
       LIMIT ${topK * 2}
-    `) as any[];
+    `)) as unknown as KeywordSearchRow[];
 
     // Step 4: Merge and rerank results
     const mergedResults = useReranking
       ? mergeAndRerank(semanticResults, keywordResults, hybridWeights)
-      : semanticResults.map((r: any) => ({
+      : semanticResults.map((r) => ({
           chunk: {
             id: r.id,
             documentId: r.document_id,
@@ -88,18 +113,22 @@ export async function executeRAGQuery(
             chunkIndex: r.chunk_index || 0,
           },
           score: r.semantic_score,
-          relevance: r.semantic_score >= 0.8 ? 'high' as const : r.semantic_score >= 0.6 ? 'medium' as const : 'low' as const,
+          relevance:
+            r.semantic_score >= 0.8
+              ? ('high' as const)
+              : r.semantic_score >= 0.6
+                ? ('medium' as const)
+                : ('low' as const),
         }));
 
     // Step 5: Filter by minimum score and limit to topK
-    const filteredResults = mergedResults
-      .filter((r) => r.score >= minScore)
-      .slice(0, topK);
+    const filteredResults = mergedResults.filter((r) => r.score >= minScore).slice(0, topK);
 
     // Step 6: Build context from top chunks
-    const context = filteredResults.length > 0
-      ? filteredResults.map((r, i) => `[${i + 1}] ${r.chunk.content}`).join('\n\n')
-      : '';
+    const context =
+      filteredResults.length > 0
+        ? filteredResults.map((r, i) => `[${i + 1}] ${r.chunk.content}`).join('\n\n')
+        : '';
 
     const processingTimeMs = Date.now() - startTime;
 
@@ -111,7 +140,9 @@ export async function executeRAGQuery(
     };
   } catch (error) {
     console.error('RAG query failed:', error);
-    throw new Error(`Failed to execute RAG query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to execute RAG query: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -121,12 +152,15 @@ export async function executeRAGQuery(
  * Normalizes scores to [0, 1] range and applies weighted combination
  */
 function mergeAndRerank(
-  semanticResults: any[],
-  keywordResults: any[],
+  semanticResults: SemanticSearchRow[],
+  keywordResults: KeywordSearchRow[],
   weights: { semantic: number; keyword: number }
 ): SearchResult[] {
   // Create a map to combine scores for the same chunk
-  const scoreMap = new Map<string, { chunk: any; semanticScore: number; keywordScore: number }>();
+  const scoreMap = new Map<
+    string,
+    { chunk: SemanticSearchRow | KeywordSearchRow; semanticScore: number; keywordScore: number }
+  >();
 
   // Add semantic results
   for (const result of semanticResults) {
@@ -152,7 +186,7 @@ function mergeAndRerank(
   }
 
   // Normalize keyword scores to [0, 1] range
-  const maxKeywordScore = Math.max(...Array.from(scoreMap.values()).map(d => d.keywordScore), 0);
+  const maxKeywordScore = Math.max(...Array.from(scoreMap.values()).map((d) => d.keywordScore), 0);
 
   // Calculate hybrid scores
   const results: SearchResult[] = [];
@@ -161,8 +195,7 @@ function mergeAndRerank(
     const normalizedKeywordScore = maxKeywordScore > 0 ? data.keywordScore / maxKeywordScore : 0;
 
     const hybridScore =
-      data.semanticScore * weights.semantic +
-      normalizedKeywordScore * weights.keyword;
+      data.semanticScore * weights.semantic + normalizedKeywordScore * weights.keyword;
 
     results.push({
       chunk: {

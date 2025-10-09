@@ -3,8 +3,8 @@
  * Type-safe API client with React Query integration
  */
 
-import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '@platform/api-contract';
+import { createTRPCReact } from '@trpc/react-query';
 
 /**
  * tRPC React hooks

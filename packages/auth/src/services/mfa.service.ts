@@ -23,10 +23,10 @@
  * https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html
  */
 
-import { TOTP, Secret } from 'otpauth';
-import QRCode from 'qrcode';
-import { randomBytes, createCipheriv, createDecipheriv, scryptSync } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
+import { Secret, TOTP } from 'otpauth';
+import QRCode from 'qrcode';
 
 /**
  * MFA setup result with secret and QR code
@@ -100,7 +100,7 @@ export class MFAService {
     );
 
     // Encrypt secret for storage
-    const encryptedSecret = this.encryptSecret(secret.base32);
+    const encryptedSecret = MFAService.encryptSecret(secret.base32);
 
     return {
       secret: encryptedSecret,
@@ -152,7 +152,7 @@ export class MFAService {
     if (/^\d{6}$/.test(cleanCode)) {
       try {
         // Decrypt secret
-        const secret = this.decryptSecret(encryptedSecret);
+        const secret = MFAService.decryptSecret(encryptedSecret);
 
         // Create TOTP instance
         const totp = new TOTP({
@@ -239,7 +239,7 @@ export class MFAService {
    */
   private static encryptSecret(secret: string): string {
     const iv = randomBytes(16);
-    const cipher = createCipheriv('aes-256-gcm', this.ENCRYPTION_KEY, iv);
+    const cipher = createCipheriv('aes-256-gcm', MFAService.ENCRYPTION_KEY, iv);
 
     let encrypted = cipher.update(secret, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -267,7 +267,7 @@ export class MFAService {
     const encrypted = Buffer.from(encryptedHex, 'hex');
     const authTag = Buffer.from(authTagHex, 'hex');
 
-    const decipher = createDecipheriv('aes-256-gcm', this.ENCRYPTION_KEY, iv);
+    const decipher = createDecipheriv('aes-256-gcm', MFAService.ENCRYPTION_KEY, iv);
     decipher.setAuthTag(authTag);
 
     let decrypted = decipher.update(encrypted, undefined, 'utf8');

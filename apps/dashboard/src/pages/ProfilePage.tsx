@@ -4,8 +4,8 @@
  * Allows users to view and update their profile information.
  */
 
-import { useState, useEffect } from 'react';
 import { Button } from '@platform/ui';
+import { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 export function ProfilePage() {
@@ -75,9 +75,10 @@ export function ProfilePage() {
       setSuccessMessage('Profile updated successfully!');
       setIsEditing(false);
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setErrors({
-        submit: error?.message || 'Failed to update profile. Please try again.',
+        submit:
+          error instanceof Error ? error.message : 'Failed to update profile. Please try again.',
       });
     }
   };
@@ -226,11 +227,7 @@ export function ProfilePage() {
                     <p className="mt-1 text-sm text-gray-900">{user.email}</p>
                     {user.emailVerified && (
                       <span className="inline-flex items-center mt-1 text-xs text-green-600">
-                        <svg
-                          className="h-4 w-4 mr-1"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
+                        <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                           <path
                             fillRule="evenodd"
                             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -250,9 +247,7 @@ export function ProfilePage() {
 
                   {/* Created At */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Member Since
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">Member Since</label>
                     <p className="mt-1 text-sm text-gray-900">
                       {new Date(user.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',

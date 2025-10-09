@@ -6,8 +6,8 @@
  */
 
 import { useWebSocket } from '../../hooks/useWebSocket';
-import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
+import { MessageList } from './MessageList';
 
 export interface ChatWindowProps {
   sessionId: string;
@@ -15,11 +15,7 @@ export interface ChatWindowProps {
   onClose?: () => void;
 }
 
-export function ChatWindow({
-  sessionId,
-  wsUrl,
-  onClose,
-}: ChatWindowProps) {
+export function ChatWindow({ sessionId, wsUrl, onClose }: ChatWindowProps) {
   const {
     messages,
     isConnected,
@@ -45,28 +41,19 @@ export function ChatWindow({
                 isConnected
                   ? 'bg-green-500'
                   : isReconnecting
-                  ? 'bg-yellow-500 animate-pulse'
-                  : 'bg-red-500'
+                    ? 'bg-yellow-500 animate-pulse'
+                    : 'bg-red-500'
               }`}
             />
             <h2 className="text-lg font-semibold text-gray-900">
-              {isConnected
-                ? 'Chat'
-                : isReconnecting
-                ? 'Reconnecting...'
-                : 'Disconnected'}
+              {isConnected ? 'Chat' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
             </h2>
           </div>
 
           {/* Online users count */}
           {onlineUsers.size > 0 && (
             <div className="flex items-center gap-1 text-sm text-gray-500">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -86,12 +73,7 @@ export function ChatWindow({
             className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Close chat"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -107,11 +89,7 @@ export function ChatWindow({
       {error && (
         <div className="px-4 py-2 bg-red-50 border-b border-red-200">
           <div className="flex items-center gap-2 text-sm text-red-800">
-            <svg
-              className="w-4 h-4 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
+            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -137,11 +115,7 @@ export function ChatWindow({
         onSendMessage={sendMessage}
         onTyping={sendTyping}
         disabled={!isConnected}
-        placeholder={
-          isConnected
-            ? 'Type a message...'
-            : 'Waiting for connection...'
-        }
+        placeholder={isConnected ? 'Type a message...' : 'Waiting for connection...'}
       />
     </div>
   );

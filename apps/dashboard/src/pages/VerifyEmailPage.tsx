@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@platform/ui';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { trpc } from '../utils/trpc';
 
 export function VerifyEmailPage() {
@@ -45,8 +45,8 @@ export function VerifyEmailPage() {
           },
         });
       }, 3000);
-    } catch (err: any) {
-      setError(err?.message || 'Verification failed. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
     } finally {
       setIsVerifying(false);
     }
@@ -68,8 +68,8 @@ export function VerifyEmailPage() {
 
       setError(''); // Clear any previous errors
       alert(result.message || 'Verification email sent. Please check your inbox.');
-    } catch (err: any) {
-      setError(err?.message || 'Failed to resend verification email');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend verification email');
     } finally {
       setIsVerifying(false);
     }

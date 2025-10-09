@@ -9,7 +9,7 @@ import type { AIModel, AIProvider } from './types';
 export interface ModelPricing {
   provider: AIProvider;
   model: AIModel;
-  inputPerMillion: number;  // USD per 1M input tokens
+  inputPerMillion: number; // USD per 1M input tokens
   outputPerMillion: number; // USD per 1M output tokens
 }
 
@@ -19,40 +19,36 @@ export const PRICING: Record<AIModel, ModelPricing> = {
     provider: 'openai',
     model: 'gpt-4o-mini',
     inputPerMillion: 0.15,
-    outputPerMillion: 0.60,
+    outputPerMillion: 0.6,
   },
   'gpt-4o': {
     provider: 'openai',
     model: 'gpt-4o',
-    inputPerMillion: 2.50,
-    outputPerMillion: 10.00,
+    inputPerMillion: 2.5,
+    outputPerMillion: 10.0,
   },
 
   // Anthropic - Fallback for complex tasks
   'claude-3-5-sonnet-20241022': {
     provider: 'anthropic',
     model: 'claude-3-5-sonnet-20241022',
-    inputPerMillion: 3.00,
-    outputPerMillion: 15.00,
+    inputPerMillion: 3.0,
+    outputPerMillion: 15.0,
   },
 
   // Google - Vision tasks
   'gemini-2.0-flash-exp': {
     provider: 'google',
     model: 'gemini-2.0-flash-exp',
-    inputPerMillion: 0.00, // Free during preview
-    outputPerMillion: 0.00, // Free during preview
+    inputPerMillion: 0.0, // Free during preview
+    outputPerMillion: 0.0, // Free during preview
   },
 };
 
 /**
  * Calculate cost for token usage
  */
-export function calculateCost(
-  model: AIModel,
-  inputTokens: number,
-  outputTokens: number
-): number {
+export function calculateCost(model: AIModel, inputTokens: number, outputTokens: number): number {
   const pricing = PRICING[model];
   if (!pricing) {
     throw new Error(`Unknown model: ${model}`);
@@ -88,7 +84,8 @@ export function calculateSavings(actualCost: number): {
   savingsPercent: number;
 } {
   const claudePricing = PRICING['claude-3-5-sonnet-20241022'];
-  const baselineCost = actualCost * (claudePricing.inputPerMillion / getBlendedRate().inputPerMillion);
+  const baselineCost =
+    actualCost * (claudePricing.inputPerMillion / getBlendedRate().inputPerMillion);
 
   const savings = baselineCost - actualCost;
   const savingsPercent = (savings / baselineCost) * 100;

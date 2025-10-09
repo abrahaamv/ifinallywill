@@ -3,8 +3,18 @@
  * User preferences, profile updates, and configuration
  */
 
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+} from '@platform/ui';
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Label } from '@platform/ui';
+import { trpc } from '../utils/trpc';
 
 export function SettingsPage() {
   const [profileData, setProfileData] = useState({
@@ -22,6 +32,9 @@ export function SettingsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // tRPC mutation for profile updates
+  const updateMeMutation = trpc.users.updateMe.useMutation();
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +55,10 @@ export function SettingsPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Integrate with tRPC users.update mutation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Profile update:', profileData);
+      await updateMeMutation.mutateAsync({
+        name: profileData.name,
+        avatarUrl: profileData.avatarUrl || undefined,
+      });
 
       setSuccessMessage('Profile updated successfully');
     } catch (error) {
@@ -103,27 +116,12 @@ export function SettingsPage() {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      // TODO: Integrate with password update endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Password update requested');
-
-      setSuccessMessage('Password updated successfully');
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-    } catch (error) {
-      setErrors({
-        submitPassword: error instanceof Error ? error.message : 'Failed to update password',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Password updates require Auth.js integration with proper password hashing
+    // This will be implemented in a future phase with proper security measures
+    setErrors({
+      submitPassword:
+        'Password updates are currently managed through your OAuth provider (Google/Microsoft)',
+    });
   };
 
   return (
@@ -182,9 +180,7 @@ export function SettingsPage() {
                   className={errors.email ? 'border-red-300' : ''}
                 />
                 {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-                <p className="text-xs text-gray-500">
-                  Email changes will require verification
-                </p>
+                <p className="text-xs text-gray-500">Email changes will require verification</p>
               </div>
 
               <div className="space-y-2">
@@ -252,9 +248,7 @@ export function SettingsPage() {
                   }
                   className={errors.newPassword ? 'border-red-300' : ''}
                 />
-                {errors.newPassword && (
-                  <p className="text-sm text-red-600">{errors.newPassword}</p>
-                )}
+                {errors.newPassword && <p className="text-sm text-red-600">{errors.newPassword}</p>}
                 <p className="text-xs text-gray-500">
                   Must be 8+ characters with uppercase, lowercase, number, and special character
                 </p>
@@ -288,7 +282,9 @@ export function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Account Security</CardTitle>
-            <CardDescription>Manage security settings and multi-factor authentication</CardDescription>
+            <CardDescription>
+              Manage security settings and multi-factor authentication
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
@@ -320,7 +316,12 @@ export function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="orgName">Organization Name</Label>
-              <Input id="orgName" placeholder="Acme Corporation" value="Acme Corporation" disabled />
+              <Input
+                id="orgName"
+                placeholder="Acme Corporation"
+                value="Acme Corporation"
+                disabled
+              />
               <p className="text-xs text-gray-500">
                 Contact an owner to change organization settings
               </p>

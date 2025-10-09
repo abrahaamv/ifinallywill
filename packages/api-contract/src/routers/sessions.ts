@@ -125,6 +125,7 @@ export const sessionsRouter = router({
       // Filter by ended status
       if (!input.includeEnded) {
         // Only return active sessions (endedAt is null)
+        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM requires explicit null comparison
         query = query.where(eq(sessions.endedAt, null as any));
       }
 
@@ -140,6 +141,7 @@ export const sessionsRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
+        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM dynamic query result type
         sessions: results.map((session: any) => ({
           id: session.id,
           widgetId: session.widgetId,
@@ -395,6 +397,7 @@ export const sessionsRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
+        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM dynamic query result type
         messages: results.map((message: any) => ({
           id: message.id,
           sessionId: message.sessionId,
@@ -507,7 +510,8 @@ export const sessionsRouter = router({
         const aiMessages = [
           {
             role: 'system' as const,
-            content: 'You are a helpful AI assistant. Use the provided context to answer questions accurately.',
+            content:
+              'You are a helpful AI assistant. Use the provided context to answer questions accurately.',
           },
           ...conversationHistory.slice(0, -1).map((msg) => ({
             role: msg.role as 'user' | 'assistant',
@@ -548,7 +552,7 @@ export const sessionsRouter = router({
           .returning();
 
         // Step 6: Update session cost
-        const newSessionCost = parseFloat(session.costUsd || '0') + aiResponse.usage.cost;
+        const newSessionCost = Number.parseFloat(session.costUsd || '0') + aiResponse.usage.cost;
         await ctx.db
           .update(sessions)
           .set({ costUsd: newSessionCost.toFixed(6) })
@@ -565,15 +569,17 @@ export const sessionsRouter = router({
             metadata: userMessage.metadata,
             timestamp: userMessage.timestamp,
           },
-          assistantMessage: assistantMessage ? {
-            id: assistantMessage.id,
-            sessionId: assistantMessage.sessionId,
-            role: assistantMessage.role,
-            content: assistantMessage.content,
-            attachments: assistantMessage.attachments,
-            metadata: assistantMessage.metadata,
-            timestamp: assistantMessage.timestamp,
-          } : undefined,
+          assistantMessage: assistantMessage
+            ? {
+                id: assistantMessage.id,
+                sessionId: assistantMessage.sessionId,
+                role: assistantMessage.role,
+                content: assistantMessage.content,
+                attachments: assistantMessage.attachments,
+                metadata: assistantMessage.metadata,
+                timestamp: assistantMessage.timestamp,
+              }
+            : undefined,
         };
       }
 

@@ -3,7 +3,7 @@
  * Analyzes message complexity to route to appropriate model tier
  */
 
-import type { Message, ComplexityAnalysis } from './types';
+import type { ComplexityAnalysis, Message } from './types';
 
 /**
  * Analyze message complexity for routing decisions
@@ -22,21 +22,44 @@ export function analyzeComplexity(messages: Message[]): ComplexityAnalysis {
 
   // Factor 3: Requires reasoning keywords
   const reasoningKeywords = [
-    'analyze', 'explain', 'compare', 'evaluate', 'why', 'how',
-    'reasoning', 'logic', 'think', 'consider', 'implications',
-    'consequences', 'strategy', 'approach', 'methodology'
+    'analyze',
+    'explain',
+    'compare',
+    'evaluate',
+    'why',
+    'how',
+    'reasoning',
+    'logic',
+    'think',
+    'consider',
+    'implications',
+    'consequences',
+    'strategy',
+    'approach',
+    'methodology',
   ];
-  const requiresReasoning = reasoningKeywords.some(keyword =>
+  const requiresReasoning = reasoningKeywords.some((keyword) =>
     content.toLowerCase().includes(keyword)
   );
 
   // Factor 4: Requires creativity keywords
   const creativityKeywords = [
-    'create', 'design', 'generate', 'write', 'compose', 'draft',
-    'brainstorm', 'ideas', 'innovative', 'creative', 'imagine',
-    'suggest', 'propose', 'develop'
+    'create',
+    'design',
+    'generate',
+    'write',
+    'compose',
+    'draft',
+    'brainstorm',
+    'ideas',
+    'innovative',
+    'creative',
+    'imagine',
+    'suggest',
+    'propose',
+    'develop',
   ];
-  const requiresCreativity = creativityKeywords.some(keyword =>
+  const requiresCreativity = creativityKeywords.some((keyword) =>
     content.toLowerCase().includes(keyword)
   );
 
@@ -46,7 +69,7 @@ export function analyzeComplexity(messages: Message[]): ComplexityAnalysis {
     /^(yes|no|true|false|maybe)/i,
     /^(define|definition|meaning of)/i,
   ];
-  const isSimpleQuery = simplePatterns.some(pattern => pattern.test(content.trim()));
+  const isSimpleQuery = simplePatterns.some((pattern) => pattern.test(content.trim()));
 
   // Calculate weighted complexity score
   let score = 0;
@@ -57,8 +80,8 @@ export function analyzeComplexity(messages: Message[]): ComplexityAnalysis {
     // Weighted factors
     score += lengthScore * 0.3;
     score += contextComplexity * 0.2;
-    score += (requiresReasoning ? 0.3 : 0);
-    score += (requiresCreativity ? 0.2 : 0);
+    score += requiresReasoning ? 0.3 : 0;
+    score += requiresCreativity ? 0.2 : 0;
   }
 
   // Clamp to 0-1
@@ -72,9 +95,8 @@ export function analyzeComplexity(messages: Message[]): ComplexityAnalysis {
   if (requiresCreativity) factors.push('requires creativity');
   if (isSimpleQuery) factors.push('simple factual query');
 
-  const reasoning = factors.length > 0
-    ? `Complexity factors: ${factors.join(', ')}`
-    : 'Standard complexity';
+  const reasoning =
+    factors.length > 0 ? `Complexity factors: ${factors.join(', ')}` : 'Standard complexity';
 
   return {
     score,
@@ -104,11 +126,17 @@ export function requiresVisionModel(messages: Message[]): boolean {
   const content = lastMessage?.content || '';
 
   const visionKeywords = [
-    'image', 'picture', 'photo', 'screenshot', 'diagram',
-    'visual', 'see', 'look at', 'show me', 'what\'s in'
+    'image',
+    'picture',
+    'photo',
+    'screenshot',
+    'diagram',
+    'visual',
+    'see',
+    'look at',
+    'show me',
+    "what's in",
   ];
 
-  return visionKeywords.some(keyword =>
-    content.toLowerCase().includes(keyword)
-  );
+  return visionKeywords.some((keyword) => content.toLowerCase().includes(keyword));
 }

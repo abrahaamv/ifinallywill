@@ -12,16 +12,16 @@
  * - Account lockout protection (5 attempts = 15 minutes)
  */
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import { appRouter, createContext } from '@platform/api-contract';
 import { RealtimeServer } from '@platform/realtime';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import Fastify from 'fastify';
 import { authPlugin } from './plugins/auth';
 import { rateLimitPlugin } from './plugins/rate-limit';
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
-const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3002;
+const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3001;
+const WS_PORT = process.env.WS_PORT ? Number.parseInt(process.env.WS_PORT) : 3002;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const DATABASE_URL =
   process.env.DATABASE_URL || 'postgresql://platform:platform_dev_password@localhost:5432/platform';
@@ -70,13 +70,22 @@ async function main() {
         /^https:\/\/.*\.platform\.com$/,
         // Development origins
         ...(process.env.NODE_ENV === 'development'
-          ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176']
+          ? [
+              'http://localhost:5173',
+              'http://localhost:5174',
+              'http://localhost:5175',
+              'http://localhost:5176',
+            ]
           : []),
       ];
 
       // Check if origin is allowed
       const isAllowed = allowed.some((pattern) =>
-        typeof pattern === 'string' ? pattern === origin : pattern instanceof RegExp && origin ? pattern.test(origin) : false
+        typeof pattern === 'string'
+          ? pattern === origin
+          : pattern instanceof RegExp && origin
+            ? pattern.test(origin)
+            : false
       );
 
       callback(null, isAllowed);

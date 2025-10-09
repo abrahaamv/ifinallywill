@@ -1,6 +1,6 @@
+import { Button } from '@platform/ui';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@platform/ui';
 import { trpc } from '../utils/trpc';
 
 export function SignupPage() {
@@ -85,10 +85,8 @@ export function SignupPage() {
         organizationName: formData.organizationName,
       });
 
-      console.log('Registration successful:', result);
-
       setSuccessMessage(
-        result.message || 'Registration successful! Please check your email to verify your account.',
+        result.message || 'Registration successful! Please check your email to verify your account.'
       );
 
       // Clear form
@@ -107,12 +105,13 @@ export function SignupPage() {
             email: formData.email,
             // DEVELOPMENT ONLY: Pass token for testing
             verificationToken: result.verificationToken,
-          }
+          },
         });
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle tRPC error
-      const errorMessage = error?.message || 'Registration failed. Please try again.';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Registration failed. Please try again.';
 
       // Check if error is due to existing user
       if (errorMessage.includes('already exists')) {
@@ -322,7 +321,6 @@ export function SignupPage() {
               <Button
                 type="button"
                 onClick={() => {
-                  // TODO: Implement OAuth flow with Auth.js
                   window.location.href = '/api/auth/signin/google';
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
@@ -336,7 +334,6 @@ export function SignupPage() {
               <Button
                 type="button"
                 onClick={() => {
-                  // TODO: Implement OAuth flow with Auth.js
                   window.location.href = '/api/auth/signin/microsoft';
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"

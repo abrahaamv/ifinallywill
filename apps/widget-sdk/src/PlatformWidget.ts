@@ -6,8 +6,8 @@
  * This class wraps the React Widget component and provides a vanilla JS API.
  */
 
-import { createRoot, type Root } from 'react-dom/client';
 import { createElement } from 'react';
+import { type Root, createRoot } from 'react-dom/client';
 import { Widget } from './Widget';
 import type { WidgetConfig } from './types';
 

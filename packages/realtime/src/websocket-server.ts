@@ -9,15 +9,15 @@
  * - Sticky session support
  */
 
-import { WebSocketServer, WebSocket } from 'ws';
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
-import Redis from 'ioredis';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { eq } from 'drizzle-orm';
+import { authSessions, messages, users } from '@platform/db';
 import { parse as parseCookie } from 'cookie';
-import { messages, authSessions, users } from '@platform/db';
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import Redis from 'ioredis';
+import postgres from 'postgres';
+import { WebSocket, WebSocketServer } from 'ws';
 
 /**
  * Message types for WebSocket communication
@@ -108,11 +108,7 @@ export class RealtimeServer {
     });
 
     // Subscribe to Redis pub/sub for cross-instance broadcasting
-    await this.redisSub.subscribe(
-      'chat:broadcast',
-      'chat:typing',
-      'chat:presence'
-    );
+    await this.redisSub.subscribe('chat:broadcast', 'chat:typing', 'chat:presence');
 
     this.redisSub.on('message', (channel, message) => {
       this.handleRedisMessage(channel, message);
@@ -132,7 +128,10 @@ export class RealtimeServer {
   /**
    * Handle new WebSocket connection
    */
-  private async handleConnection(ws: WebSocket, request: IncomingMessage | undefined): Promise<void> {
+  private async handleConnection(
+    ws: WebSocket,
+    request: IncomingMessage | undefined
+  ): Promise<void> {
     if (!request) {
       ws.close(1008, 'Missing request object');
       return;
@@ -151,9 +150,10 @@ export class RealtimeServer {
     const cookies = parseCookie(cookieHeader);
 
     // Auth.js session cookie name (depends on NODE_ENV)
-    const sessionCookieName = process.env.NODE_ENV === 'production'
-      ? '__Secure-next-auth.session-token'
-      : 'next-auth.session-token';
+    const sessionCookieName =
+      process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token';
 
     const sessionToken = cookies[sessionCookieName];
     if (!sessionToken) {
@@ -190,10 +190,14 @@ export class RealtimeServer {
     });
 
     // Broadcast user joined
-    this.broadcastToSession(chatSessionId, {
-      type: MessageType.USER_JOINED,
-      payload: { userId, sessionId: chatSessionId },
-    }, clientId);
+    this.broadcastToSession(
+      chatSessionId,
+      {
+        type: MessageType.USER_JOINED,
+        payload: { userId, sessionId: chatSessionId },
+      },
+      clientId
+    );
 
     // Handle incoming messages
     ws.on('message', (data: Buffer | ArrayBuffer | Buffer[]) => {
@@ -271,18 +275,21 @@ export class RealtimeServer {
     });
 
     // Broadcast via Redis for multi-instance support
-    await this.redis.publish('chat:broadcast', JSON.stringify({
-      sessionId: client.sessionId,
-      message: {
-        type: MessageType.CHAT_MESSAGE,
-        payload: {
-          messageId,
-          userId: client.userId,
-          content: message.payload,
-          timestamp,
+    await this.redis.publish(
+      'chat:broadcast',
+      JSON.stringify({
+        sessionId: client.sessionId,
+        message: {
+          type: MessageType.CHAT_MESSAGE,
+          payload: {
+            messageId,
+            userId: client.userId,
+            content: message.payload,
+            timestamp,
+          },
         },
-      },
-    }));
+      })
+    );
 
     // Send ACK to sender
     this.sendToClient(clientId, {
@@ -313,11 +320,14 @@ export class RealtimeServer {
     }
 
     // Broadcast via Redis
-    await this.redis.publish('chat:typing', JSON.stringify({
-      sessionId,
-      userId,
-      isTyping,
-    }));
+    await this.redis.publish(
+      'chat:typing',
+      JSON.stringify({
+        sessionId,
+        userId,
+        isTyping,
+      })
+    );
   }
 
   /**
@@ -351,7 +361,11 @@ export class RealtimeServer {
   /**
    * Broadcast message to all clients in a session
    */
-  private broadcastToSession(sessionId: string, message: WSMessage, excludeClientId?: string): void {
+  private broadcastToSession(
+    sessionId: string,
+    message: WSMessage,
+    excludeClientId?: string
+  ): void {
     for (const [clientId, client] of this.clients) {
       if (client.sessionId === sessionId && clientId !== excludeClientId) {
         this.sendToClient(clientId, message);
@@ -367,10 +381,12 @@ export class RealtimeServer {
     if (!client || client.ws.readyState !== WebSocket.OPEN) return;
 
     try {
-      client.ws.send(JSON.stringify({
-        ...message,
-        timestamp: message.timestamp || Date.now(),
-      }));
+      client.ws.send(
+        JSON.stringify({
+          ...message,
+          timestamp: message.timestamp || Date.now(),
+        })
+      );
     } catch (error) {
       console.error(`[WebSocket] Failed to send message to ${clientId}:`, error);
       this.handleDisconnect(clientId);
@@ -393,16 +409,23 @@ export class RealtimeServer {
     }
 
     // Broadcast user left
-    await this.redis.publish('chat:presence', JSON.stringify({
-      sessionId: client.sessionId,
-      userId: client.userId,
-      action: 'left',
-    }));
+    await this.redis.publish(
+      'chat:presence',
+      JSON.stringify({
+        sessionId: client.sessionId,
+        userId: client.userId,
+        action: 'left',
+      })
+    );
 
-    this.broadcastToSession(client.sessionId, {
-      type: MessageType.USER_LEFT,
-      payload: { userId: client.userId },
-    }, clientId);
+    this.broadcastToSession(
+      client.sessionId,
+      {
+        type: MessageType.USER_LEFT,
+        payload: { userId: client.userId },
+      },
+      clientId
+    );
 
     // Remove client
     this.clients.delete(clientId);

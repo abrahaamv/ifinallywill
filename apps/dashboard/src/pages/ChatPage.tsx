@@ -3,11 +3,11 @@
  * AI-powered chat interface with cost-optimized routing + Real-time WebSocket chat
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { trpc } from '../utils/trpc';
-import { Button, Input, Card } from '@platform/ui';
-import { Loader2, Send, User, Bot, Zap } from 'lucide-react';
+import { Button, Card, Input } from '@platform/ui';
+import { Bot, Loader2, Send, User, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatWindow } from '../components/chat/ChatWindow';
+import { trpc } from '../utils/trpc';
 
 interface Message {
   id: string;
@@ -122,7 +122,15 @@ export function ChatPage() {
       await refetchMessages();
     } catch (error) {
       console.error('Failed to send message:', error);
-      // TODO: Show error toast
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          role: 'system',
+          content: 'Failed to send message. Please try again.',
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -168,10 +176,7 @@ export function ChatPage() {
       {chatMode === 'realtime' ? (
         <div className="flex-1 overflow-hidden">
           {sessionId ? (
-            <ChatWindow
-              sessionId={sessionId}
-              wsUrl="ws://localhost:3002/ws"
-            />
+            <ChatWindow sessionId={sessionId} wsUrl="ws://localhost:3002/ws" />
           ) : (
             <div className="flex items-center justify-center h-full">
               <Card className="p-6 max-w-md text-center">
@@ -188,82 +193,79 @@ export function ChatPage() {
         <>
           {/* AI Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex items-center justify-center h-full">
-            <Card className="p-6 max-w-md text-center">
-              <Bot className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-lg font-semibold mb-2">Start a conversation</h2>
-              <p className="text-sm text-muted-foreground">
-                Ask me anything! I'm powered by cost-optimized AI routing with RAG-enhanced
-                responses from your knowledge base. Each response shows which knowledge chunks
-                were used to answer your question.
-              </p>
-            </Card>
-          </div>
-        )}
-
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            {message.role === 'assistant' && (
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-primary-foreground" />
-                </div>
+            {messages.length === 0 && (
+              <div className="flex items-center justify-center h-full">
+                <Card className="p-6 max-w-md text-center">
+                  <Bot className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold mb-2">Start a conversation</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Ask me anything! I'm powered by cost-optimized AI routing with RAG-enhanced
+                    responses from your knowledge base. Each response shows which knowledge chunks
+                    were used to answer your question.
+                  </p>
+                </Card>
               </div>
             )}
 
-            <Card
-              className={`max-w-[80%] p-4 ${
-                message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-card'
-              }`}
-            >
-              <p className="whitespace-pre-wrap">{message.content}</p>
-
-              {message.metadata && (
-                <div className="mt-2 pt-2 border-t border-border/50 text-xs opacity-70">
-                  <div className="flex flex-wrap gap-4">
-                    {message.metadata.model && (
-                      <span>Model: {message.metadata.model}</span>
-                    )}
-                    {message.metadata.tokensUsed && (
-                      <span>Tokens: {message.metadata.tokensUsed}</span>
-                    )}
-                    {message.metadata.costUsd && (
-                      <span>Cost: ${message.metadata.costUsd.toFixed(6)}</span>
-                    )}
-                    {message.metadata.latencyMs && (
-                      <span>Latency: {message.metadata.latencyMs}ms</span>
-                    )}
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.role === 'assistant' && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-primary-foreground" />
+                    </div>
                   </div>
-                  {message.metadata.ragChunksRetrieved !== undefined && (
-                    <div className="flex flex-wrap gap-4 mt-1 text-blue-600 dark:text-blue-400">
-                      <span>📚 RAG: {message.metadata.ragChunksRetrieved} chunks</span>
-                      {message.metadata.ragProcessingTimeMs && (
-                        <span>⚡ {message.metadata.ragProcessingTimeMs}ms</span>
-                      )}
-                      {message.metadata.ragTopRelevance && message.metadata.ragTopRelevance !== 'none' && (
-                        <span>🎯 {message.metadata.ragTopRelevance} relevance</span>
+                )}
+
+                <Card
+                  className={`max-w-[80%] p-4 ${
+                    message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-card'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+
+                  {message.metadata && (
+                    <div className="mt-2 pt-2 border-t border-border/50 text-xs opacity-70">
+                      <div className="flex flex-wrap gap-4">
+                        {message.metadata.model && <span>Model: {message.metadata.model}</span>}
+                        {message.metadata.tokensUsed && (
+                          <span>Tokens: {message.metadata.tokensUsed}</span>
+                        )}
+                        {message.metadata.costUsd && (
+                          <span>Cost: ${message.metadata.costUsd.toFixed(6)}</span>
+                        )}
+                        {message.metadata.latencyMs && (
+                          <span>Latency: {message.metadata.latencyMs}ms</span>
+                        )}
+                      </div>
+                      {message.metadata.ragChunksRetrieved !== undefined && (
+                        <div className="flex flex-wrap gap-4 mt-1 text-blue-600 dark:text-blue-400">
+                          <span>📚 RAG: {message.metadata.ragChunksRetrieved} chunks</span>
+                          {message.metadata.ragProcessingTimeMs && (
+                            <span>⚡ {message.metadata.ragProcessingTimeMs}ms</span>
+                          )}
+                          {message.metadata.ragTopRelevance &&
+                            message.metadata.ragTopRelevance !== 'none' && (
+                              <span>🎯 {message.metadata.ragTopRelevance} relevance</span>
+                            )}
+                        </div>
                       )}
                     </div>
                   )}
-                </div>
-              )}
-            </Card>
+                </Card>
 
-            {message.role === 'user' && (
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                  <User className="w-5 h-5 text-secondary-foreground" />
-                </div>
+                {message.role === 'user' && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                      <User className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            ))}
 
             <div ref={messagesEndRef} />
           </div>

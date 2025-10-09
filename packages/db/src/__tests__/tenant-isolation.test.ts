@@ -15,11 +15,11 @@
  * Reference: docs/research/10-07-2025/research-10-07-2025.md lines 258-293
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { db } from '../client';
-import { TenantContext } from '../tenant-context';
-import { users, messages, sessions } from '../schema';
 import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { db } from '../client';
+import { messages, sessions, users } from '../schema';
+import { TenantContext } from '../tenant-context';
 
 // Test tenant IDs (use fixed UUIDs for reproducibility)
 const TENANT_A_ID = '00000000-0000-0000-0000-000000000001';
@@ -188,10 +188,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
 
       // Verify insert succeeded
       const messagesA = await TenantContext.withTenant(TENANT_A_ID, async (tx) => {
-        return await tx
-          .select()
-          .from(messages)
-          .where(eq(messages.content, 'Valid tenant insert'));
+        return await tx.select().from(messages).where(eq(messages.content, 'Valid tenant insert'));
       });
 
       expect(messagesA.length).toBe(1);
