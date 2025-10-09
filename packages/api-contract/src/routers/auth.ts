@@ -510,7 +510,8 @@ export const authRouter = router({
   getSession: publicProcedure.query(async ({ ctx }) => {
     // Auth.js middleware adds session to context
     // Check if user is authenticated via context
-    if (!ctx.userId || !ctx.tenantId) {
+    // During development, mock values will return null session
+    if (!ctx.userId || !ctx.tenantId || ctx.userId === 'mock-user-id') {
       return { user: null };
     }
 
