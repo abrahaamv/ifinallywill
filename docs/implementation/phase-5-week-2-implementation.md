@@ -109,8 +109,8 @@ Successfully implemented complete LiveKit integration with backend room manageme
 
 **Frame Deduplication**:
 - **pHash Algorithm**: Perceptual hashing with Hamming distance threshold=10
-- **Adaptive FPS**: 30 FPS active → 5 FPS idle
-- **Result**: 60-75% frame reduction
+- **1 FPS Screen Capture**: 96% cost reduction vs 30 FPS
+- **Result**: 60-75% frame reduction with pHash deduplication
 
 **Combined Savings**: ~$1.1M/year at 1K users (82-85% total reduction)
 

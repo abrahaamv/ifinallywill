@@ -209,7 +209,7 @@ platform/
 **Cost Optimization Features**:
 - Complexity scoring algorithm (0-18 points: length, keywords, questions, code, data)
 - Perceptual hashing (pHash) for frame deduplication (60-75% frame reduction)
-- Adaptive FPS: 30 FPS active → 5 FPS idle for screen sharing
+- 1 FPS screen capture (96% cost reduction vs 30 FPS)
 - **Combined Savings**: 82-85% vs baseline (~$1.1M/year at 1K users)
 
 ### Development Tools
