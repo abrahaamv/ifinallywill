@@ -11,18 +11,20 @@ import {
   RoomAudioRenderer,
   useTracks,
   useDataChannel,
+  useRoomContext,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@livekit/components-styles';
-import { Button } from '@platform/ui';
+import { Button, Input } from '@platform/ui';
 import { trpc } from '../utils/trpc';
 
 interface ChatMessage {
   sender: string;
   content: string;
   timestamp: Date;
+  type: 'voice' | 'text'; // Track if from voice transcription or text input
 }
 
 export function MeetingRoom() {
@@ -184,7 +186,11 @@ export function MeetingRoom() {
 
         {/* Chat Panel */}
         {isChatOpen && (
-          <ChatPanel messages={messages} onClose={() => setIsChatOpen(false)} />
+          <ChatPanel
+            messages={messages}
+            setMessages={setMessages}
+            onClose={() => setIsChatOpen(false)}
+          />
         )}
       </div>
     </div>
@@ -214,7 +220,7 @@ function VideoGrid() {
 
 /**
  * Chat Data Channel Handler
- * Listens for data messages from AI agent
+ * Listens for data messages from AI agent and voice transcriptions
  */
 function ChatHandler({
   setMessages,
@@ -233,6 +239,7 @@ function ChatHandler({
           sender,
           content: text,
           timestamp: new Date(),
+          type: 'voice', // Messages from agent are voice transcriptions
         },
       ]);
     } catch (error) {
@@ -245,20 +252,65 @@ function ChatHandler({
 
 /**
  * Chat Panel Component
- * Displays AI agent messages in sidebar
+ * Live transcription + text input for AI interaction
  */
 function ChatPanel({
   messages,
+  setMessages,
   onClose,
 }: {
   messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   onClose: () => void;
 }) {
+  const [inputText, setInputText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const room = useRoomContext();
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim() || isSending) return;
+
+    const messageContent = inputText.trim();
+    setInputText('');
+    setIsSending(true);
+
+    try {
+      // Add user message to transcript
+      const userMessage: ChatMessage = {
+        sender: 'You',
+        content: messageContent,
+        timestamp: new Date(),
+        type: 'text',
+      };
+      setMessages((prev) => [...prev, userMessage]);
+
+      // Send message to room via data channel (AI agent will receive and respond with voice)
+      const encoder = new TextEncoder();
+      const data = encoder.encode(messageContent);
+      await room.localParticipant.publishData(data, { reliable: true });
+
+      setIsSending(false);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="fixed right-0 top-0 h-screen w-80 bg-white border-l border-gray-200 flex flex-col">
       {/* Header */}
       <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">AI Assistant Chat</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Transcript & Chat</h2>
+          <p className="text-xs text-gray-400">Live conversation</p>
+        </div>
         <button
           onClick={onClose}
           className="text-white hover:text-gray-300"
@@ -280,39 +332,76 @@ function ChatPanel({
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages / Transcript */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 mt-8">
-            <p className="text-sm">No messages yet</p>
-            <p className="text-xs mt-2">AI assistant messages will appear here</p>
+            <svg
+              className="w-12 h-12 mx-auto mb-3 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+            <p className="text-sm font-medium">No messages yet</p>
+            <p className="text-xs mt-1">Start talking or type a message below</p>
           </div>
         ) : (
           messages.map((message, index) => (
-            <div key={index} className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700">
+            <div
+              key={index}
+              className={`space-y-1 ${
+                message.sender === 'You' ? 'text-right' : 'text-left'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span className="font-semibold">
                   {message.sender}
+                  {message.type === 'voice' && ' 🎤'}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {message.timestamp.toLocaleTimeString()}
-                </span>
+                <span>{message.timestamp.toLocaleTimeString()}</span>
               </div>
-              <div className="bg-gray-100 rounded-lg p-3">
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                  {message.content}
-                </p>
+              <div
+                className={`inline-block max-w-[85%] rounded-lg p-3 ${
+                  message.sender === 'You'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
             </div>
           ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 p-4 bg-gray-50">
-        <p className="text-xs text-gray-500 text-center">
-          Voice responses are preferred. Text messages appear here as fallback.
-        </p>
+      {/* Text Input */}
+      <div className="border-t border-gray-200 p-4 bg-white">
+        <form onSubmit={handleSendMessage} className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Type a message to AI..."
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              disabled={isSending}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={isSending || !inputText.trim()}>
+              {isSending ? '...' : 'Send'}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 text-center">
+            AI will respond with voice. Your message appears in transcript.
+          </p>
+        </form>
       </div>
     </div>
   );

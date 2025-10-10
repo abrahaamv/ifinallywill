@@ -341,10 +341,13 @@ class MultiModalAgent:
     async def speak(self, message: str):
         """
         Speak message with voice using ElevenLabs TTS
-        Publishes audio track to room
+        Publishes audio track to room and sends transcript to chat
         """
         try:
             logger.info(f"Speaking: {message[:100]}...")
+
+            # Send transcript to chat first (appears in transcript while speaking)
+            await self.send_message(message)
 
             # Synthesize speech with ElevenLabs
             audio_stream = self.tts.synthesize(message)
@@ -373,8 +376,8 @@ class MultiModalAgent:
 
         except Exception as e:
             logger.error(f"Failed to speak: {e}")
-            # Fallback to text message
-            await self.send_message(message)
+            # Fallback to text message (already sent above)
+            pass
 
 
 async def entrypoint(ctx: JobContext):
@@ -395,7 +398,27 @@ async def entrypoint(ctx: JobContext):
     # Register track subscription handler
     ctx.room.on("track_subscribed", agent.handle_track_subscribed)
 
-    logger.info("Agent ready and listening for tracks")
+    # Register data channel handler for text messages
+    @ctx.room.on("data_received")
+    async def on_data_received(data: rtc.DataPacket):
+        """Handle text messages from participants"""
+        try:
+            # Decode text message
+            message_text = data.data.decode("utf-8")
+            sender = data.participant.identity if data.participant else "Unknown"
+
+            logger.info(f"Received text message from {sender}: {message_text}")
+
+            # Send transcript back to chat (shows what user typed)
+            await agent.send_message(message_text)
+
+            # Process the text message as a query (AI will respond with voice)
+            await agent.handle_voice_query(message_text)
+
+        except Exception as e:
+            logger.error(f"Failed to process data message: {e}")
+
+    logger.info("Agent ready and listening for tracks and text messages")
 
     # Speak welcome message
     await agent.speak(
