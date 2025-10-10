@@ -43,6 +43,11 @@ export function MeetingRoom() {
 
   // Request access token on mount
   useEffect(() => {
+    // Skip if already has token or is currently loading from a previous request
+    if (token || joinRoom.isPending) {
+      return;
+    }
+
     const requestToken = async () => {
       // Validate room ID from URL
       if (!roomId) {
@@ -90,7 +95,8 @@ export function MeetingRoom() {
     };
 
     requestToken();
-  }, [roomId, navigate, listRooms.isLoading, listRooms.data, joinRoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, listRooms.isLoading, listRooms.data]);
 
   // Handle connection errors
   const handleError = (error: Error) => {
