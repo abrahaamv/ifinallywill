@@ -6,7 +6,7 @@
 import { TRPCError } from '@trpc/server';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { z } from 'zod';
-import { protectedProcedure, router } from '../trpc';
+import { protectedProcedure, publicProcedure, router } from '../trpc';
 
 /**
  * LiveKit configuration from environment
@@ -86,9 +86,10 @@ export const livekitRouter = router({
   }),
 
   /**
-   * Generate access token to join room
+   * Generate access token to join room (PUBLIC - no authentication required)
+   * Room name already contains tenant prefix from creation
    */
-  joinRoom: protectedProcedure.input(joinRoomSchema).mutation(async ({ ctx, input }) => {
+  joinRoom: publicProcedure.input(joinRoomSchema).mutation(async ({ input }) => {
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -98,20 +99,21 @@ export const livekitRouter = router({
     }
 
     try {
-      // Construct full room name with tenant prefix
-      const fullRoomName = `tenant_${ctx.tenantId}_${input.roomName}`;
+      // Room name already has tenant prefix (tenant_{tenantId}_{roomName})
+      // No need to add prefix again - just use the provided room name
+      const fullRoomName = input.roomName;
 
-      // Generate access token
+      // Generate access token for anonymous participant
       const token = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
         identity: input.participantName,
         name: input.participantName,
+        // No tenant/user metadata for anonymous participants
         metadata: JSON.stringify({
-          userId: ctx.userId,
-          tenantId: ctx.tenantId,
+          anonymous: true,
         }),
       });
 
-      // Grant full room permissions (adjust for production)
+      // Grant full room permissions
       token.addGrant({
         room: fullRoomName,
         roomJoin: true,
@@ -154,7 +156,8 @@ export const livekitRouter = router({
 
       return {
         rooms: tenantRooms.map((room) => ({
-          roomName: room.name?.replace(`tenant_${ctx.tenantId}_`, ''), // Remove prefix for display
+          roomName: room.name?.replace(`tenant_${ctx.tenantId}_`, ''), // Display name (no prefix)
+          fullRoomName: room.name, // Full name with tenant prefix (for joining)
           roomSid: room.sid,
           numParticipants: room.numParticipants,
           createdAt: room.creationTime,

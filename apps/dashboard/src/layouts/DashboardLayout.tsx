@@ -4,9 +4,26 @@
  */
 
 import { Button } from '@platform/ui';
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../providers/AuthProvider';
 
 export function DashboardLayout() {
+  const { user, signOut } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (confirm('Are you sure you want to sign out?')) {
+      setIsSigningOut(true);
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Sign out error:', error);
+        setIsSigningOut(false);
+      }
+    }
+  };
+
   return (
     <div className="flex h-full bg-background">
       {/* Sidebar Navigation */}
@@ -109,8 +126,19 @@ export function DashboardLayout() {
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 w-64 border-t border-border p-4">
-          <Button variant="outline" className="w-full">
-            Sign Out
+          {user && (
+            <div className="mb-2 px-2 text-sm">
+              <p className="font-medium truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          )}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+          >
+            {isSigningOut ? 'Signing out...' : 'Sign Out'}
           </Button>
         </div>
       </aside>

@@ -23,7 +23,8 @@ import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 interface RoomDetails {
-  roomName: string;
+  roomName: string; // Display name (without tenant prefix)
+  fullRoomName?: string; // Full name with tenant prefix (for joining)
   roomSid: string;
   numParticipants: number;
   createdAt: number;
@@ -78,8 +79,9 @@ export function RoomsPage() {
     setIsDetailsOpen(true);
   };
 
-  const getShareableLink = (roomName: string) => {
-    return `https://meet.platform.com/room/${roomName}`;
+  const getShareableLink = (fullRoomName: string) => {
+    // Use full room name with tenant prefix for public access
+    return `https://meet.platform.com/${fullRoomName}`;
   };
 
   const handleCopyLink = async (roomName: string) => {
@@ -181,9 +183,9 @@ export function RoomsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCopyLink(room.roomName || '')}
+                          onClick={() => handleCopyLink(room.fullRoomName || room.roomName || '')}
                         >
-                          {copiedRoomId === room.roomName ? 'Copied!' : 'Copy Link'}
+                          {copiedRoomId === (room.fullRoomName || room.roomName) ? 'Copied!' : 'Copy Link'}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handleShowDetails(room)}>
                           Details
@@ -240,14 +242,14 @@ export function RoomsPage() {
                 <div className="mt-1 flex gap-2">
                   <Input
                     readOnly
-                    value={getShareableLink(selectedRoom.roomName || '')}
+                    value={getShareableLink(selectedRoom.fullRoomName || selectedRoom.roomName || '')}
                     className="font-mono text-sm"
                   />
                   <Button
                     variant="outline"
-                    onClick={() => handleCopyLink(selectedRoom.roomName || '')}
+                    onClick={() => handleCopyLink(selectedRoom.fullRoomName || selectedRoom.roomName || '')}
                   >
-                    {copiedRoomId === selectedRoom.roomName ? 'Copied!' : 'Copy'}
+                    {copiedRoomId === (selectedRoom.fullRoomName || selectedRoom.roomName) ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

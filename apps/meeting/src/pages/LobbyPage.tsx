@@ -30,7 +30,7 @@ export function LobbyPage() {
     sessionStorage.setItem('displayName', displayName);
 
     // Navigate to room
-    navigate(`/room/${roomId}`);
+    navigate(`/${roomId}`);
   };
 
   return (

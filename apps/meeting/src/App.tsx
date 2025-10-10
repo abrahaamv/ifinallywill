@@ -15,7 +15,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LobbyPage />} />
-          <Route path="/room/:roomId" element={<RoomPage />} />
+          <Route path="/:roomId" element={<RoomPage />} />
         </Routes>
       </BrowserRouter>
     </CSRFProvider>

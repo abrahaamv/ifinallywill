@@ -111,9 +111,16 @@ export function LoginPage() {
       }
 
       // Success! Auth.js has set session cookie
-      // Redirect to dashboard
-      console.log('[LOGIN] Login successful, redirecting to dashboard');
-      window.location.href = '/dashboard';
+      // Check if there's a redirect path stored
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectPath) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        console.log('[LOGIN] Login successful, redirecting to:', redirectPath);
+        window.location.href = redirectPath;
+      } else {
+        console.log('[LOGIN] Login successful, redirecting to dashboard');
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
       console.error('[LOGIN] Login error:', error);
       setErrors({
