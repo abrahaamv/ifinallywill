@@ -395,28 +395,36 @@ async def entrypoint(ctx: JobContext):
     # Connect to room with AutoSubscribe
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    # Register track subscription handler
-    ctx.room.on("track_subscribed", agent.handle_track_subscribed)
+    # Register track subscription handler (synchronous wrapper for async function)
+    def on_track_subscribed(track: rtc.Track, publication: rtc.TrackPublication, participant: rtc.RemoteParticipant):
+        """Synchronous wrapper that creates async task"""
+        asyncio.create_task(agent.handle_track_subscribed(track, publication, participant))
 
-    # Register data channel handler for text messages
-    @ctx.room.on("data_received")
-    async def on_data_received(data: rtc.DataPacket):
+    ctx.room.on("track_subscribed", on_track_subscribed)
+
+    # Register data channel handler for text messages (synchronous wrapper)
+    def on_data_received(data: rtc.DataPacket):
         """Handle text messages from participants"""
-        try:
-            # Decode text message
-            message_text = data.data.decode("utf-8")
-            sender = data.participant.identity if data.participant else "Unknown"
+        async def handle_message():
+            try:
+                # Decode text message
+                message_text = data.data.decode("utf-8")
+                sender = data.participant.identity if data.participant else "Unknown"
 
-            logger.info(f"Received text message from {sender}: {message_text}")
+                logger.info(f"Received text message from {sender}: {message_text}")
 
-            # Send transcript back to chat (shows what user typed)
-            await agent.send_message(message_text)
+                # Send transcript back to chat (shows what user typed)
+                await agent.send_message(message_text)
 
-            # Process the text message as a query (AI will respond with voice)
-            await agent.handle_voice_query(message_text)
+                # Process the text message as a query (AI will respond with voice)
+                await agent.handle_voice_query(message_text)
 
-        except Exception as e:
-            logger.error(f"Failed to process data message: {e}")
+            except Exception as e:
+                logger.error(f"Failed to process data message: {e}")
+
+        asyncio.create_task(handle_message())
+
+    ctx.room.on("data_received", on_data_received)
 
     logger.info("Agent ready and listening for tracks and text messages")
 
