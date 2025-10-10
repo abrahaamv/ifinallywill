@@ -1,6 +1,8 @@
+import crypto from 'node:crypto';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db, serviceDb, eq, users, accounts, authSessions as sessions, verificationTokens } from '@platform/db';
+import { serviceDb, eq, users, accounts, authSessions as sessions, verificationTokens } from '@platform/db';
 import type { NextAuthConfig } from 'next-auth';
+import { encode as defaultEncode } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { z } from 'zod';
@@ -26,8 +28,10 @@ import { passwordService } from './services/password.service';
  */
 export const authConfig: NextAuthConfig = {
   // Database adapter for session storage with custom table mapping
+  // ⚠️ CRITICAL: Use serviceDb to bypass RLS for session operations
+  // Auth.js adapter needs to create/read/update/delete sessions without authenticated context
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adapter: DrizzleAdapter(db, {
+  adapter: DrizzleAdapter(serviceDb!, {
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,
@@ -195,6 +199,37 @@ export const authConfig: NextAuthConfig = {
     updateAge: 30 * 60, // 30 minutes inactivity timeout (update every 30 min)
   },
 
+  // JWT encode/decode override - CRITICAL for credentials with database sessions
+  // Auth.js restricts credentials to JWT-only, so we override to return raw session token
+  jwt: {
+    /**
+     * Encode JWT - returns raw session token for credentials instead of encrypted JWT
+     * This allows credentials provider to work with strategy: 'database'
+     */
+    async encode(params) {
+      // For credentials provider: return the raw session token (set in JWT callback)
+      // This bypasses JWT encryption and allows Auth.js to look up session in database
+      if (params.token && (params.token as any).sessionId) {
+        console.log('[AUTH] JWT encode: Returning raw session token for credentials');
+        return (params.token as any).sessionId as string;
+      }
+
+      // For OAuth providers: use default JWT encoding
+      console.log('[AUTH] JWT encode: Using default JWT encoding for OAuth');
+      return defaultEncode(params);
+    },
+
+    /**
+     * Decode JWT - returns null to skip JWT decoding
+     * Auth.js will look up session by token in database instead
+     */
+    async decode() {
+      // Skip JWT decoding - Auth.js will query the database for session
+      console.log('[AUTH] JWT decode: Skipping JWT decode, using database session lookup');
+      return null;
+    },
+  },
+
   // Pages configuration removed - frontend handles all UI
   // Auth.js runs on API server, frontend apps handle their own routes
 
@@ -203,11 +238,21 @@ export const authConfig: NextAuthConfig = {
     /**
      * JWT callback - runs when JWT is created or updated
      * We use database sessions, so this is only for token creation
+     *
+     * CRITICAL: Passes sessionToken from user to token for credentials provider
+     * This allows jwt.encode to access the raw session token
      */
     async jwt({ token, user, account }) {
       if (user) {
         token.userId = user.id;
         token.email = user.email;
+
+        // CRITICAL: Pass session token from user to token for credentials provider
+        // This is set in signIn callback and used by jwt.encode
+        if ((user as any).sessionToken) {
+          token.sessionId = (user as any).sessionToken;
+          console.log('[AUTH] JWT callback: Passing sessionToken through token chain');
+        }
       }
       if (account) {
         token.accessToken = account.access_token;
@@ -256,8 +301,38 @@ export const authConfig: NextAuthConfig = {
     /**
      * Sign in callback - control if user is allowed to sign in
      * Phase 8: Allow both OAuth and credential sign-ins
+     *
+     * CRITICAL: Auth.js does NOT call adapter.createSession() for credentials provider
+     * We must manually create database sessions here for credentials to work with strategy: 'database'
      */
-    async signIn({ account }) {
+    async signIn({ user, account, credentials }) {
+      // CRITICAL: Manually create database session for credentials provider
+      // Auth.js restricts credentials to JWT-only by design, so we override this behavior
+      if (credentials && user && account?.provider === 'credentials') {
+        const sessionToken = crypto.randomUUID();
+        const sessionExpiry = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours (matches session.maxAge)
+
+        console.log('[AUTH] Creating manual session for credentials login:', {
+          userId: user.id,
+          sessionToken,
+          expires: sessionExpiry,
+        });
+
+        // Create session record in database using adapter
+        // @ts-expect-error - adapter is typed as DrizzleAdapter but we need createSession method
+        await authConfig.adapter.createSession({
+          sessionToken,
+          userId: user.id as string, // user.id is guaranteed to exist here
+          expires: sessionExpiry,
+        });
+
+        // Store session token on user object for JWT encode callback to access
+        // This allows jwt.encode to return the raw session token instead of encrypted JWT
+        (user as any).sessionToken = sessionToken;
+
+        console.log('[AUTH] Manual session created successfully');
+      }
+
       // Allow OAuth sign-ins (Google, etc.)
       if (account?.provider === 'google') {
         return true;
