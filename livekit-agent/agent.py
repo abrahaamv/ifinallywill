@@ -85,7 +85,7 @@ class MultiModalAgent:
         # Initialize ElevenLabs for text-to-speech
         self.tts = elevenlabs.TTS(
             api_key=os.getenv("ELEVENLABS_API_KEY"),
-            model_id="eleven_turbo_v2_5",  # Fast, low-latency model
+            model="eleven_turbo_v2_5",  # Fast, low-latency model
             voice_id="21m00Tcm4TlvDq8ikWAM",  # Default voice (Rachel)
         )
 
