@@ -1,19 +1,50 @@
-# LiveKit Agent Dependencies (Phase 5 - Week 3)
+# LiveKit Agent Dependencies - Production Ready
 # Python 3.11+ required
+# All versions pinned per project policy (CLAUDE.md)
 
-# Core LiveKit libraries (let pip resolve latest compatible versions)
-livekit
-livekit-agents
-livekit-plugins-deepgram
-livekit-plugins-elevenlabs
+# Core LiveKit libraries
+livekit==1.0.16
+livekit-agents==1.2.14
+livekit-api==1.0.7
+livekit-protocol==1.0.8
 
-# AI providers
-openai
-anthropic
-google-generativeai
+# LiveKit plugins
+livekit-plugins-deepgram==1.2.14
+livekit-plugins-elevenlabs==1.2.14
+livekit-plugins-openai==1.2.14
+livekit-plugins-anthropic==1.2.14
+livekit-plugins-google==1.2.14
+livekit-plugins-silero==1.2.14
 
-# Utilities
-python-dotenv
-httpx
-pydantic
-pillow
+# Vision & Image Processing (perceptual hashing + frame encoding)
+opencv-python==4.12.0.88
+Pillow==11.1.0
+imagehash==4.3.2
+numpy==2.2.6
+
+# HTTP Client & JWT (backend communication)
+httpx==0.28.1
+h2==4.3.0
+pyjwt==2.10.1
+
+# Configuration & Environment
+python-dotenv==1.1.1
+pydantic==2.12.0
+pydantic-settings==2.11.0
+
+# Database & Cache (knowledge base + rate limiting)
+asyncpg==0.30.0
+redis==6.4.0
+
+# AI Providers (direct SDK access)
+openai==2.3.0
+anthropic==0.69.0
+google-generativeai==0.8.5
+
+# Logging & Monitoring
+structlog==25.4.0
+
+# Testing
+pytest==8.4.2
+pytest-asyncio==1.2.0
+pytest-timeout==2.4.0
