@@ -33,23 +33,28 @@ pnpm install
 cp .env.example .env
 # Edit .env with your API keys and configuration
 
-# 3. Start local databases
+# 3. Configure LiveKit agent (Python)
+cd livekit-agent
+cp .env.example .env
+# Edit .env with LiveKit and AI provider credentials
+cd ..
+
+# 4. Start local databases
 pnpm db:up
 
-# 4. Push database schema (after Phase 8 security implementation)
-# pnpm db:push
-
-# 5. Start development servers
+# 5. Start ALL services (including Python agent)
 pnpm dev
 ```
 
 ### Quick Commands
 
-- **`pnpm dev`** - Start all development servers in parallel ✨ **Recommended**
+- **`pnpm dev`** - Start ALL services + Python LiveKit agent ✨ **Recommended for testing**
+- **`pnpm dev:all`** - Start Node.js services only (without Python agent)
 - **`pnpm dev:api`** - Start API server only (port 3001)
 - **`pnpm dev:dashboard`** - Start dashboard app (port 5174)
 - **`pnpm dev:meeting`** - Start meeting app (port 5175)
 - **`pnpm dev:widget`** - Start widget SDK development (port 5176)
+- **`pnpm dev:agent`** - Start Python LiveKit agent only
 - **`pnpm build`** - Build all packages for production
 - **`pnpm typecheck`** - Run TypeScript type checking
 - **`pnpm lint`** - Run Biome linting and formatting
@@ -65,12 +70,19 @@ pnpm dev
 
 ### Testing the Full System
 
-**Quick Start:**
+**Complete Testing (All Services + Agent):**
 ```bash
-pnpm watch
+# Start databases
+pnpm db:up
+
+# Start all services + Python LiveKit agent
+pnpm dev
 ```
 
-Then open http://localhost:5175 to create/join a meeting room.
+Then open:
+- **Meeting Room**: http://localhost:5175 - Create/join meeting with AI agent
+- **Dashboard**: http://localhost:5174 - Test AI chat with RAG
+- **Landing**: http://localhost:5173 - Public marketing site
 
 > **📌 Multi-App Architecture**
 >
