@@ -16,7 +16,7 @@
     "dev:widget": "pnpm --filter @platform/widget-sdk dev",
     "dev:api": "pnpm --filter @platform/api dev",
     "dev:realtime": "pnpm --filter @platform/realtime dev",
-    "dev:agent": "cd livekit-agent && (test -d venv && . venv/bin/activate && python agent.py || echo '⚠️  Python venv not found. Run: cd livekit-agent && python3 -m venv venv && . venv/bin/activate && pip install -r requirements.txt')",
+    "dev:agent": "cd livekit-agent && (test -d venv && . venv/bin/activate && python agent.py dev || echo '⚠️  Python venv not found. Run: cd livekit-agent && python3 -m venv venv && . venv/bin/activate && pip install -r requirements.txt')",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     
