@@ -8,6 +8,29 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5174,
+    proxy: {
+      // Proxy all Auth.js and tRPC API requests to backend server
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: false, // Keep same-origin for Auth.js cookies
+        secure: false, // Allow HTTP for local development
+        // Cookie rewriting for Auth.js compatibility with HTTP localhost
+        configure: (proxy, options) => {
+          // Intercept proxy responses to rewrite Set-Cookie headers
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            const setCookie = proxyRes.headers['set-cookie'];
+            if (setCookie) {
+              // Rewrite cookies to work with HTTP localhost (remove Secure flag, fix domain)
+              proxyRes.headers['set-cookie'] = setCookie.map((cookie: string) => {
+                return cookie
+                  .replace(/; Secure/gi, '') // Remove Secure flag for HTTP
+                  .replace(/; Domain=localhost/gi, ''); // Remove domain to allow same-origin
+              });
+            }
+          });
+        },
+      },
+    },
   },
   resolve: {
     alias: {

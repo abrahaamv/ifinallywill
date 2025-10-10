@@ -1,5 +1,5 @@
 export * from './schema/index';
-export { db, sql } from './client';
+export { db, sql, serviceDb } from './client';
 
 // Re-export Drizzle ORM utilities for queries
 export {

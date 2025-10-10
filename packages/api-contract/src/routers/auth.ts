@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { hash, verify } from '@node-rs/argon2';
-import { tenants, users, verificationTokens } from '@platform/db';
+import { serviceDb, tenants, users, verificationTokens } from '@platform/db';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -54,9 +54,18 @@ export const authRouter = router({
    * Login with email and password
    * Verifies credentials and creates Auth.js session
    */
-  login: publicProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+  login: publicProcedure.input(loginSchema).mutation(async ({ input }) => {
+    // Verify service database is available
+    if (!serviceDb) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Service database not configured.',
+      });
+    }
+
     // Find user by email
-    const [user] = await ctx.db.select().from(users).where(eq(users.email, input.email)).limit(1);
+    // ⚠️ CRITICAL: Use serviceDb for unauthenticated login
+    const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
 
     if (!user) {
       throw new TRPCError({
@@ -95,7 +104,7 @@ export const authRouter = router({
       if (failedAttempts >= 5) {
         const lockUntil = new Date();
         lockUntil.setMinutes(lockUntil.getMinutes() + 15);
-        await ctx.db
+        await serviceDb
           .update(users)
           .set({
             failedLoginAttempts: failedAttempts,
@@ -104,7 +113,7 @@ export const authRouter = router({
           })
           .where(eq(users.id, user.id));
       } else {
-        await ctx.db
+        await serviceDb
           .update(users)
           .set({
             failedLoginAttempts: failedAttempts,
@@ -162,7 +171,7 @@ export const authRouter = router({
     }
 
     // Reset failed login attempts on successful login
-    await ctx.db
+    await serviceDb
       .update(users)
       .set({
         failedLoginAttempts: 0,
@@ -190,9 +199,18 @@ export const authRouter = router({
    * Register a new user and create their tenant
    * First user becomes owner of new tenant
    */
-  register: publicProcedure.input(registerSchema).mutation(async ({ ctx, input }) => {
+  register: publicProcedure.input(registerSchema).mutation(async ({ input }) => {
+    // Verify service database is available
+    if (!serviceDb) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Service database not configured. Set SERVICE_DATABASE_URL environment variable.',
+      });
+    }
+
     // Check if user already exists
-    const [existingUser] = await ctx.db
+    // ⚠️ CRITICAL: Use serviceDb to bypass RLS for existence check
+    const [existingUser] = await serviceDb
       .select()
       .from(users)
       .where(eq(users.email, input.email))
@@ -213,89 +231,126 @@ export const authRouter = router({
       parallelism: 1, // 1 thread
     });
 
-    // Create tenant for the new user
-    const apiKey = `pk_live_${crypto.randomBytes(32).toString('hex')}`;
-    const [newTenant] = await ctx.db
-      .insert(tenants)
-      .values({
-        name: input.organizationName,
-        apiKey,
-        plan: 'starter', // Start with starter plan
-        settings: {
-          maxMonthlySpend: 100, // Starter tier limit
-          allowedDomains: [],
-          features: ['chat'], // Basic features only
+    try {
+      // Create tenant for the new user
+      // ⚠️ CRITICAL: Use serviceDb to bypass RLS for registration
+      const apiKey = `pk_live_${crypto.randomBytes(32).toString('hex')}`;
+      const [newTenant] = await serviceDb
+        .insert(tenants)
+        .values({
+          name: input.organizationName,
+          apiKey,
+          plan: 'starter', // Start with starter plan
+          settings: {
+            maxMonthlySpend: 100, // Starter tier limit
+            allowedDomains: [],
+            features: ['chat'], // Basic features only
+          },
+        })
+        .returning();
+
+      if (!newTenant) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create tenant',
+        });
+      }
+
+      // Create user as owner of the tenant
+      // ⚠️ CRITICAL: Use serviceDb to bypass RLS for registration
+      const [newUser] = await serviceDb
+        .insert(users)
+        .values({
+          tenantId: newTenant.id,
+          email: input.email,
+          passwordHash,
+          passwordAlgorithm: 'argon2id',
+          role: 'owner', // First user is always owner
+          name: input.name,
+          emailVerified: null, // Email not verified yet
+        })
+        .returning();
+
+      if (!newUser) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user',
+        });
+      }
+
+      // Generate email verification token
+      // ⚠️ CRITICAL: Use serviceDb to bypass RLS for registration
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
+
+      await serviceDb.insert(verificationTokens).values({
+        identifier: input.email,
+        token: verificationToken,
+        expires: expiresAt,
+      });
+
+      // TODO: Send verification email
+      // For now, return token for testing purposes
+      // In production, this should be sent via email and not returned
+
+      return {
+        success: true,
+        message: 'Registration successful. Please check your email to verify your account.',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
         },
-      })
-      .returning();
+        tenant: {
+          id: newTenant.id,
+          name: newTenant.name,
+        },
+        // DEVELOPMENT ONLY - Remove in production
+        verificationToken,
+      };
+    } catch (error: any) {
+      // Handle PostgreSQL unique constraint violations
+      if (error?.cause?.code === '23505') {
+        // Unique constraint violation - email already exists
+        if (error.cause.constraint_name === 'users_email_unique') {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'User with this email already exists',
+          });
+        }
+      }
 
-    if (!newTenant) {
+      // Re-throw TRPCErrors as-is
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      // Log unexpected errors and throw generic error
+      console.error('Registration error:', error);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create tenant',
+        message: 'Failed to create account. Please try again.',
       });
     }
-
-    // Create user as owner of the tenant
-    const [newUser] = await ctx.db
-      .insert(users)
-      .values({
-        tenantId: newTenant.id,
-        email: input.email,
-        passwordHash,
-        passwordAlgorithm: 'argon2id',
-        role: 'owner', // First user is always owner
-        name: input.name,
-        emailVerified: null, // Email not verified yet
-      })
-      .returning();
-
-    if (!newUser) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create user',
-      });
-    }
-
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
-
-    await ctx.db.insert(verificationTokens).values({
-      identifier: input.email,
-      token: verificationToken,
-      expires: expiresAt,
-    });
-
-    // TODO: Send verification email
-    // For now, return token for testing purposes
-    // In production, this should be sent via email and not returned
-
-    return {
-      success: true,
-      message: 'Registration successful. Please check your email to verify your account.',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-      },
-      tenant: {
-        id: newTenant.id,
-        name: newTenant.name,
-      },
-      // DEVELOPMENT ONLY - Remove in production
-      verificationToken,
-    };
   }),
 
   /**
    * Verify email address with token
    */
-  verifyEmail: publicProcedure.input(verifyEmailSchema).mutation(async ({ ctx, input }) => {
+  verifyEmail: publicProcedure.input(verifyEmailSchema).mutation(async ({ input }) => {
+    // Verify service database is available
+    if (!serviceDb) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Service database not configured.',
+      });
+    }
+
     // Find verification token
-    const [tokenRecord] = await ctx.db
+    // ⚠️ CRITICAL: Use serviceDb for unauthenticated email verification
+    const [tokenRecord] = await serviceDb
       .select()
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
@@ -311,7 +366,7 @@ export const authRouter = router({
     // Check if token is expired
     if (new Date() > tokenRecord.expires) {
       // Delete expired token
-      await ctx.db.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
+      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -320,7 +375,7 @@ export const authRouter = router({
     }
 
     // Find user by email
-    const [user] = await ctx.db
+    const [user] = await serviceDb
       .select()
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))
@@ -334,7 +389,7 @@ export const authRouter = router({
     }
 
     // Update user email verified status
-    await ctx.db
+    await serviceDb
       .update(users)
       .set({
         emailVerified: new Date(),
@@ -343,7 +398,7 @@ export const authRouter = router({
       .where(eq(users.id, user.id));
 
     // Delete verification token
-    await ctx.db.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
+    await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
     return {
       success: true,
@@ -356,9 +411,18 @@ export const authRouter = router({
    */
   resendVerification: publicProcedure
     .input(resendVerificationSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
+      // Verify service database is available
+      if (!serviceDb) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Service database not configured.',
+        });
+      }
+
       // Find user
-      const [user] = await ctx.db.select().from(users).where(eq(users.email, input.email)).limit(1);
+      // ⚠️ CRITICAL: Use serviceDb for unauthenticated operation
+      const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
 
       if (!user) {
         // Don't reveal if user exists or not
@@ -377,14 +441,14 @@ export const authRouter = router({
       }
 
       // Delete any existing verification tokens for this email
-      await ctx.db.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
+      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
 
       // Generate new verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
 
-      await ctx.db.insert(verificationTokens).values({
+      await serviceDb.insert(verificationTokens).values({
         identifier: input.email,
         token: verificationToken,
         expires: expiresAt,
@@ -406,9 +470,18 @@ export const authRouter = router({
    */
   resetPasswordRequest: publicProcedure
     .input(resetPasswordRequestSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
+      // Verify service database is available
+      if (!serviceDb) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Service database not configured.',
+        });
+      }
+
       // Find user
-      const [user] = await ctx.db.select().from(users).where(eq(users.email, input.email)).limit(1);
+      // ⚠️ CRITICAL: Use serviceDb for unauthenticated operation
+      const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
 
       if (!user) {
         // Don't reveal if user exists or not
@@ -419,14 +492,14 @@ export const authRouter = router({
       }
 
       // Delete any existing reset tokens for this email
-      await ctx.db.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
+      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
 
       // Generate password reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry (shorter than email verification)
 
-      await ctx.db.insert(verificationTokens).values({
+      await serviceDb.insert(verificationTokens).values({
         identifier: input.email,
         token: resetToken,
         expires: expiresAt,
@@ -446,9 +519,18 @@ export const authRouter = router({
   /**
    * Reset password with token
    */
-  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ ctx, input }) => {
+  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ input }) => {
+    // Verify service database is available
+    if (!serviceDb) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Service database not configured.',
+      });
+    }
+
     // Find reset token
-    const [tokenRecord] = await ctx.db
+    // ⚠️ CRITICAL: Use serviceDb for unauthenticated password reset
+    const [tokenRecord] = await serviceDb
       .select()
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
@@ -464,7 +546,7 @@ export const authRouter = router({
     // Check if token is expired
     if (new Date() > tokenRecord.expires) {
       // Delete expired token
-      await ctx.db.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
+      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -473,7 +555,7 @@ export const authRouter = router({
     }
 
     // Find user by email
-    const [user] = await ctx.db
+    const [user] = await serviceDb
       .select()
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))
@@ -495,7 +577,7 @@ export const authRouter = router({
     });
 
     // Update user password and clear account lockout
-    await ctx.db
+    await serviceDb
       .update(users)
       .set({
         passwordHash,
@@ -507,7 +589,7 @@ export const authRouter = router({
       .where(eq(users.id, user.id));
 
     // Delete reset token
-    await ctx.db.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
+    await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
     return {
       success: true,

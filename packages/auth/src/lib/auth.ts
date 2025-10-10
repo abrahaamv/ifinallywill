@@ -6,7 +6,7 @@
  */
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db } from '@platform/db';
+import { db, users, accounts, authSessions as sessions, verificationTokens } from '@platform/db';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
 import Google from 'next-auth/providers/google';
@@ -21,11 +21,24 @@ import Microsoft from 'next-auth/providers/microsoft-entra-id';
  * ✅ Accounts table: snake_case column names
  * ✅ Verification tokens: Composite primary key
  *
+ * Custom table names configured for Drizzle adapter:
+ * - users → users
+ * - accounts → accounts
+ * - authSessions → sessions (aliased for adapter)
+ * - verificationTokens → verificationTokens
+ *
  * See: https://authjs.dev/reference/adapter/drizzle#postgres
  */
 export const authConfig: NextAuthConfig = {
   // Drizzle adapter for database sessions (Migration 007 complete)
-  adapter: DrizzleAdapter(db),
+  // Pass custom table schemas to map our naming to Auth.js defaults
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  } as any),
 
   session: {
     strategy: 'database', // Database sessions (via Drizzle adapter)

@@ -1,55 +1,87 @@
 /**
- * Protected Route Component
- * Ensures users are authenticated before accessing protected pages
- * Redirects to login if unauthenticated
+ * ProtectedRoute Component
+ *
+ * Wraps routes that require authentication
+ * Redirects to login page if user is not authenticated
+ * Shows loading state while checking session
+ *
+ * Usage:
+ * ```tsx
+ * <ProtectedRoute>
+ *   <DashboardPage />
+ * </ProtectedRoute>
+ * ```
  */
 
-import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { trpc } from '../utils/trpc';
+import { useEffect } from 'react';
+import { useSession } from '../hooks/useSession';
 
-interface ProtectedRouteProps {
+export interface ProtectedRouteProps {
   children: React.ReactNode;
+  /**
+   * Optional redirect URL (defaults to /login)
+   */
+  redirectTo?: string;
+  /**
+   * Optional loading component (defaults to simple loading div)
+   */
+  loadingComponent?: React.ReactNode;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check authentication status using Auth.js session
-  const {
-    data: session,
-    isLoading,
-    error,
-  } = trpc.auth.getSession.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+/**
+ * ProtectedRoute component - requires authentication
+ */
+export function ProtectedRoute({
+  children,
+  redirectTo = '/login',
+  loadingComponent,
+}: ProtectedRouteProps) {
+  const { session, loading, error } = useSession();
 
   useEffect(() => {
-    if (!isLoading) {
-      setIsAuthenticated(!!session?.user);
-      setIsChecking(false);
+    // If not loading and no session, redirect to login
+    if (!loading && !session) {
+      console.log('[ProtectedRoute] No session, redirecting to login');
+      window.location.href = redirectTo;
     }
-  }, [session, isLoading]);
+  }, [loading, session, redirectTo]);
 
-  // Show loading spinner while checking authentication
-  if (isChecking || isLoading) {
+  // Show loading state while fetching session
+  if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      loadingComponent || (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )
+    );
+  }
+
+  // Show error state if session fetch failed
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 text-sm text-muted-foreground">Verifying session...</p>
+          <p className="text-red-600">Failed to load session: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated || error) {
-    return <Navigate to="/login" replace />;
+  // No session - redirect will trigger in useEffect
+  if (!session) {
+    return null;
   }
 
-  // Render protected content
+  // Authenticated - render children
   return <>{children}</>;
 }

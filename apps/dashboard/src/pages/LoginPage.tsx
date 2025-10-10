@@ -1,6 +1,12 @@
 /**
  * Login Page
  * Email/password and OAuth authentication with Auth.js
+ *
+ * Implements proper Auth.js credentials flow:
+ * 1. Fetch CSRF token before form submission
+ * 2. Submit credentials with CSRF token
+ * 3. Handle Auth.js redirect responses
+ * 4. Support MFA (TOTP) when enabled
  */
 
 import { useState } from 'react';
@@ -17,12 +23,12 @@ export function LoginPage() {
   const [showMFA, setShowMFA] = useState(false);
 
   const handleGoogleLogin = () => {
-    // Auth.js OAuth flow
+    // Auth.js OAuth flow - direct redirect to provider
     window.location.href = '/api/auth/signin/google';
   };
 
   const handleMicrosoftLogin = () => {
-    // Auth.js OAuth flow
+    // Auth.js OAuth flow - direct redirect to provider
     window.location.href = '/api/auth/signin/microsoft';
   };
 
@@ -47,26 +53,69 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Integrate with Auth.js credentials provider
-      // For now, simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      console.log('Login attempt:', {
-        email: formData.email,
-        mfaCode: formData.mfaCode || undefined,
+      // Step 1: Fetch CSRF token (required by Auth.js for security)
+      const csrfResponse = await fetch('/api/auth/csrf', {
+        credentials: 'include', // CRITICAL: Include cookies for session
       });
 
-      // Simulate MFA requirement
-      if (!showMFA && formData.email === 'admin@acme.com') {
-        setShowMFA(true);
-        setErrors({ mfaCode: 'MFA code required for this account' });
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to fetch CSRF token');
+      }
+
+      const { csrfToken } = await csrfResponse.json();
+
+      console.log('[LOGIN] CSRF token fetched:', csrfToken);
+
+      // Step 2: Submit credentials to Auth.js credentials provider
+      const loginResponse = await fetch('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          csrfToken,
+          email: formData.email,
+          password: formData.password,
+          ...(showMFA && formData.mfaCode ? { mfaCode: formData.mfaCode } : {}),
+          callbackUrl: '/dashboard', // Where to redirect on success
+          json: 'true', // Request JSON response instead of redirect
+        }),
+        credentials: 'include', // CRITICAL: Include cookies for session
+      });
+
+      console.log('[LOGIN] Login response status:', loginResponse.status);
+
+      // Auth.js credentials provider returns different status codes:
+      // - 200: Success (with JSON response)
+      // - 302: Success (with redirect - only if json=false)
+      // - 401: Invalid credentials
+      // - 500: Server error
+
+      if (loginResponse.status === 401) {
+        // Check if MFA is required
+        const errorText = await loginResponse.text();
+        if (errorText.includes('MFA_REQUIRED')) {
+          setShowMFA(true);
+          setErrors({ mfaCode: 'MFA code required for this account' });
+          setIsLoading(false);
+          return;
+        }
+
+        setErrors({ submit: 'Invalid email or password' });
         setIsLoading(false);
         return;
       }
 
-      // Redirect to dashboard on success
+      if (!loginResponse.ok) {
+        throw new Error('Login failed');
+      }
+
+      // Success! Auth.js has set session cookie
+      // Redirect to dashboard
+      console.log('[LOGIN] Login successful, redirecting to dashboard');
       window.location.href = '/dashboard';
     } catch (error) {
+      console.error('[LOGIN] Login error:', error);
       setErrors({
         submit: error instanceof Error ? error.message : 'Login failed. Please try again.',
       });
