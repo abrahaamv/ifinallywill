@@ -29,7 +29,7 @@ from livekit.agents import (
     WorkerOptions,
     cli,
 )
-from livekit.plugins import deepgram
+from livekit.plugins import deepgram, elevenlabs
 from PIL import Image
 
 # Import AI providers and backend client (after load_dotenv)
@@ -80,6 +80,13 @@ class MultiModalAgent:
             api_key=os.getenv("DEEPGRAM_API_KEY"),
             model="nova-2",
             language="en-US",
+        )
+
+        # Initialize ElevenLabs for text-to-speech
+        self.tts = elevenlabs.TTS(
+            api_key=os.getenv("ELEVENLABS_API_KEY"),
+            model_id="eleven_turbo_v2_5",  # Fast, low-latency model
+            voice_id="21m00Tcm4TlvDq8ikWAM",  # Default voice (Rachel)
         )
 
         # Conversation context
@@ -306,8 +313,8 @@ class MultiModalAgent:
             self.conversation_history.append({"role": "user", "content": query})
             self.conversation_history.append({"role": "assistant", "content": llm_result.content})
 
-            # Send response to room
-            await self.send_message(llm_result.content)
+            # Speak response with voice (also sends text as fallback)
+            await self.speak(llm_result.content)
 
             logger.info(
                 f"Response sent - Provider: {llm_result.provider.value}, "
@@ -316,7 +323,7 @@ class MultiModalAgent:
 
         except Exception as e:
             logger.error(f"Failed to process query: {e}")
-            await self.send_message(
+            await self.speak(
                 "I'm sorry, I encountered an error processing your request. "
                 "Please try again."
             )
@@ -330,6 +337,44 @@ class MultiModalAgent:
             reliable=True,
         )
         logger.info(f"Sent message: {message[:100]}...")
+
+    async def speak(self, message: str):
+        """
+        Speak message with voice using ElevenLabs TTS
+        Publishes audio track to room
+        """
+        try:
+            logger.info(f"Speaking: {message[:100]}...")
+
+            # Synthesize speech with ElevenLabs
+            audio_stream = self.tts.synthesize(message)
+
+            # Create audio source from TTS stream
+            audio_source = rtc.AudioSource(
+                sample_rate=24000,  # ElevenLabs default
+                num_channels=1,
+            )
+
+            # Create audio track
+            audio_track = rtc.LocalAudioTrack.create_audio_track(
+                "agent-voice",
+                audio_source,
+            )
+
+            # Publish audio track to room
+            options = rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE)
+            await self.room.local_participant.publish_track(audio_track, options)
+
+            # Stream audio frames
+            async for audio_frame in audio_stream:
+                await audio_source.capture_frame(audio_frame)
+
+            logger.info("Finished speaking")
+
+        except Exception as e:
+            logger.error(f"Failed to speak: {e}")
+            # Fallback to text message
+            await self.send_message(message)
 
 
 async def entrypoint(ctx: JobContext):
@@ -352,8 +397,8 @@ async def entrypoint(ctx: JobContext):
 
     logger.info("Agent ready and listening for tracks")
 
-    # Send welcome message
-    await agent.send_message(
+    # Speak welcome message
+    await agent.speak(
         "AI Assistant has joined the meeting. "
         "I can help with screen analysis and voice interaction."
     )
