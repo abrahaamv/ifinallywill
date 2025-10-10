@@ -7,7 +7,6 @@
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import {
-  db,
   serviceDb,
   users,
   accounts,
@@ -44,8 +43,10 @@ import { passwordService } from '../services/password.service';
 export const authConfig: NextAuthConfig = {
   // Drizzle adapter for database sessions (Migration 007 complete)
   // Pass custom table schemas to map our naming to Auth.js defaults
+  // CRITICAL: Use serviceDb (BYPASSRLS) for Auth.js operations
+  // Auth.js needs to write sessions/accounts without RLS policy restrictions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  adapter: DrizzleAdapter(db, {
+  adapter: DrizzleAdapter(serviceDb, {
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,
