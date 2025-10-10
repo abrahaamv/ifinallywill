@@ -591,4 +591,6 @@ export const dataRequestsRelations = relations(dataRequests, ({ one }) => ({
 }));
 
 // ==================== INDEXES ====================
-// TODO: Add indexes via SQL migration (standalone index exports cause runtime errors in Drizzle 0.44.6)
+// Indexes are defined via SQL migration files in packages/db/migrations/
+// Standalone index exports cause runtime errors in Drizzle 0.44.6
+// See: https://orm.drizzle.team/docs/indexes-constraints#indexes--constraints

@@ -146,7 +146,12 @@ export class LiveKitService {
         return null;
       }
 
-      return this.mapRoomToInfo(rooms[0], tenantId);
+      const room = rooms[0];
+      if (!room) {
+        return null;
+      }
+
+      return this.mapRoomToInfo(room, tenantId);
     } catch (error) {
       console.error('Failed to get room:', error);
       return null;

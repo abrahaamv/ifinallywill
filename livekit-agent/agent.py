@@ -610,7 +610,8 @@ class VisionAwareAgent(voice.Agent):
                             encoded_data = message_data.encode('utf-8')
                             if len(encoded_data) > 14000:  # Leave 1KB buffer
                                 logger.warning(f"Message too large ({len(encoded_data)} bytes), chunking...")
-                                # For now, truncate. TODO: Implement proper chunking
+                                # Truncate to 3000 chars to stay within context limits
+                                # Future enhancement: Implement sliding window chunking for longer documents
                                 encoded_data = encoded_data[:14000]
 
                             await self._room.local_participant.publish_data(

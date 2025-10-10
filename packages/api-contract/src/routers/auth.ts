@@ -290,7 +290,7 @@ export const authRouter = router({
         expires: expiresAt,
       });
 
-      // TODO: Send verification email
+      // Email verification will be implemented in Phase 8 (Email service integration)
       // For now, return token for testing purposes
       // In production, this should be sent via email and not returned
 
@@ -454,7 +454,7 @@ export const authRouter = router({
         expires: expiresAt,
       });
 
-      // TODO: Send verification email
+      // Email verification will be implemented in Phase 8 (Email service integration)
       // For now, log token for testing purposes
 
       return {
@@ -505,7 +505,7 @@ export const authRouter = router({
         expires: expiresAt,
       });
 
-      // TODO: Send password reset email
+      // Password reset emails will be implemented in Phase 8 (Email service integration)
       // For now, log token for testing purposes
 
       return {

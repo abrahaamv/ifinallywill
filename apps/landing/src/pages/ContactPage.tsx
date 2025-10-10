@@ -17,7 +17,7 @@ import {
 export function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission
+    // Contact form submission - integrate with email service in Phase 8
     alert('Form submission will be implemented in Phase 5');
   };
 

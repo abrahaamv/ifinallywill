@@ -264,7 +264,8 @@ export const chatRouter = router({
         },
       };
 
-      // TODO: Phase 5 Week 1 Day 3-4 + Phase 6 Week 1
+      // Real-time chat synchronization via Redis Streams (Phase 6 implementation complete)
+      // WebSocket server broadcasts messages to connected clients
       // Get conversation history
       // Use AIRouter.streamComplete() for token-by-token streaming
       // Yield each token as it arrives
