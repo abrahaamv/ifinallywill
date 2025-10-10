@@ -27,11 +27,9 @@
     "zod": "3.24.1"
   },
   "devDependencies": {
-    "@fastify/cookie": "11.0.2",
     "@types/node": "22.10.5",
     "@vitest/coverage-v8": "2.1.8",
     "dotenv": "16.4.7",
-    "fastify": "5.3.2",
     "typescript": "5.7.2",
     "vitest": "2.1.8"
   }

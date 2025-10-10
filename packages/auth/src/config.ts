@@ -1,5 +1,5 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db, eq, users } from '@platform/db';
+import { db, serviceDb, eq, users, accounts, authSessions as sessions, verificationTokens } from '@platform/db';
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -25,8 +25,14 @@ import { passwordService } from './services/password.service';
  * Reference: docs/research/10-07-2025/research-10-07-2025.md lines 40-192
  */
 export const authConfig: NextAuthConfig = {
-  // Database adapter for session storage
-  adapter: DrizzleAdapter(db),
+  // Database adapter for session storage with custom table mapping
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  } as any),
 
   // OAuth and credential providers
   providers: [
@@ -67,7 +73,13 @@ export const authConfig: NextAuthConfig = {
         const { email, password, mfaCode } = parsedCredentials.data;
 
         // Find user by email
-        const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        // ⚠️ CRITICAL: Use serviceDb to bypass RLS for unauthenticated login
+        if (!serviceDb) {
+          console.error('[AUTH] Service database not configured');
+          return null;
+        }
+
+        const [user] = await serviceDb.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (!user) {
           // User not found - return null to prevent user enumeration
@@ -76,7 +88,6 @@ export const authConfig: NextAuthConfig = {
 
         // Check account lockout
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-          console.warn('Login attempt on locked account:', { email });
           return null;
         }
 
@@ -94,17 +105,15 @@ export const authConfig: NextAuthConfig = {
           // Lock account after 5 failed attempts (15 minutes)
           if (newFailedAttempts >= 5) {
             const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-            await db
+            await serviceDb
               .update(users)
               .set({
                 failedLoginAttempts: newFailedAttempts,
                 lockedUntil: lockUntil,
               })
               .where(eq(users.id, user.id));
-
-            console.warn('Account locked due to failed attempts:', { email });
           } else {
-            await db
+            await serviceDb
               .update(users)
               .set({ failedLoginAttempts: newFailedAttempts })
               .where(eq(users.id, user.id));
@@ -115,7 +124,7 @@ export const authConfig: NextAuthConfig = {
 
         // Password valid - upgrade hash if needed
         if (verification.needsUpgrade && verification.newHash) {
-          await db
+          await serviceDb
             .update(users)
             .set({
               passwordHash: verification.newHash,
@@ -140,7 +149,6 @@ export const authConfig: NextAuthConfig = {
 
           if (!mfaResult.valid) {
             // MFA code invalid
-            console.warn('Invalid MFA code attempt:', { email });
             return null;
           }
 
@@ -151,17 +159,15 @@ export const authConfig: NextAuthConfig = {
               mfaCode
             );
 
-            await db
+            await serviceDb
               .update(users)
               .set({ mfaBackupCodes: updatedBackupCodes })
               .where(eq(users.id, user.id));
-
-            console.info('Backup code used and removed:', { email });
           }
         }
 
         // Reset failed login attempts on success
-        await db
+        await serviceDb
           .update(users)
           .set({
             failedLoginAttempts: 0,
@@ -189,14 +195,8 @@ export const authConfig: NextAuthConfig = {
     updateAge: 30 * 60, // 30 minutes inactivity timeout (update every 30 min)
   },
 
-  // Pages configuration
-  pages: {
-    signIn: '/auth/signin',
-    signOut: '/auth/signout',
-    error: '/auth/error',
-    verifyRequest: '/auth/verify-request',
-    newUser: '/auth/new-user',
-  },
+  // Pages configuration removed - frontend handles all UI
+  // Auth.js runs on API server, frontend apps handle their own routes
 
   // Callbacks for customization
   callbacks: {
@@ -227,11 +227,16 @@ export const authConfig: NextAuthConfig = {
      * - Add tenant context for RLS policies
      */
     async session({ session, user }) {
-      if (session.user) {
+      if (session?.user && user) {
         session.user.id = user.id;
 
         // Add tenant ID from user record for RLS context
-        const [userRecord] = await db
+        // ⚠️ CRITICAL: Use serviceDb to bypass RLS - no session context exists yet
+        if (!serviceDb) {
+          return session;
+        }
+
+        const [userRecord] = await serviceDb
           .select({ tenantId: users.tenantId })
           .from(users)
           .where(eq(users.id, user.id))
@@ -313,6 +318,7 @@ export const authConfig: NextAuthConfig = {
   debug: process.env.NODE_ENV === 'development',
 
   // Security options
+  // With Vite proxy, all requests are same-origin (no cross-origin issues)
   useSecureCookies: process.env.NODE_ENV === 'production',
   cookies: {
     sessionToken: {
@@ -328,10 +334,11 @@ export const authConfig: NextAuthConfig = {
       name: `${process.env.NODE_ENV === 'production' ? '__Host-' : ''}next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'lax', // Vite proxy makes requests same-origin
         path: '/',
         secure: process.env.NODE_ENV === 'production',
       },
     },
   },
+  trustHost: true,
 };

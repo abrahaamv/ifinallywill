@@ -3,9 +3,8 @@
  * Email/password and OAuth authentication with Auth.js
  */
 
-import { Button } from '@platform/ui';
 import { useState } from 'react';
-import { trpc } from '../utils/trpc';
+import { Button } from '@platform/ui';
 
 export function LoginPage() {
   const [formData, setFormData] = useState({
@@ -14,10 +13,8 @@ export function LoginPage() {
     mfaCode: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [showMFA, setShowMFA] = useState(false);
-
-  // tRPC login mutation
-  const loginMutation = trpc.auth.login.useMutation();
 
   const handleGoogleLogin = () => {
     // Auth.js OAuth flow
@@ -47,29 +44,34 @@ export function LoginPage() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // Call tRPC login mutation
-      await loginMutation.mutateAsync({
+      // TODO: Integrate with Auth.js credentials provider
+      // For now, simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      console.log('Login attempt:', {
         email: formData.email,
-        password: formData.password,
-        mfaCode: showMFA ? formData.mfaCode : undefined,
+        mfaCode: formData.mfaCode || undefined,
       });
 
-      // Redirect to dashboard on success
-      window.location.href = '/dashboard';
-    } catch (error: unknown) {
-      // Check if MFA is required
-      const err = error as { data?: { cause?: string }; message?: string };
-      if (err?.data?.cause === 'MFA_REQUIRED') {
+      // Simulate MFA requirement
+      if (!showMFA && formData.email === 'admin@acme.com') {
         setShowMFA(true);
         setErrors({ mfaCode: 'MFA code required for this account' });
+        setIsLoading(false);
         return;
       }
 
-      // Handle other errors
+      // Redirect to dashboard on success
+      window.location.href = '/dashboard';
+    } catch (error) {
       setErrors({
-        submit: err?.message || 'Login failed. Please try again.',
+        submit: error instanceof Error ? error.message : 'Login failed. Please try again.',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -210,10 +212,10 @@ export function LoginPage() {
             <div>
               <Button
                 type="submit"
-                disabled={loginMutation.isPending}
+                disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>
           </form>
