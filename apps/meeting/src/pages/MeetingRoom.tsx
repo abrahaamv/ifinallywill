@@ -26,7 +26,8 @@ export function MeetingRoom() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Join room mutation
+  // tRPC queries and mutations
+  const listRooms = trpc.livekit.listRooms.useQuery();
   const joinRoom = trpc.livekit.joinRoom.useMutation();
 
   // Request access token on mount
@@ -41,6 +42,23 @@ export function MeetingRoom() {
       }
 
       try {
+        // Wait for room list to load
+        if (listRooms.isLoading) {
+          return;
+        }
+
+        // Check if room exists in LiveKit
+        const rooms = listRooms.data?.rooms || [];
+        const roomExists = rooms.some(
+          (room) => room.fullRoomName === roomId || room.roomName === roomId
+        );
+
+        if (!roomExists) {
+          setError(`Room "${roomId}" does not exist or has been deleted`);
+          setIsLoading(false);
+          return;
+        }
+
         // Get participant name from session storage or use default
         const participantName = sessionStorage.getItem('displayName') || 'Guest';
 
@@ -61,7 +79,7 @@ export function MeetingRoom() {
     };
 
     requestToken();
-  }, [roomId, navigate, joinRoom]);
+  }, [roomId, navigate, listRooms.isLoading, listRooms.data, joinRoom]);
 
   // Handle connection errors
   const handleError = (error: Error) => {
