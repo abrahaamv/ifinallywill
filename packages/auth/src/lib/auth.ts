@@ -252,6 +252,23 @@ export const authConfig: NextAuthConfig = {
     },
 
     /**
+     * JWT Callback - REQUIRED even for database strategy with credentials provider
+     *
+     * This is a workaround for Auth.js v5 limitation:
+     * - Database strategy is configured (line 54)
+     * - But credentials provider requires JWT callback chain to pass session token
+     * - We're NOT creating JWTs - we're passing the raw session token through
+     * - The jwt.encode callback (below) returns raw token instead of encrypted JWT
+     */
+    async jwt({ token, user, account }) {
+      // Pass session token through JWT callback chain for credentials provider
+      if (account?.provider === 'credentials' && user) {
+        token.sessionId = (user as any).sessionToken;
+      }
+      return token;
+    },
+
+    /**
      * Redirect Callback - Control where to redirect after sign-in
      */
     async redirect({ url, baseUrl }) {
@@ -259,6 +276,31 @@ export const authConfig: NextAuthConfig = {
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
       return `${baseUrl}/dashboard`;
+    },
+  },
+
+  /**
+   * JWT Configuration - CRITICAL WORKAROUND for credentials provider
+   *
+   * Auth.js restricts credentials to JWT-only by default, even with database strategy.
+   * This override forces database session behavior:
+   * - encode: Return raw session token (NOT encrypted JWT)
+   * - decode: Skip JWT decoding (returns null)
+   *
+   * Cookie value becomes the database session token UUID, which Auth.js looks up via
+   * adapter.getSessionAndUser(sessionToken)
+   *
+   * See: docs/research/10-09-2025/authjs-implementation-research.md
+   */
+  jwt: {
+    encode: async ({ token }) => {
+      console.log('[Auth] JWT encode called - returning session token for credentials');
+      // Return database session token instead of encoding a JWT
+      return (token?.sessionId as string) ?? '';
+    },
+    decode: async () => {
+      // Skip JWT decoding for database strategy
+      return null;
     },
   },
 
