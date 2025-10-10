@@ -6,9 +6,20 @@
  */
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
-import { db, users, accounts, authSessions as sessions, verificationTokens } from '@platform/db';
+import {
+  db,
+  serviceDb,
+  users,
+  accounts,
+  authSessions as sessions,
+  verificationTokens,
+} from '@platform/db';
+import { verify as verifyArgon2 } from 'argon2';
+import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import Microsoft from 'next-auth/providers/microsoft-entra-id';
 
@@ -46,8 +57,100 @@ export const authConfig: NextAuthConfig = {
     updateAge: 24 * 60 * 60, // Update session every 24 hours
   },
 
-  // OAuth providers
+  // Authentication providers
   providers: [
+    /**
+     * Email/Password Credentials Provider
+     *
+     * SECURITY NOTE: Database strategy requires manual session creation
+     * Auth.js v5 doesn't auto-create sessions for credentials provider with database adapter
+     * We handle this in the signIn callback below
+     */
+    Credentials({
+      id: 'credentials',
+      name: 'Email and Password',
+      credentials: {
+        email: { label: 'Email', type: 'email', placeholder: 'user@example.com' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        console.log('[Auth] Credentials authorize called');
+
+        if (!credentials?.email || !credentials?.password) {
+          console.error('[Auth] Missing email or password');
+          throw new Error('Email and password required');
+        }
+
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+
+        console.log('[Auth] Login attempt for email:', email);
+
+        // CRITICAL: Use serviceDb (BYPASSRLS) for authentication queries
+        // Regular db connection hits RLS policies and can't see users during login
+        // This is the industry-standard pattern (Supabase, Firebase, Auth0)
+        if (!serviceDb) {
+          console.error('[Auth] Service database not configured');
+          throw new Error('Service database not configured - set SERVICE_DATABASE_URL');
+        }
+
+        // Query user from database with service role (bypasses RLS)
+        const [user] = await serviceDb.select().from(users).where(eq(users.email, email)).limit(1);
+
+        if (!user) {
+          console.error('[Auth] User not found:', email);
+          throw new Error('Invalid email or password');
+        }
+
+        console.log('[Auth] User found:', {
+          id: user.id,
+          email: user.email,
+          algorithm: user.passwordAlgorithm,
+          hasHash: !!user.passwordHash,
+        });
+
+        // Verify password based on algorithm stored in database
+        let isValidPassword = false;
+
+        try {
+          if (user.passwordAlgorithm === 'argon2id') {
+            console.log('[Auth] Using Argon2id verification');
+            // Argon2id verification (recommended, industry standard)
+            isValidPassword = await verifyArgon2(user.passwordHash, password);
+            console.log('[Auth] Argon2id verification result:', isValidPassword);
+          } else if (user.passwordAlgorithm === 'bcrypt') {
+            console.log('[Auth] Using BCrypt verification');
+            // BCrypt verification (legacy support)
+            isValidPassword = await bcrypt.compare(password, user.passwordHash);
+            console.log('[Auth] BCrypt verification result:', isValidPassword);
+          } else {
+            console.error('[Auth] Unknown password algorithm:', user.passwordAlgorithm);
+            throw new Error('Invalid email or password');
+          }
+        } catch (error) {
+          console.error('[Auth] Password verification error:', error);
+          throw new Error('Invalid email or password');
+        }
+
+        if (!isValidPassword) {
+          console.error('[Auth] Password verification failed for:', email);
+          throw new Error('Invalid email or password');
+        }
+
+        console.log('[Auth] Authentication successful for:', email);
+
+        // Return user object (Auth.js will handle session creation in signIn callback)
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          tenantId: user.tenantId,
+          role: user.role,
+        };
+      },
+    }),
+
     /**
      * Google OAuth 2.0
      * Requires: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
@@ -127,16 +230,45 @@ export const authConfig: NextAuthConfig = {
     /**
      * Sign In Callback - Control user sign-in access
      * Return true to allow sign-in, false to deny
+     *
+     * CRITICAL: For credentials provider with database strategy,
+     * we must manually create the session here.
+     * OAuth providers handle this automatically through the adapter.
      */
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       // Allow sign-in if user exists in database
-      // Additional authorization logic can be added here
       if (!user || !user.email) {
         return false;
       }
 
-      // Check if user is associated with a tenant
-      // (In production, implement tenant assignment logic)
+      // For credentials provider, manually create session
+      // Auth.js v5 doesn't auto-create sessions for credentials with database adapter
+      if (account?.provider === 'credentials') {
+        try {
+          // Generate session token and expiry
+          const sessionToken = crypto.randomUUID();
+          const sessionExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+          // Create session in database
+          await authConfig.adapter!.createSession!({
+            sessionToken,
+            userId: user.id as string,
+            expires: sessionExpiry,
+          });
+
+          // Store session token in user object for cookie setting
+          (user as any).sessionToken = sessionToken;
+
+          console.log('[Auth] Created session for credentials login:', {
+            userId: user.id,
+            sessionToken: sessionToken.substring(0, 12) + '...',
+          });
+        } catch (error) {
+          console.error('[Auth] Failed to create session:', error);
+          return false;
+        }
+      }
+
       return true;
     },
 

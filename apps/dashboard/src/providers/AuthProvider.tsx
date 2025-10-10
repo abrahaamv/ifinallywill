@@ -36,9 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
   });
 
-  // Sign out mutation
-  const signOutMutation = trpc.auth.signOut.useMutation();
-
   useEffect(() => {
     if (session?.user) {
       setUser(session.user as User);
@@ -51,11 +48,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      await signOutMutation.mutateAsync();
+      // Step 1: Get CSRF token (required by Auth.js for security)
+      const csrfResponse = await fetch('/api/auth/csrf', {
+        credentials: 'include',
+      });
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to fetch CSRF token');
+      }
+
+      const { csrfToken } = await csrfResponse.json();
+
+      // Step 2: Call Auth.js signOut endpoint with CSRF token
+      const signOutResponse = await fetch('/api/auth/signout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          csrfToken,
+        }),
+        credentials: 'include', // Important: include cookies
+      });
+
+      if (!signOutResponse.ok) {
+        throw new Error('Sign out failed');
+      }
+
+      // Clear local state
       setUser(null);
+
+      // Redirect to login page
       window.location.href = '/login';
     } catch (error) {
       console.error('Sign out failed:', error);
+      // Even if API call fails, redirect to login and clear local state
+      setUser(null);
+      window.location.href = '/login';
     }
   };
 

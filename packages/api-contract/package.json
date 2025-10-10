@@ -15,6 +15,7 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
+    "@auth/core": "0.40.0",
     "@node-rs/argon2": "^2.0.2",
     "@platform/ai-core": "workspace:*",
     "@platform/auth": "workspace:^",
@@ -23,6 +24,7 @@
     "@platform/shared": "workspace:*",
     "@trpc/server": "11.0.0",
     "drizzle-orm": "0.44.6",
+    "fastify": "5.3.2",
     "livekit-server-sdk": "2.14.0",
     "zod": "3.24.1"
   },
