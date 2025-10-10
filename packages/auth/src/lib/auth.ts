@@ -14,13 +14,15 @@ import {
   authSessions as sessions,
   verificationTokens,
 } from '@platform/db';
-import { verify as verifyArgon2 } from 'argon2';
 import { eq } from 'drizzle-orm';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import Microsoft from 'next-auth/providers/microsoft-entra-id';
+import { z } from 'zod';
+import { MFAService } from '../services/mfa.service';
+import { passwordService } from '../services/password.service';
 
 /**
  * Auth.js configuration with OAuth providers
@@ -52,8 +54,8 @@ export const authConfig: NextAuthConfig = {
 
   session: {
     strategy: 'database', // Database sessions (via Drizzle adapter)
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // Update session every 24 hours
+    maxAge: 8 * 60 * 60, // 8 hours absolute timeout (NIST guideline)
+    updateAge: 30 * 60, // 30 minutes inactivity timeout (update every 30 min)
   },
 
   // Authentication providers
@@ -71,17 +73,23 @@ export const authConfig: NextAuthConfig = {
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'user@example.com' },
         password: { label: 'Password', type: 'password' },
+        mfaCode: { label: 'MFA Code (if enabled)', type: 'text', optional: true },
       },
       async authorize(credentials) {
-        console.log('[Auth] Credentials authorize called');
+        // Validate input with Zod
+        const parsedCredentials = z
+          .object({
+            email: z.string().email(),
+            password: z.string().min(8),
+            mfaCode: z.string().length(6).optional(),
+          })
+          .safeParse(credentials);
 
-        if (!credentials?.email || !credentials?.password) {
-          console.error('[Auth] Missing email or password');
-          throw new Error('Email and password required');
+        if (!parsedCredentials.success) {
+          return null;
         }
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
+        const { email, password, mfaCode } = parsedCredentials.data;
 
         console.log('[Auth] Login attempt for email:', email);
 
@@ -90,45 +98,110 @@ export const authConfig: NextAuthConfig = {
         // This is the industry-standard pattern (Supabase, Firebase, Auth0)
         if (!serviceDb) {
           console.error('[Auth] Service database not configured');
-          throw new Error('Service database not configured - set SERVICE_DATABASE_URL');
+          return null;
         }
 
         // Query user from database with service role (bypasses RLS)
         const [user] = await serviceDb.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (!user) {
-          console.error('[Auth] User not found:', email);
-          throw new Error('Invalid email or password');
+          // User not found - return null to prevent user enumeration
+          return null;
         }
 
-        console.log('[Auth] User found:', {
-          id: user.id,
-          email: user.email,
-          algorithm: user.passwordAlgorithm,
-          hasHash: !!user.passwordHash,
-        });
+        // Check account lockout (Phase 8 security)
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          console.error('[Auth] Account locked until:', user.lockedUntil);
+          return null;
+        }
 
-        // Verify password using Argon2id (OWASP 2025 recommended standard)
-        let isValidPassword = false;
+        // Verify password with automatic Argon2id upgrade (Phase 8 security)
+        const verification = await passwordService.verifyAndUpgrade(
+          password,
+          user.passwordHash,
+          user.passwordAlgorithm
+        );
 
-        try {
-          if (user.passwordAlgorithm !== 'argon2id') {
-            console.error('[Auth] Unsupported password algorithm:', user.passwordAlgorithm);
-            throw new Error('Invalid email or password');
+        if (!verification.valid) {
+          // Increment failed login attempts
+          const newFailedAttempts = user.failedLoginAttempts + 1;
+
+          // Lock account after 5 failed attempts (15 minutes)
+          if (newFailedAttempts >= 5) {
+            const lockUntil = new Date(Date.now() + 15 * 60 * 1000);
+            await serviceDb
+              .update(users)
+              .set({
+                failedLoginAttempts: newFailedAttempts,
+                lockedUntil: lockUntil,
+              })
+              .where(eq(users.id, user.id));
+            console.error('[Auth] Account locked after 5 failed attempts');
+          } else {
+            await serviceDb
+              .update(users)
+              .set({ failedLoginAttempts: newFailedAttempts })
+              .where(eq(users.id, user.id));
           }
 
-          console.log('[Auth] Using Argon2id verification');
-          isValidPassword = await verifyArgon2(user.passwordHash, password);
-          console.log('[Auth] Argon2id verification result:', isValidPassword);
-        } catch (error) {
-          console.error('[Auth] Password verification error:', error);
-          throw new Error('Invalid email or password');
+          return null;
         }
 
-        if (!isValidPassword) {
-          console.error('[Auth] Password verification failed for:', email);
-          throw new Error('Invalid email or password');
+        // Password valid - upgrade hash if needed (bcrypt → argon2id migration)
+        if (verification.needsUpgrade && verification.newHash) {
+          await serviceDb
+            .update(users)
+            .set({
+              passwordHash: verification.newHash,
+              passwordAlgorithm: 'argon2id',
+            })
+            .where(eq(users.id, user.id));
+          console.log('[Auth] Password upgraded to Argon2id');
         }
+
+        // Check MFA if enabled (Phase 8 security)
+        if (user.mfaEnabled) {
+          if (!mfaCode) {
+            // MFA required but not provided
+            throw new Error('MFA_REQUIRED');
+          }
+
+          // Verify MFA code (TOTP or backup code)
+          const mfaResult = await MFAService.verifyCode(
+            mfaCode,
+            user.mfaSecret || '',
+            user.mfaBackupCodes || []
+          );
+
+          if (!mfaResult.valid) {
+            console.error('[Auth] MFA verification failed');
+            return null;
+          }
+
+          // If backup code was used, remove it from user's backup codes
+          if (mfaResult.usedBackupCode) {
+            const updatedBackupCodes = await MFAService.removeUsedBackupCode(
+              user.mfaBackupCodes || [],
+              mfaCode
+            );
+
+            await serviceDb
+              .update(users)
+              .set({ mfaBackupCodes: updatedBackupCodes })
+              .where(eq(users.id, user.id));
+            console.log('[Auth] MFA backup code consumed');
+          }
+        }
+
+        // Reset failed login attempts on success (Phase 8 security)
+        await serviceDb
+          .update(users)
+          .set({
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+          })
+          .where(eq(users.id, user.id));
 
         console.log('[Auth] Authentication successful for:', email);
 

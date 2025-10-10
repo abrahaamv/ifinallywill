@@ -1,10 +1,5 @@
-import NextAuth from 'next-auth';
 import type { Session } from 'next-auth';
-import { authConfig } from './config';
-
-// Create auth instance for use in helpers
-// This is internal to the auth package
-const { auth } = NextAuth(authConfig);
+import { auth } from './lib/auth';
 
 /**
  * Get current user session
