@@ -74,12 +74,16 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
 
     if (response.status === 200) {
       const session = await response.json();
-      return session.user ? (session as Session) : null;
+      // Use optional chaining to handle null sessions gracefully
+      return session?.user ? (session as Session) : null;
     }
 
     return null;
   } catch (error) {
-    console.error('[Context] Failed to get session:', error);
+    // Only log errors that aren't simply unauthenticated requests
+    if (error instanceof Error && !error.message.includes('null')) {
+      console.error('[Context] Failed to get session:', error);
+    }
     return null;
   }
 }
