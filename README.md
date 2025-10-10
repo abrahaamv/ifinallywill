@@ -145,12 +145,13 @@ platform/
 
 ### Cost-Optimized AI Architecture
 
-**75-85% cost reduction** through intelligent provider routing (Phase 5 complete):
+**82-85% cost reduction** through three-tier AI routing + frame deduplication (Phase 5 complete):
 
-- **Vision**: Gemini Flash 2.5 (85%) + Claude 3.5 Sonnet (15%) → $0.50/1M tokens (was $2.50/1M)
-- **LLM**: GPT-4o-mini (70%) + GPT-4o (30%) → $0.50/1M tokens (was $2.50/1M)
+- **Vision** (LiveKit Agent): Gemini Flash-Lite 8B (60%) + Gemini Flash (25%) + Claude Sonnet 4.5 (15%) → 85% cost reduction
+- **LLM** (Dashboard Chat API): GPT-4o-mini (70%) + GPT-4o (30%) → 75% cost reduction
+- **Frame Deduplication**: pHash algorithm with adaptive FPS (30→5 FPS) → 60-75% frame reduction
 - **LiveKit**: Self-hosted option (95-97% savings: $1.6K-6K/year vs $60K-120K+/year Enterprise)
-- **Expected Savings**: $680K annually at 100K sessions
+- **Combined Savings**: ~$1.1M/year at 1K users, scales linearly
 
 ### Enterprise-Grade Infrastructure
 
@@ -189,19 +190,27 @@ platform/
 - **Auth**: Auth.js (NextAuth.js) v5.0.0-beta.25
 
 ### AI Services
+
+**Three-Tier AI Routing** (LiveKit Agent - 82-85% cost reduction):
 - **Vision**:
-  - Google Gemini Flash 2.5 (routine - 85%)
-  - Anthropic Claude 3.5 Sonnet (complex - 15%)
-  - OpenAI GPT-4o (fallback)
-- **LLM**:
-  - OpenAI GPT-4o-mini (simple - 70%)
-  - OpenAI GPT-4o (complex - 30%)
+  - Google Gemini Flash-Lite 8B (simple - 60%, $0.075/1M tokens)
+  - Google Gemini Flash (moderate - 25%, $0.20/1M tokens)
+  - Anthropic Claude Sonnet 4.5 (complex - 15%, $3.00/1M tokens)
+- **LLM** (Dashboard Chat API):
+  - OpenAI GPT-4o-mini (simple - 70%, $0.15/1M tokens)
+  - OpenAI GPT-4o (complex - 30%, $5.00/1M tokens)
 - **Speech**:
-  - Deepgram Nova-3 (STT)
-  - ElevenLabs Turbo v2.5 (TTS - primary)
-  - Cartesia Sonic (TTS - fallback)
-- **Embeddings**: Voyage Multimodal-3
-- **Real-time**: LiveKit Cloud
+  - Deepgram Nova-3 (STT, $0.0036/min)
+  - ElevenLabs Turbo v2.5 (TTS - primary, $0.15/1K chars)
+  - Cartesia Sonic (TTS - fallback, $0.05/1K chars)
+- **Embeddings**: Voyage Multimodal-3 ($0.12/1M tokens)
+- **Real-time**: LiveKit Cloud (self-hosted option: $1.6K-6K/year vs $60K-120K+/year Enterprise)
+
+**Cost Optimization Features**:
+- Complexity scoring algorithm (0-18 points: length, keywords, questions, code, data)
+- Perceptual hashing (pHash) for frame deduplication (60-75% frame reduction)
+- Adaptive FPS: 30 FPS active → 5 FPS idle for screen sharing
+- **Combined Savings**: 82-85% vs baseline (~$1.1M/year at 1K users)
 
 ### Development Tools
 - **Monorepo**: Turborepo for build orchestration
