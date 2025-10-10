@@ -73,7 +73,7 @@ export const livekitRouter = router({
       return {
         roomName: room.name,
         roomSid: room.sid,
-        createdAt: room.creationTime,
+        createdAt: Number(room.creationTime), // Convert BigInt to number for JSON serialization
       };
     } catch (error) {
       console.error('Failed to create LiveKit room:', error);
@@ -160,7 +160,7 @@ export const livekitRouter = router({
           fullRoomName: room.name, // Full name with tenant prefix (for joining)
           roomSid: room.sid,
           numParticipants: room.numParticipants,
-          createdAt: room.creationTime,
+          createdAt: Number(room.creationTime), // Convert BigInt to number for JSON serialization
           metadata: room.metadata ? JSON.parse(room.metadata) : undefined,
         })),
       };
