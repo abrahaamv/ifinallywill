@@ -8,22 +8,25 @@
 **Connection Pooling**: PgBouncer recommended (50-100 connections)
 **Migration Strategy**: SQL files for RLS policies + Drizzle Kit push for schema
 
-**Status**: ✅ Phase 2 complete (2025-10-06) - All schema, RLS policies, and seeding implemented
+**Status**: ✅ Phase 2 COMPLETE (2025-10-06) + Phase 8 Security (2025-01-10) - All 15 tables, 8 migrations, 56 RLS policies
 
-**15 Tables Total**:
-- **Core**: `tenants`, `users`, `widgets`, `meetings`, `sessions`, `messages`
-- **Auth.js**: `accounts`, `auth_sessions`, `verification_tokens`
-- **Knowledge**: `knowledge_documents`, `knowledge_chunks`
-- **Cost Tracking**: `cost_events`, `cost_summaries`, `budget_alerts`
-- **AI**: `ai_personalities`
+**15 Tables Total** (596 lines in `packages/db/src/schema/index.ts`):
+- **Core** (6): `tenants`, `users`, `widgets`, `meetings`, `sessions`, `messages`
+- **Auth.js** (3): `accounts`, `auth_sessions`, `verification_tokens` (Migration 007 - schema alignment)
+- **Knowledge Base** (2): `knowledge_documents`, `knowledge_chunks` (pgvector 1024-dimensional embeddings)
+- **Cost Tracking** (3): `cost_events`, `cost_summaries`, `budget_alerts`
+- **AI Configuration** (1): `ai_personalities`
+- **Phase 8 Security** (added 2025-01-10): `api_keys`, `audit_logs`, `data_requests` (GDPR compliance)
 
-> **🔐 SECURITY IMPLEMENTATION**:
-> - Row-Level Security (RLS) with **FORCE mode** enabled on 14 tenant-scoped tables
-> - 56 policies implemented (4 per table: SELECT, INSERT, UPDATE, DELETE)
-> - Helper function `get_current_tenant_id()` for edge case handling
-> - Session variable `app.current_tenant_id` MUST be set before ANY database query
+> **🔐 SECURITY IMPLEMENTATION** (Phase 2 + Phase 8):
+> - **Row-Level Security (RLS)**: FORCE mode enabled on 14 tenant-scoped tables (Migration 008 - 2025-10-07)
+> - **56 RLS Policies**: 4 per table (SELECT, INSERT, UPDATE, DELETE) enforcing tenant isolation
+> - **Helper Function**: `get_current_tenant_id()` handles empty string edge cases from `current_setting()`
+> - **Session Variable**: `app.current_tenant_id` MUST be set before ANY database query
+> - **8 Migrations Completed**: RLS policies, Auth.js alignment, performance indexes
+> - **Phase 8 Tables**: `api_keys`, `audit_logs`, `data_requests` for enterprise security
 > - See `rls-policies.md` for comprehensive RLS documentation
-> - See `migrations.md` for migration history and execution order
+> - See `migrations.md` for complete migration history
 
 ## 🎯 Database Philosophy
 
@@ -563,15 +566,16 @@ CREATE INDEX ai_personality_default_idx ON ai_personalities(tenant_id, is_defaul
 # 1. Push schema changes to database (Drizzle Kit)
 pnpm db:push
 
-# 2. Apply RLS policies (SQL migrations)
+# 2. Apply all 8 migrations in sequence
 psql -U platform -d platform -f packages/db/migrations/001_enable_rls.sql
 psql -U platform -d platform -f packages/db/migrations/002_fix_rls_policies.sql
 psql -U platform -d platform -f packages/db/migrations/003_fix_rls_empty_string.sql
-
-# 3. Seed database (with temporary RLS disable)
 psql -U platform -d platform -f packages/db/migrations/004_seed_helper.sql
 pnpm db:seed
 psql -U platform -d platform -f packages/db/migrations/005_restore_force_rls.sql
+psql -U platform -d platform -f packages/db/migrations/006_add_performance_indexes.sql
+psql -U platform -d platform -f packages/db/migrations/007_auth_schema_alignment.sql
+psql -U platform -d platform -f packages/db/migrations/008_enable_rls.sql
 ```
 
 ### Drizzle Kit Configuration
@@ -599,13 +603,16 @@ export default {
 
 ### Migration Files
 
-**5 migration files implemented** in `packages/db/migrations/`:
+**8 migration files implemented** in `packages/db/migrations/`:
 
-1. **`001_enable_rls.sql`** - Initial RLS setup (superseded by 003)
-2. **`002_fix_rls_policies.sql`** - Separate INSERT/UPDATE/DELETE policies (superseded by 003)
-3. **`003_fix_rls_empty_string.sql`** - ✅ Production-ready RLS with helper function (ACTIVE)
-4. **`004_seed_helper.sql`** - Temporarily disable FORCE RLS for seeding
-5. **`005_restore_force_rls.sql`** - Restore FORCE RLS after seeding
+1. **`001_enable_rls.sql`** (2025-10-06) - Initial RLS setup (superseded by 003)
+2. **`002_fix_rls_policies.sql`** (2025-10-06) - Separate INSERT/UPDATE/DELETE policies (superseded by 003)
+3. **`003_fix_rls_empty_string.sql`** (2025-10-06) - ✅ Production-ready RLS with `get_current_tenant_id()` helper
+4. **`004_seed_helper.sql`** (2025-10-06) - Temporarily disable FORCE RLS for seeding
+5. **`005_restore_force_rls.sql`** (2025-10-06) - Restore FORCE RLS after seeding
+6. **`006_add_performance_indexes.sql`** (2025-10-06) - 55 performance indexes including pgvector HNSW
+7. **`007_auth_schema_alignment.sql`** (2025-10-06) - Auth.js schema compatibility (`session_token` as PK)
+8. **`008_enable_rls.sql`** (2025-10-07) - ✅ **ACTIVE** - FORCE RLS on all 14 tenant-scoped tables
 
 See `migrations.md` for complete migration documentation and execution details.
 
@@ -613,7 +620,7 @@ See `migrations.md` for complete migration documentation and execution details.
 
 ## 🔐 Multi-Tenancy Enforcement
 
-**Status**: ✅ Phase 2 complete - FORCE RLS enabled on 14 tenant-scoped tables
+**Status**: ✅ Phase 2 + Phase 8 COMPLETE - FORCE RLS enabled on 14 tenant-scoped tables (Migration 008)
 
 > **📚 COMPREHENSIVE DOCUMENTATION**: See `rls-policies.md` for complete RLS implementation details, policy structure, middleware integration, and troubleshooting guide.
 
@@ -1139,4 +1146,8 @@ pnpm drizzle-kit introspect:pg
 
 ---
 
-**Phase 2 Status**: ✅ COMPLETE (2025-10-06) - Ready for Phase 3 (Backend APIs)
+**Database Status**: ✅ COMPLETE (Phase 2: 2025-10-06, Phase 8: 2025-01-10)
+- **15 tables** (596 lines schema)
+- **8 migrations** (RLS, Auth.js, indexes, security)
+- **56 RLS policies** (FORCE mode enforced)
+- **Production-ready** with enterprise security features

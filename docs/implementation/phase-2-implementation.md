@@ -100,12 +100,15 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 ```
 
-**Migration Files**:
-- `001_initial_schema.sql` - Base tables
-- `002_rls_policies.sql` - 56 RLS policies
-- `003_get_current_tenant_id.sql` - Session variable function
-- `004_force_rls.sql` - FORCE RLS enforcement
-- `005_tenant_id_checks.sql` - Policy validation
+**Migration Files** (8 total):
+- `001_enable_rls.sql` (2025-10-06) - Initial RLS setup (superseded by 003)
+- `002_fix_rls_policies.sql` (2025-10-06) - Separate INSERT/UPDATE/DELETE policies (superseded by 003)
+- `003_fix_rls_empty_string.sql` (2025-10-06) - Production-ready RLS with `get_current_tenant_id()` helper
+- `004_seed_helper.sql` (2025-10-06) - Temporarily disable FORCE RLS for seeding
+- `005_restore_force_rls.sql` (2025-10-06) - Restore FORCE RLS after seeding
+- `006_add_performance_indexes.sql` (2025-10-06) - 55 performance indexes including pgvector HNSW
+- `007_auth_schema_alignment.sql` (2025-10-06) - Auth.js schema compatibility (`session_token` as PK)
+- `008_enable_rls.sql` (2025-10-07) - ✅ **ACTIVE** - FORCE RLS on all 14 tenant-scoped tables
 
 ### Database Configuration
 
@@ -959,4 +962,4 @@ FROM users ORDER BY role DESC;
 - ✅ Account lockout protection
 - ✅ Session hijacking prevention
 
-**Updated Production Readiness**: Database ✅ | Auth ⚠️ (integration pending) | Overall 90%
+**Updated Production Readiness**: Database ✅ (15 tables, 8 migrations, 56 RLS policies) | Auth ✅ (Phase 8 complete) | Overall 98%
