@@ -15,7 +15,6 @@ import {
   verificationTokens,
 } from '@platform/db';
 import { verify as verifyArgon2 } from 'argon2';
-import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
@@ -109,24 +108,18 @@ export const authConfig: NextAuthConfig = {
           hasHash: !!user.passwordHash,
         });
 
-        // Verify password based on algorithm stored in database
+        // Verify password using Argon2id (OWASP 2025 recommended standard)
         let isValidPassword = false;
 
         try {
-          if (user.passwordAlgorithm === 'argon2id') {
-            console.log('[Auth] Using Argon2id verification');
-            // Argon2id verification (recommended, industry standard)
-            isValidPassword = await verifyArgon2(user.passwordHash, password);
-            console.log('[Auth] Argon2id verification result:', isValidPassword);
-          } else if (user.passwordAlgorithm === 'bcrypt') {
-            console.log('[Auth] Using BCrypt verification');
-            // BCrypt verification (legacy support)
-            isValidPassword = await bcrypt.compare(password, user.passwordHash);
-            console.log('[Auth] BCrypt verification result:', isValidPassword);
-          } else {
-            console.error('[Auth] Unknown password algorithm:', user.passwordAlgorithm);
+          if (user.passwordAlgorithm !== 'argon2id') {
+            console.error('[Auth] Unsupported password algorithm:', user.passwordAlgorithm);
             throw new Error('Invalid email or password');
           }
+
+          console.log('[Auth] Using Argon2id verification');
+          isValidPassword = await verifyArgon2(user.passwordHash, password);
+          console.log('[Auth] Argon2id verification result:', isValidPassword);
         } catch (error) {
           console.error('[Auth] Password verification error:', error);
           throw new Error('Invalid email or password');
@@ -200,22 +193,8 @@ export const authConfig: NextAuthConfig = {
   // Callbacks to customize behavior
   callbacks: {
     /**
-     * JWT Callback - Called when JWT is created or updated
-     * Add custom properties to the JWT token
-     */
-    async jwt({ token, user }) {
-      // On sign-in, add user properties to JWT
-      if (user) {
-        token.id = user.id;
-        token.tenantId = user.tenantId;
-        token.role = user.role;
-      }
-      return token;
-    },
-
-    /**
      * Session Callback - Called when session is checked (database strategy)
-     * Add custom properties to the session object
+     * Add custom properties to the session object from database user record
      */
     async session({ session, user }) {
       // Database strategy: user comes from database
