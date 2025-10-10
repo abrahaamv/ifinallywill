@@ -80,7 +80,8 @@ export const livekitRouter = router({
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to create room',
-        cause: error,
+        // Don't pass error object directly - it may contain BigInt values
+        cause: error instanceof Error ? { message: error.message } : undefined,
       });
     }
   }),
@@ -132,7 +133,8 @@ export const livekitRouter = router({
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to join room',
-        cause: error,
+        // Don't pass error object directly - it may contain BigInt values
+        cause: error instanceof Error ? { message: error.message } : undefined,
       });
     }
   }),
@@ -169,7 +171,8 @@ export const livekitRouter = router({
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to list rooms',
-        cause: error,
+        // Don't pass error object directly - it may contain BigInt values
+        cause: error instanceof Error ? { message: error.message } : undefined,
       });
     }
   }),
@@ -197,7 +200,8 @@ export const livekitRouter = router({
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to delete room',
-        cause: error,
+        // Don't pass error object directly - it may contain BigInt values
+        cause: error instanceof Error ? { message: error.message } : undefined,
       });
     }
   }),
