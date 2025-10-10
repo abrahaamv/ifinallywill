@@ -17,6 +17,11 @@ from collections import deque
 from typing import Optional
 
 from dotenv import load_dotenv
+
+# Load environment variables FIRST (before importing ai_providers)
+# ai_providers checks for API keys during import, so .env must be loaded first
+load_dotenv()
+
 from livekit import rtc
 from livekit.agents import (
     AutoSubscribe,
@@ -27,7 +32,7 @@ from livekit.agents import (
 from livekit.plugins import deepgram
 from PIL import Image
 
-# Import AI providers and backend client
+# Import AI providers and backend client (after load_dotenv)
 from ai_providers import (
     TaskComplexity,
     complexity_estimator,
@@ -35,9 +40,6 @@ from ai_providers import (
     vision_analyzer,
 )
 from backend_client import BackendClient
-
-# Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(
