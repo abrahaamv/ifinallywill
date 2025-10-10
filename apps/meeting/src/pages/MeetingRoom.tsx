@@ -226,30 +226,73 @@ function VideoGrid() {
 
 /**
  * Chat Data Channel Handler
- * Listens for data messages from AI agent and voice transcriptions
+ * Listens for data messages from AI agent with JSON support and topic filtering
  */
 function ChatHandler({
   setMessages,
 }: {
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }) {
-  // Subscribe to data channel messages
+  // Subscribe to data channel messages with topic filtering
   useDataChannel((message) => {
     try {
-      const text = new TextDecoder().decode(message.payload);
-      const sender = message.from?.identity || 'AI Assistant';
+      // Filter by topic - only process agent.chat messages
+      // @ts-ignore - topic property exists but not in types
+      const messageTopic = message.topic || '';
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender,
-          content: text,
-          timestamp: new Date(),
-          type: 'voice', // Messages from agent are voice transcriptions
-        },
-      ]);
+      if (messageTopic !== 'agent.chat') {
+        // Not an agent chat message, ignore
+        console.debug('Ignoring message with topic:', messageTopic);
+        return;
+      }
+
+      const text = new TextDecoder().decode(message.payload);
+
+      // Try to parse as JSON first (new structured format)
+      try {
+        const data = JSON.parse(text);
+
+        // Handle structured message format
+        if (data.type === 'agent_message') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: 'AI Assistant',
+              content: data.content,
+              timestamp: data.timestamp ? new Date(data.timestamp * 1000) : new Date(),
+              type: 'voice', // Agent messages are voice transcriptions
+            },
+          ]);
+          console.log('Received agent message:', data.content.substring(0, 50) + '...');
+        } else if (data.type === 'vision_insight') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: 'AI Vision',
+              content: data.content,
+              timestamp: data.timestamp ? new Date(data.timestamp * 1000) : new Date(),
+              type: 'voice',
+            },
+          ]);
+        } else {
+          console.warn('Unknown message type:', data.type);
+        }
+      } catch (jsonError) {
+        // Not JSON, treat as plain text (backward compatibility)
+        const sender = message.from?.identity || 'AI Assistant';
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender,
+            content: text,
+            timestamp: new Date(),
+            type: 'voice',
+          },
+        ]);
+        console.log('Received plain text message (fallback)');
+      }
     } catch (error) {
-      console.error('Failed to decode message:', error);
+      console.error('Failed to process message:', error);
     }
   });
 
