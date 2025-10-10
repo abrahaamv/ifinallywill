@@ -179,19 +179,19 @@ export function MeetingRoom() {
             {/* Chat Data Channel Handler */}
             <ChatHandler setMessages={setMessages} />
 
+            {/* Chat Panel - Must be inside LiveKitRoom to access room context */}
+            {isChatOpen && (
+              <ChatPanel
+                messages={messages}
+                setMessages={setMessages}
+                onClose={() => setIsChatOpen(false)}
+              />
+            )}
+
             {/* Control Bar */}
             <ControlBar />
           </LiveKitRoom>
         </div>
-
-        {/* Chat Panel */}
-        {isChatOpen && (
-          <ChatPanel
-            messages={messages}
-            setMessages={setMessages}
-            onClose={() => setIsChatOpen(false)}
-          />
-        )}
       </div>
     </div>
   );
