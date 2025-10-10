@@ -32,9 +32,11 @@ export function MeetingRoom() {
   // Request access token on mount
   useEffect(() => {
     const requestToken = async () => {
+      // Validate room ID from URL
       if (!roomId) {
         setError('Room ID is required');
         setIsLoading(false);
+        navigate('/');
         return;
       }
 
@@ -42,7 +44,7 @@ export function MeetingRoom() {
         // Get participant name from session storage or use default
         const participantName = sessionStorage.getItem('displayName') || 'Guest';
 
-        // Join room via tRPC API
+        // Join room via tRPC API (uses full room name with tenant prefix)
         const result = await joinRoom.mutateAsync({
           roomName: roomId,
           participantName,
@@ -59,7 +61,7 @@ export function MeetingRoom() {
     };
 
     requestToken();
-  }, [roomId]);
+  }, [roomId, navigate, joinRoom]);
 
   // Handle connection errors
   const handleError = (error: Error) => {

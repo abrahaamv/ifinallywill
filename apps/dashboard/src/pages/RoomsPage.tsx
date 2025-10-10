@@ -81,7 +81,9 @@ export function RoomsPage() {
 
   const getShareableLink = (fullRoomName: string) => {
     // Use full room name with tenant prefix for public access
-    return `https://meet.platform.com/${fullRoomName}`;
+    // Development: localhost:5175, Production: https://meet.platform.com
+    const baseUrl = import.meta.env.DEV ? 'http://localhost:5175' : 'https://meet.platform.com';
+    return `${baseUrl}/${fullRoomName}`;
   };
 
   const handleCopyLink = async (roomName: string) => {
