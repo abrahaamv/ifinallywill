@@ -5,6 +5,7 @@
  */
 
 import { TRPCError, initTRPC } from '@trpc/server';
+import { sql } from 'drizzle-orm';
 import type { Context } from './context';
 
 /**
@@ -22,6 +23,7 @@ export const publicProcedure = t.procedure;
  * Protected procedure - requires authentication
  *
  * Guarantees ctx.session, ctx.tenantId, ctx.userId, ctx.role are non-null
+ * Sets PostgreSQL session variable for RLS policies
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session || !ctx.tenantId || !ctx.userId || !ctx.role) {
@@ -31,15 +33,30 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   }
 
-  return next({
-    ctx: {
-      ...ctx,
-      // Type narrowing - these are guaranteed non-null now
-      session: ctx.session,
-      tenantId: ctx.tenantId,
-      userId: ctx.userId,
-      role: ctx.role,
-    },
+  // Type narrowing - capture non-null values before transaction
+  const session = ctx.session;
+  const tenantId = ctx.tenantId;
+  const userId = ctx.userId;
+  const role = ctx.role;
+
+  // Wrap in transaction to use SET LOCAL for RLS policies
+  // This ensures tenant isolation and automatic cleanup after request
+  return await ctx.db.transaction(async (tx) => {
+    // Set PostgreSQL session variable for RLS policies
+    // SET LOCAL only persists for this transaction, preventing tenant leakage
+    await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+
+    return next({
+      ctx: {
+        ...ctx,
+        db: tx, // Use transaction connection for all queries
+        // Type narrowing - these are guaranteed non-null now
+        session,
+        tenantId,
+        userId,
+        role,
+      },
+    });
   });
 });
 
