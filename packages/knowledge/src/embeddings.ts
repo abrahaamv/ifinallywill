@@ -34,12 +34,12 @@ interface VoyageResponse {
 /**
  * Voyage AI Embedding Provider
  *
- * Implements EmbeddingProvider interface for Voyage Multimodal-3
+ * Implements EmbeddingProvider interface for Voyage-2
  * Model specs:
- * - Dimensions: 1024
- * - Max input: 32K tokens
+ * - Dimensions: 1024 (voyage-2)
+ * - Max input: 16K tokens
  * - Pricing: $0.12/1M tokens
- * - Best for: Multi-modal retrieval (text, code, images)
+ * - Best for: General-purpose retrieval (text, code)
  */
 export class VoyageEmbeddingProvider implements EmbeddingProvider {
   private readonly apiKey: string;
@@ -51,7 +51,25 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
       throw new Error('Voyage API key is required');
     }
     this.apiKey = config.apiKey;
-    this.model = config.model || 'voyage-multimodal-3';
+    this.model = config.model || 'voyage-2';
+  }
+
+  /**
+   * Sanitize text for Voyage API
+   * Removes invalid UTF-8 characters and normalizes whitespace
+   */
+  private sanitizeText(text: string): string {
+    return (
+      text
+        // Replace invalid UTF-8 characters with space
+        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, ' ')
+        // Normalize unicode
+        .normalize('NFC')
+        // Replace multiple spaces with single space
+        .replace(/\s+/g, ' ')
+        // Trim
+        .trim()
+    );
   }
 
   /**
@@ -92,8 +110,11 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
       throw new Error('Batch size cannot exceed 128 texts');
     }
 
-    // Validate texts
-    const validTexts = texts.filter((t) => t && t.trim().length > 0);
+    // Validate and sanitize texts
+    const validTexts = texts
+      .filter((t) => t && t.trim().length > 0)
+      .map((t) => this.sanitizeText(t));
+
     if (validTexts.length === 0) {
       throw new Error('All texts are empty');
     }
@@ -102,7 +123,7 @@ export class VoyageEmbeddingProvider implements EmbeddingProvider {
       const response = await fetch(`${this.baseUrl}/embeddings`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
@@ -188,6 +209,6 @@ export function createVoyageProvider(): VoyageEmbeddingProvider {
 
   return new VoyageEmbeddingProvider({
     apiKey,
-    model: 'voyage-multimodal-3',
+    model: 'voyage-2',
   });
 }

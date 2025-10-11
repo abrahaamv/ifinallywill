@@ -20,7 +20,6 @@ export interface SearchResult {
 
 export interface RAGQueryOptions {
   query: string;
-  tenantId: string;
   topK?: number;
   minScore?: number;
   hybridWeights?: {
