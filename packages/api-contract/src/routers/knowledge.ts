@@ -570,6 +570,8 @@ export const knowledgeRouter = router({
       // <=> is cosine distance operator (0 = identical, 2 = opposite)
       // 1 - distance = similarity score (0 to 1, higher is better)
 
+      // RLS automatically filters knowledge_documents by tenant_id
+      // Join will only match documents visible to current tenant
       const similarityQuery = sql`
         SELECT
           kc.id,
@@ -582,8 +584,7 @@ export const knowledgeRouter = router({
           1 - (kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as similarity_score
         FROM knowledge_chunks kc
         INNER JOIN knowledge_documents kd ON kc.document_id = kd.id
-        WHERE kd.tenant_id = ${ctx.tenantId}
-        ${input.category ? sql`AND kd.category = ${input.category}` : sql``}
+        ${input.category ? sql`WHERE kd.category = ${input.category}` : sql``}
         ORDER BY kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
         LIMIT ${input.limit}
       `;

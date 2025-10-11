@@ -100,16 +100,22 @@ export const chatRouter = router({
         .limit(20); // Last 20 messages for context
 
       // Step 2: Execute RAG query to get relevant knowledge
+      // RLS policies automatically filter by tenant via get_current_tenant_id()
       const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
       const ragResult = await executeRAGQuery(ctx.db as any, {
         query: input.content,
-        tenantId: ctx.tenantId,
         topK: 5,
         minScore: 0.7,
       });
 
+      console.log('[RAG] Query:', input.content);
+      console.log('[RAG] Chunks retrieved:', ragResult.totalChunks);
+      console.log('[RAG] Context length:', ragResult.context.length);
+      console.log('[RAG] Top chunk preview:', ragResult.chunks[0]?.chunk.content.substring(0, 100));
+
       // Step 3: Build enhanced prompt with RAG context
       const enhancedPrompt = buildRAGPrompt(input.content, ragResult.context);
+      console.log('[RAG] Enhanced prompt length:', enhancedPrompt.length);
 
       // Step 4: Convert history to AI format with RAG-enhanced system message
       const aiMessages = [

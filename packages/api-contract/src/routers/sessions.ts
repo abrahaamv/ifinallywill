@@ -475,10 +475,10 @@ export const sessionsRouter = router({
         const aiStartTime = Date.now();
 
         // Step 1: Execute RAG query to retrieve relevant knowledge
+        // RLS policies automatically filter by tenant via get_current_tenant_id()
         const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
         const ragResult = await executeRAGQuery(ctx.db, {
           query: input.content,
-          tenantId: ctx.tenantId,
           topK: 5,
           minScore: 0.7,
         });
