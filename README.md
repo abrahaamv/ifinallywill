@@ -165,7 +165,7 @@ platform/
 
 - **Multi-modal Interaction**: Voice, vision, and text in real-time (Phase 5 complete)
 - **Screen Analysis**: Real-time analysis at 1 FPS (Python LiveKit agent)
-- **Knowledge Enhancement**: RAG system with mock data integration (Phase 5 complete)
+- **Knowledge Enhancement**: Production RAG system with hybrid retrieval (semantic + keyword + smart fallback) + voyage-2 embeddings (Phase 5 complete)
 - **Complexity-based Routing**: Automatic provider selection for cost optimization (Phase 5 complete)
 - **Real-time Chat**: WebSocket bidirectional chat with Redis Streams (Phase 6 complete)
 - **Dual-Mode Interface**: AI chat + Real-time chat in single dashboard (Phase 6 complete)
@@ -203,7 +203,7 @@ platform/
   - Deepgram Nova-3 (STT, $0.0036/min)
   - ElevenLabs Turbo v2.5 (TTS - primary, $0.15/1K chars)
   - Cartesia Sonic (TTS - fallback, $0.05/1K chars)
-- **Embeddings**: Voyage Multimodal-3 ($0.12/1M tokens)
+- **Embeddings**: Voyage-2 ($0.10/1M tokens) with text sanitization
 - **Real-time**: LiveKit Cloud (self-hosted option: $1.6K-6K/year vs $60K-120K+/year Enterprise)
 
 **Cost Optimization Features**:
