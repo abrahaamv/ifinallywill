@@ -8,7 +8,6 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { ApiKeysPage } from './pages/ApiKeysPage';
-import { ChatPage } from './pages/ChatPage';
 import { ConversationsPage } from './pages/ConversationsPage';
 import { CostsPage } from './pages/CostsPage';
 import { DeployPage } from './pages/DeployPage';
@@ -55,7 +54,6 @@ export function App() {
               <Route path="dashboard" element={<HomePage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="conversations" element={<ConversationsPage />} />
-              <Route path="conversations/:id" element={<ChatPage />} />
               <Route path="knowledge" element={<KnowledgePage />} />
               <Route path="rooms" element={<RoomsPage />} />
               <Route path="escalations" element={<EscalationsPage />} />

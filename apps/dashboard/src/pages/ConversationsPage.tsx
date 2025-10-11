@@ -7,7 +7,6 @@
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@platform/ui';
 import { Bot, CheckCircle2, Clock, Filter, MessageCircle, Search, User, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
 
 export function ConversationsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
@@ -284,11 +283,9 @@ export function ConversationsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <NavLink to={`/conversations/${conv.id}`}>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </NavLink>
+                    <Button variant="ghost" size="sm" disabled>
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

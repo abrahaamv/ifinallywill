@@ -19,6 +19,8 @@ interface Message {
     costUsd?: number;
     latencyMs?: number;
     ragChunksRetrieved?: number;
+    ragProcessingTimeMs?: number;
+    ragTopRelevance?: 'high' | 'medium' | 'low' | 'none';
   };
 }
 
@@ -234,38 +236,53 @@ export function ChatWidget() {
                       </div>
                     )}
 
-                    <Card
-                      className={`max-w-[75%] ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card border-border'
-                      }`}
-                    >
-                      <CardContent className="p-3">
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    <div className="flex flex-col gap-1 max-w-[75%]">
+                      <Card
+                        className={`${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card border-border'
+                        }`}
+                      >
+                        <CardContent className="p-3">
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                        </CardContent>
+                      </Card>
 
-                        {message.metadata && message.role === 'assistant' && (
-                          <div className="mt-2 pt-2 border-t border-border/50">
-                            <div className="flex flex-wrap gap-2 text-xs opacity-70">
-                              {message.metadata.model && (
-                                <span className="flex items-center gap-1">
-                                  <Sparkles className="w-3 h-3" />
-                                  {message.metadata.model}
-                                </span>
+                      {/* Metadata below message for assistant */}
+                      {message.metadata && message.role === 'assistant' && (
+                        <div className="px-2 space-y-0.5">
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            {message.metadata.model && (
+                              <span className="flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" />
+                                {message.metadata.model}**
+                              </span>
+                            )}
+                            {message.metadata.tokensUsed && (
+                              <span>{message.metadata.tokensUsed} tokens</span>
+                            )}
+                            {message.metadata.costUsd && (
+                              <span>${message.metadata.costUsd.toFixed(6)}</span>
+                            )}
+                            {message.metadata.latencyMs && (
+                              <span>{message.metadata.latencyMs}ms</span>
+                            )}
+                          </div>
+                          {message.metadata.ragChunksRetrieved !== undefined && message.metadata.ragChunksRetrieved > 0 && (
+                            <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
+                              <span>📚 RAG: {message.metadata.ragChunksRetrieved} chunks***</span>
+                              {message.metadata.ragProcessingTimeMs && (
+                                <span>⚡ {message.metadata.ragProcessingTimeMs}ms</span>
                               )}
-                              {message.metadata.costUsd && (
-                                <span>${message.metadata.costUsd.toFixed(6)}</span>
-                              )}
-                              {message.metadata.ragChunksRetrieved !== undefined && (
-                                <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                  📚 {message.metadata.ragChunksRetrieved} chunks
-                                </span>
+                              {message.metadata.ragTopRelevance && message.metadata.ragTopRelevance !== 'none' && (
+                                <span>🎯 {message.metadata.ragTopRelevance} relevance</span>
                               )}
                             </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {message.role === 'user' && (
                       <div className="flex-shrink-0">
@@ -303,9 +320,6 @@ export function ChatWidget() {
                     )}
                   </Button>
                 </form>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Powered by three-tier AI routing with RAG
-                </p>
               </div>
             </>
           )}
