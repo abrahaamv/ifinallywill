@@ -100,31 +100,57 @@ export function KnowledgePage() {
     setUploadProgress('Reading file...');
 
     try {
-      // Read file as base64
-      const reader = new FileReader();
-      reader.onload = async () => {
+      // Read file content as text first (for content validation)
+      const textReader = new FileReader();
+      textReader.onload = async () => {
         try {
-          const result = reader.result as string;
-          const base64Data = result.split(',')[1];
+          const textContent = textReader.result as string;
 
-          if (!base64Data) {
-            throw new Error('Failed to read file data');
+          if (!textContent || textContent.trim().length === 0) {
+            throw new Error('File is empty');
           }
 
-          setUploadProgress('Uploading and processing...');
+          setUploadProgress('Processing file...');
 
-          // Call upload mutation
-          await uploadMutation.mutateAsync({
-            title: uploadFormData.title,
-            content: '', // Will be extracted from file
-            category: uploadFormData.category || undefined,
-            file: {
-              name: uploadFormData.file!.name,
-              type: uploadFormData.file!.type,
-              size: uploadFormData.file!.size,
-              data: base64Data,
-            },
-          });
+          // Now read as base64 for upload
+          const base64Reader = new FileReader();
+          base64Reader.onload = async () => {
+            try {
+              const result = base64Reader.result as string;
+              const base64Data = result.split(',')[1];
+
+              if (!base64Data) {
+                throw new Error('Failed to encode file data');
+              }
+
+              setUploadProgress('Uploading and processing...');
+
+              // Call upload mutation with actual content
+              await uploadMutation.mutateAsync({
+                title: uploadFormData.title,
+                content: textContent, // Use extracted text content
+                category: uploadFormData.category || undefined,
+                file: {
+                  name: uploadFormData.file!.name,
+                  type: uploadFormData.file!.type,
+                  size: uploadFormData.file!.size,
+                  data: base64Data,
+                },
+              });
+            } catch (error) {
+              setIsUploading(false);
+              setUploadProgress('');
+              setUploadError(error instanceof Error ? error.message : 'Upload failed');
+            }
+          };
+
+          base64Reader.onerror = () => {
+            setIsUploading(false);
+            setUploadProgress('');
+            setUploadError('Failed to encode file');
+          };
+
+          base64Reader.readAsDataURL(uploadFormData.file!);
         } catch (error) {
           setIsUploading(false);
           setUploadProgress('');
@@ -132,13 +158,13 @@ export function KnowledgePage() {
         }
       };
 
-      reader.onerror = () => {
+      textReader.onerror = () => {
         setIsUploading(false);
         setUploadProgress('');
         setUploadError('Failed to read file');
       };
 
-      reader.readAsDataURL(uploadFormData.file);
+      textReader.readAsText(uploadFormData.file);
     } catch (error) {
       setIsUploading(false);
       setUploadProgress('');

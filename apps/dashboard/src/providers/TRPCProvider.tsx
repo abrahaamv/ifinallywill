@@ -89,7 +89,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             const response = await fetch(url, {
               ...options,
               credentials: 'include',
-            });
+            } as RequestInit);
 
             // Handle 401 Unauthorized - session expired or invalid
             if (response.status === 401) {

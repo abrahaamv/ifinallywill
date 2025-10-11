@@ -15,9 +15,9 @@ export default defineConfig({
         changeOrigin: false, // Keep same-origin for Auth.js cookies
         secure: false, // Allow HTTP for local development
         // Cookie rewriting for Auth.js compatibility with HTTP localhost
-        configure: (proxy, options) => {
+        configure: (proxy) => {
           // Intercept proxy responses to rewrite Set-Cookie headers
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes) => {
             const setCookie = proxyRes.headers['set-cookie'];
             if (setCookie) {
               // Rewrite cookies to work with HTTP localhost (remove Secure flag, fix domain)
