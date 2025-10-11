@@ -4,10 +4,11 @@
  */
 
 import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@platform/ui';
-import { BookOpen, Home, Key, LayoutDashboard, LogOut, Menu, MessageSquare, PuzzleIcon, Settings, User, Video, X } from 'lucide-react';
+import { AlertTriangle, BarChart3, BookOpen, DollarSign, Home, LayoutDashboard, LogOut, Menu, MessageCircle, Plug, Rocket, Settings, Sparkles, User, Users, Video, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
+import { ChatWidget } from '../components/ChatWidget';
 
 interface NavItem {
   to: string;
@@ -17,11 +18,16 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-  { to: '/chat', label: 'AI Chat', icon: <MessageSquare className="h-5 w-5" /> },
-  { to: '/knowledge', label: 'Knowledge Base', icon: <BookOpen className="h-5 w-5" /> },
+  { to: '/analytics', label: 'Analytics', icon: <BarChart3 className="h-5 w-5" /> },
+  { to: '/conversations', label: 'Conversations', icon: <MessageCircle className="h-5 w-5" /> },
+  { to: '/knowledge', label: 'Knowledge', icon: <BookOpen className="h-5 w-5" /> },
   { to: '/rooms', label: 'Meeting Rooms', icon: <Video className="h-5 w-5" /> },
-  { to: '/api-keys', label: 'API Keys', icon: <Key className="h-5 w-5" /> },
-  { to: '/widget-config', label: 'Widget Config', icon: <PuzzleIcon className="h-5 w-5" /> },
+  { to: '/escalations', label: 'Escalations', icon: <AlertTriangle className="h-5 w-5" /> },
+  { to: '/costs', label: 'Costs', icon: <DollarSign className="h-5 w-5" /> },
+  { to: '/optimize', label: 'Optimize', icon: <Sparkles className="h-5 w-5" /> },
+  { to: '/deploy', label: 'Deploy', icon: <Rocket className="h-5 w-5" /> },
+  { to: '/integrations', label: 'Integrations', icon: <Plug className="h-5 w-5" /> },
+  { to: '/team', label: 'Team', icon: <Users className="h-5 w-5" /> },
   { to: '/settings', label: 'Settings', icon: <Settings className="h-5 w-5" /> },
 ];
 
@@ -221,6 +227,9 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Chat Widget */}
+      <ChatWidget />
     </div>
   );
 }

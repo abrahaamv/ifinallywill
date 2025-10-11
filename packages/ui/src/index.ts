@@ -100,3 +100,19 @@ export { Progress } from './components/progress';
 export type { ProgressProps } from './components/progress';
 
 export { Skeleton } from './components/skeleton';
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './components/table';
+
+export { Textarea } from './components/textarea';
+export type { TextareaProps } from './components/textarea';
+
+export { Switch } from './components/switch';
