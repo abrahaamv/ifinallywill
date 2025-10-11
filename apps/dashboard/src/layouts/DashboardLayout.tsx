@@ -1,16 +1,34 @@
 /**
  * Dashboard Layout Component
- * Provides navigation sidebar and content area
+ * Enhanced navigation with icons, responsive mobile menu, and improved UI
  */
 
-import { Button } from '@platform/ui';
+import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@platform/ui';
+import { BookOpen, Home, Key, LayoutDashboard, LogOut, Menu, MessageSquare, PuzzleIcon, Settings, User, Video, X } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
+interface NavItem {
+  to: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const navItems: NavItem[] = [
+  { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
+  { to: '/chat', label: 'AI Chat', icon: <MessageSquare className="h-5 w-5" /> },
+  { to: '/knowledge', label: 'Knowledge Base', icon: <BookOpen className="h-5 w-5" /> },
+  { to: '/rooms', label: 'Meeting Rooms', icon: <Video className="h-5 w-5" /> },
+  { to: '/api-keys', label: 'API Keys', icon: <Key className="h-5 w-5" /> },
+  { to: '/widget-config', label: 'Widget Config', icon: <PuzzleIcon className="h-5 w-5" /> },
+  { to: '/settings', label: 'Settings', icon: <Settings className="h-5 w-5" /> },
+];
+
 export function DashboardLayout() {
   const { user, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     if (confirm('Are you sure you want to sign out?')) {
@@ -24,112 +42,66 @@ export function DashboardLayout() {
     }
   };
 
+  const getUserInitials = () => {
+    if (!user?.name) return '?';
+    return user.name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <div className="flex h-full bg-background">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 border-r border-border bg-card">
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card">
+        {/* Logo/Title */}
         <div className="flex h-16 items-center border-b border-border px-6">
-          <h1 className="text-xl font-semibold">AI Assistant</h1>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <Home className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              AI Platform
+            </h1>
+          </div>
         </div>
 
-        <nav className="flex flex-col gap-1 p-4">
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            Dashboard
-          </NavLink>
-
-          <NavLink
-            to="/chat"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            AI Chat
-          </NavLink>
-
-          <NavLink
-            to="/knowledge"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            Knowledge Base
-          </NavLink>
-
-          <NavLink
-            to="/rooms"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            Meeting Rooms
-          </NavLink>
-
-          <NavLink
-            to="/api-keys"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            API Keys
-          </NavLink>
-
-          <NavLink
-            to="/widget-config"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            Widget Configuration
-          </NavLink>
-
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-secondary text-foreground'
-                  : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-              }`
-            }
-          >
-            Settings
-          </NavLink>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`
+              }
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 w-64 border-t border-border p-4">
+        {/* User Profile Section */}
+        <div className="border-t border-border p-4">
           {user && (
-            <div className="mb-2 px-2 text-sm">
-              <p className="font-medium truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <div className="flex items-center gap-3 mb-3 px-2">
+              <Avatar>
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              </div>
             </div>
           )}
           <Button
@@ -138,15 +110,117 @@ export function DashboardLayout() {
             onClick={handleSignOut}
             disabled={isSigningOut}
           >
+            <LogOut className="h-4 w-4 mr-2" />
             {isSigningOut ? 'Signing out...' : 'Sign Out'}
           </Button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+      {/* Mobile/Tablet Layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Mobile Header */}
+        <header className="lg:hidden h-16 border-b border-border bg-card flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <Home className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <h1 className="text-lg font-bold">AI Platform</h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* User Menu for Mobile */}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/profile" className="cursor-pointer">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </NavLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/settings" className="cursor-pointer">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </NavLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} disabled={isSigningOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {isSigningOut ? 'Signing out...' : 'Sign Out'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Mobile Menu Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </header>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+            <aside className="fixed inset-y-0 left-0 w-72 border-r border-border bg-card shadow-lg">
+              {/* Mobile Menu Header */}
+              <div className="flex h-16 items-center justify-between border-b border-border px-6">
+                <h1 className="text-xl font-bold">Menu</h1>
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {/* Mobile Navigation */}
+              <nav className="p-4 space-y-1">
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      }`
+                    }
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+            </aside>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
