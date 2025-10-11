@@ -53,7 +53,6 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
 
   const {
     query,
-    tenantId,
     topK = 5,
     minScore = 0.7,
     hybridWeights = { semantic: 0.7, keyword: 0.3 },
@@ -68,6 +67,7 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
     // Step 2: Semantic search with pgvector
     // Use cosine distance operator (<=>)
     // Convert to similarity score: 1 - distance
+    // RLS policies automatically filter by tenant_id via get_current_tenant_id()
     const semanticResults = (await db.execute(sql`
       SELECT
         kc.id,
@@ -78,12 +78,12 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
         1 - (kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector) as semantic_score
       FROM ${knowledgeChunks} kc
       INNER JOIN ${knowledgeDocuments} kd ON kc.document_id = kd.id
-      WHERE kd.tenant_id = ${tenantId}
       ORDER BY kc.embedding <=> ${JSON.stringify(queryEmbedding)}::vector
       LIMIT ${topK * 2}
     `)) as unknown as SemanticSearchRow[];
 
     // Step 3: Keyword search with PostgreSQL full-text search
+    // RLS policies automatically filter by tenant_id via get_current_tenant_id()
     const keywordResults = (await db.execute(sql`
       SELECT
         kc.id,
@@ -94,14 +94,17 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
         ts_rank(to_tsvector('english', kc.content), plainto_tsquery('english', ${query})) as keyword_score
       FROM ${knowledgeChunks} kc
       INNER JOIN ${knowledgeDocuments} kd ON kc.document_id = kd.id
-      WHERE kd.tenant_id = ${tenantId}
-        AND to_tsvector('english', kc.content) @@ plainto_tsquery('english', ${query})
+      WHERE to_tsvector('english', kc.content) @@ plainto_tsquery('english', ${query})
       ORDER BY keyword_score DESC
       LIMIT ${topK * 2}
     `)) as unknown as KeywordSearchRow[];
 
     // Step 4: Merge and rerank results
-    const mergedResults = useReranking
+    // Smart fallback: If keyword search returns 0 results, skip hybrid reranking
+    // and use pure semantic scores to avoid penalizing good semantic matches
+    const shouldUseReranking = useReranking && keywordResults.length > 0;
+
+    const mergedResults = shouldUseReranking
       ? mergeAndRerank(semanticResults, keywordResults, hybridWeights)
       : semanticResults.map((r) => ({
           chunk: {
