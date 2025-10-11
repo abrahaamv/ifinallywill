@@ -31,7 +31,7 @@ from livekit.agents import (
     llm,
     voice,
 )
-from livekit.plugins import anthropic, deepgram, elevenlabs, google, openai, silero
+from livekit.plugins import anthropic, cartesia, deepgram, google, openai, silero
 
 from ai_router import AIRouter, ComplexityLevel
 from backend_client import BackendClient
@@ -691,11 +691,11 @@ def prewarm_fnc(proc: JobContext):
         logger.warning(f"Deepgram init failed: {e}")
 
     try:
-        # Test ElevenLabs connection
-        elevenlabs.TTS()
-        logger.info("✓ ElevenLabs TTS initialized")
+        # Test Cartesia connection (uses CARTESIA_API_KEY env var automatically)
+        cartesia.TTS(model="sonic-2")
+        logger.info("✓ Cartesia TTS initialized")
     except Exception as e:
-        logger.warning(f"ElevenLabs init failed: {e}")
+        logger.warning(f"Cartesia init failed: {e}")
 
     logger.info("Worker process ready")
 
@@ -760,9 +760,8 @@ async def entrypoint(ctx: JobContext):
         vad=silero.VAD.load(),  # Voice activity detection
         stt=deepgram.STT(),     # Speech-to-text
         llm=initial_llm,        # Dynamic LLM via ai_router
-        tts=elevenlabs.TTS(
-            voice_id=agent.tenant_config.tts_voice_id,
-            model=agent.tenant_config.tts_model
+        tts=cartesia.TTS(
+            model=agent.tenant_config.tts_model or "sonic-2",  # Cartesia Sonic model
         ),
     )
 
@@ -802,14 +801,37 @@ async def entrypoint(ctx: JobContext):
         on_track_subscribed(track, pub, part)
     ))
 
+    # Capture tenant_id in closure for chat handler
+    current_tenant_id = tenant_config.tenant_id
+
     # Handle incoming chat messages (just log, don't echo)
     async def on_data_received(data_packet: rtc.DataPacket):
-        """Handle incoming chat messages - log only, no echo"""
+        """Handle incoming chat messages with RAG integration"""
         try:
             message = data_packet.data.decode('utf-8')
             logger.info(f"Chat message received: {message}")
-            # Note: Chat messages are logged but not echoed
-            # Voice responses are automatically transcribed via TTS wrapper
+
+            # Query knowledge base using backend RAG system
+            logger.info("🔍 Querying knowledge base...")
+            rag_query_result = await backend.search_knowledge(
+                tenant_id=current_tenant_id,
+                query=message,
+                top_k=5
+            )
+
+            if rag_query_result and rag_query_result.answer:
+                # Found relevant knowledge - send RAG-enhanced response
+                response_text = rag_query_result.answer
+                logger.info(f"✅ RAG response ({rag_query_result.confidence:.2f} confidence): {response_text[:100]}...")
+
+                # Send response back to chat
+                await ctx.room.local_participant.publish_data(
+                    response_text.encode('utf-8'),
+                    topic="agent.chat"
+                )
+            else:
+                logger.info("ℹ️ No relevant knowledge found - agent will respond via voice if user speaks")
+
         except Exception as e:
             logger.error(f"Error processing chat message: {e}", exc_info=True)
 

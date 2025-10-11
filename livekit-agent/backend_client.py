@@ -341,30 +341,40 @@ class BackendClient:
             RAGResult with answer and sources, or None on error
         """
         try:
-            # tRPC batch request format
+            # tRPC batch request format for knowledge.search
             payload = {
                 "0": {
                     "json": {
-                        "tenantId": tenant_id,
-                        "sessionId": "agent-session",
-                        "message": query,
-                        "useKnowledge": True,
-                        "topK": top_k
+                        "query": query,
+                        "topK": top_k,
+                        "minScore": 0.7
                     }
                 }
             }
 
-            result = await self.post("/trpc/chat.sendMessage", json=payload)
+            result = await self.post("/trpc/knowledge.search?batch=1", json=payload)
 
             if result and "0" in result and "result" in result["0"]:
                 data = result["0"]["result"]["data"]["json"]
+                chunks = data.get("chunks", [])
 
-                return RAGResult(
-                    answer=data.get("response", ""),
-                    sources=data.get("sources", []),
-                    confidence=data.get("confidence", 0.0),
-                    metadata=data.get("metadata", {})
-                )
+                # Build answer from chunks
+                if chunks:
+                    answer = "\n\n".join([
+                        f"[{i+1}] {chunk['content'][:200]}..."
+                        for i, chunk in enumerate(chunks[:3])  # Top 3 chunks
+                    ])
+
+                    # Calculate average confidence from chunk scores
+                    scores = [chunk.get("similarity", 0.0) for chunk in chunks]
+                    avg_confidence = sum(scores) / len(scores) if scores else 0.0
+
+                    return RAGResult(
+                        answer=answer,
+                        sources=chunks,
+                        confidence=avg_confidence,
+                        metadata={"total_chunks": len(chunks), "query": query}
+                    )
 
             return None
 

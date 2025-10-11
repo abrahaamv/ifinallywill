@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     google_api_key: str = ""
     deepgram_api_key: str = ""
-    elevenlabs_api_key: str = ""
+    cartesia_api_key: str = ""  # Cartesia TTS (primary)
     voyage_api_key: str = ""
 
     # Agent Configuration
@@ -82,9 +82,9 @@ class TenantConfig:
     system_prompt: Optional[str] = None
     greeting_message: Optional[str] = None
 
-    # TTS Settings
-    tts_voice_id: str = "21m00Tcm4TlvDq8ikWAM"  # ElevenLabs Rachel
-    tts_model: str = "eleven_turbo_v2_5"
+    # TTS Settings (Cartesia defaults)
+    tts_voice_id: str = "a0e99841-438c-4a64-b679-ae501e7d6091"  # Barbershop Man (American)
+    tts_model: str = "sonic-2"  # Cartesia Sonic model
     tts_streaming_latency: int = 3
 
     # AI Routing
@@ -142,8 +142,8 @@ class Config:
                             tenant_id=tenant_id,
                             system_prompt=result.get("systemPrompt"),
                             greeting_message=result.get("greetingMessage"),
-                            tts_voice_id=result.get("ttsVoiceId", "21m00Tcm4TlvDq8ikWAM"),
-                            tts_model=result.get("ttsModel", "eleven_turbo_v2_5"),
+                            tts_voice_id=result.get("ttsVoiceId", "a0e99841-438c-4a64-b679-ae501e7d6091"),
+                            tts_model=result.get("ttsModel", "sonic-2"),
                             enable_vision=result.get("enableVision", True),
                             enable_knowledge_base=result.get("enableKnowledgeBase", True),
                         )
@@ -188,8 +188,8 @@ class Config:
                             tenant_id=tenant_id,
                             system_prompt=result.get("systemPrompt"),
                             greeting_message=result.get("greetingMessage"),
-                            tts_voice_id=result.get("ttsVoiceId", "21m00Tcm4TlvDq8ikWAM"),
-                            tts_model=result.get("ttsModel", "eleven_turbo_v2_5"),
+                            tts_voice_id=result.get("ttsVoiceId", "a0e99841-438c-4a64-b679-ae501e7d6091"),
+                            tts_model=result.get("ttsModel", "sonic-2"),
                             enable_vision=result.get("enableVision", True),
                             enable_knowledge_base=result.get("enableKnowledgeBase", True),
                         )

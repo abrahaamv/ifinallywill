@@ -70,7 +70,7 @@ Validated through comprehensive test suite (`tests/test_integration.py`).
 - **Security**: Seccomp, capabilities drop, 1000:1000 UID/GID
 
 ### 🎙️ **Real-Time Processing**
-- **Voice**: Deepgram Nova-2 STT + ElevenLabs Turbo v2.5 TTS
+- **Voice**: Deepgram Nova-2 STT + Cartesia Sonic TTS (cost-effective)
 - **Screen Share**: 1 FPS capture (96% cost reduction vs 30 FPS)
 - **Video**: Optional camera feed (disabled by default for cost)
 - **Chat**: Bidirectional text messaging
@@ -1377,7 +1377,7 @@ resources:
 | `ANTHROPIC_API_KEY` | Anthropic API key | `sk-ant-xxxxxxxxxxxxxxxx` |
 | `GOOGLE_API_KEY` | Google AI API key | `AIzaxxxxxxxxxxxxxxxx` |
 | `DEEPGRAM_API_KEY` | Deepgram API key | `xxxxxxxxxxxxxxxx` |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key | `xxxxxxxxxxxxxxxx` |
+| `CARTESIA_API_KEY` | Cartesia API key (cost-effective TTS) | `xxxxxxxxxxxxxxxx` |
 | `VOYAGE_API_KEY` | Voyage AI API key | `pa-xxxxxxxxxxxxxxxx` |
 
 **Optional Variables**:
@@ -1416,7 +1416,7 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxx
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
 GOOGLE_API_KEY=AIzaxxxxxxxxxxxxxxxx
 DEEPGRAM_API_KEY=xxxxxxxxxxxxxxxx
-ELEVENLABS_API_KEY=xxxxxxxxxxxxxxxx
+CARTESIA_API_KEY=xxxxxxxxxxxxxxxx
 VOYAGE_API_KEY=pa-xxxxxxxxxxxxxxxx
 
 # Optional Configuration
