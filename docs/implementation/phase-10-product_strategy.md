@@ -1192,7 +1192,509 @@ Marginal cost compared to LLM costs ($400-500/month)
 
 ---
 
-## Part 2: Prioritized Implementation Roadmap
+## Part 2: Pricing Strategy & Billing Architecture
+
+### 2.1 Pricing Model Decision (Phase 10 MVP)
+
+**Model Selected**: **Hybrid Outcome-Based Pricing** (Seat + Resolution Usage)
+
+**Rationale**:
+- Combines predictable recurring revenue (seats) with value-aligned usage charges (resolutions)
+- Leverages 75-85% cost advantage to undercut competitors (Intercom $0.99, Zendesk $1.50-2.00)
+- Clear, transparent pricing builds trust and showcases cost efficiency
+- Enables land-and-expand strategy (start with Professional, grow to Enterprise)
+
+#### Pricing Tiers
+
+**Professional Tier: $89/seat/month**
+- 50 AI resolutions included per seat
+- Unlimited text chat interactions
+- 500 voice minutes included
+- 100 video minutes included
+- Standard response time
+- Email + community support
+- Up to 1GB knowledge base storage
+- Additional resolutions: **$0.75 each** (25% below Intercom's $0.99)
+
+**Enterprise Tier: $149/seat/month**
+- 150 AI resolutions included per seat
+- Unlimited multi-modal interactions
+- 2,000 voice minutes included
+- 500 video minutes included
+- Priority routing and response
+- Dedicated success manager
+- 24/7 phone + email support
+- Up to 10GB knowledge base storage
+- SSO, advanced security, audit logs
+- Additional resolutions: **$0.75 each** (same as Professional)
+
+**Additional Usage Beyond Included Amounts**:
+- AI resolutions: **$0.75 each** (25% below Intercom)
+- Voice minutes: **$0.015/minute** (competitive with LiveKit pricing)
+- Video minutes: **$0.025/minute**
+- Screen sharing: Included in video rate
+- Knowledge base storage: **$0.05/GB/month** (2x markup on S3)
+
+#### Free Tier Strategy
+
+**14-Day Free Trial** (Credit card required):
+- Full Professional tier features
+- 5 seats maximum
+- 50 AI resolutions (with abuse limits)
+- 200 voice minutes (with abuse limits)
+- 50 video minutes (with abuse limits)
+- Remove "Powered by" branding
+- Email support during trial
+- Converts to text-only free tier after 14 days
+
+**Perpetual Free Tier** (After trial expires):
+- 2 seats maximum
+- **Text chat ONLY** (no voice/video to prevent infrastructure abuse)
+- 25 AI resolutions per month
+- 500MB knowledge base storage
+- "Powered by [Platform]" branding in widget
+- Community support only
+- Email verification + phone verification for signup
+
+**Conversion Targets**:
+- Trial-to-paid: **40%+** (credit card requirement improves conversion 2.6x)
+- Free-to-paid: **4-6%** (above 2.6% industry average)
+
+#### Pricing Page Requirements
+
+**Public Transparent Pricing** (NO "Contact Sales" for SMB):
+- Clear tier comparison table
+- Real-time cost calculator (conversations, minutes, storage)
+- Savings comparison vs competitors (Intercom, Zendesk)
+- FAQ addressing common pricing questions
+- Self-serve signup for Professional tier
+- "Contact Sales" button for Enterprise (100+ seats)
+
+**Cost Transparency Differentiator**:
+- Show exact per-resolution cost ($0.75 vs Intercom $0.99)
+- Highlight 75-85% infrastructure cost savings passed to customers
+- Real-time usage dashboard in admin panel
+- No hidden fees, no surprise charges
+
+### 2.2 Database Schema Additions for Pricing
+
+#### New Tables
+
+**1. `subscription_plans` Table**
+```sql
+CREATE TABLE subscription_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(50) NOT NULL, -- 'free', 'professional', 'enterprise'
+  display_name VARCHAR(100) NOT NULL,
+  price_per_seat_monthly INTEGER NOT NULL, -- cents (8900, 14900)
+  included_resolutions INTEGER NOT NULL, -- 0, 50, 150
+  included_voice_minutes INTEGER NOT NULL, -- 0, 500, 2000
+  included_video_minutes INTEGER NOT NULL, -- 0, 100, 500
+  included_storage_gb INTEGER NOT NULL, -- 0.5, 1, 10
+  features JSONB NOT NULL, -- Array of feature flags
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_subscription_plans_name ON subscription_plans(name);
+
+-- Seed data
+INSERT INTO subscription_plans (name, display_name, price_per_seat_monthly, included_resolutions, included_voice_minutes, included_video_minutes, included_storage_gb, features) VALUES
+  ('free', 'Free', 0, 25, 0, 0, 0.5, '["text_chat", "community_support"]'::jsonb),
+  ('professional', 'Professional', 8900, 50, 500, 100, 1, '["text_chat", "voice", "video", "email_support", "integrations"]'::jsonb),
+  ('enterprise', 'Enterprise', 14900, 150, 2000, 500, 10, '["text_chat", "voice", "video", "priority_support", "sso", "audit_logs", "dedicated_manager"]'::jsonb);
+```
+
+**2. `tenant_subscriptions` Table**
+```sql
+CREATE TABLE tenant_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  plan_id UUID NOT NULL REFERENCES subscription_plans(id),
+  seats_purchased INTEGER NOT NULL DEFAULT 1,
+  status VARCHAR(20) NOT NULL DEFAULT 'active', -- 'active', 'trial', 'canceled', 'past_due'
+  trial_ends_at TIMESTAMPTZ,
+  current_period_start TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  current_period_end TIMESTAMPTZ NOT NULL,
+  stripe_subscription_id VARCHAR(255),
+  stripe_customer_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT valid_seats CHECK (seats_purchased > 0),
+  CONSTRAINT valid_status CHECK (status IN ('active', 'trial', 'canceled', 'past_due', 'unpaid'))
+);
+
+CREATE INDEX idx_tenant_subscriptions_tenant ON tenant_subscriptions(tenant_id);
+CREATE INDEX idx_tenant_subscriptions_status ON tenant_subscriptions(status);
+CREATE INDEX idx_tenant_subscriptions_trial_ends ON tenant_subscriptions(trial_ends_at) WHERE trial_ends_at IS NOT NULL;
+```
+
+**3. `usage_quotas` Table**
+```sql
+CREATE TABLE usage_quotas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  subscription_id UUID NOT NULL REFERENCES tenant_subscriptions(id) ON DELETE CASCADE,
+  period_start TIMESTAMPTZ NOT NULL,
+  period_end TIMESTAMPTZ NOT NULL,
+
+  -- Included amounts (from plan)
+  included_resolutions INTEGER NOT NULL,
+  included_voice_minutes INTEGER NOT NULL,
+  included_video_minutes INTEGER NOT NULL,
+  included_storage_gb INTEGER NOT NULL,
+
+  -- Used amounts (tracked in real-time)
+  used_resolutions INTEGER DEFAULT 0,
+  used_voice_minutes INTEGER DEFAULT 0,
+  used_video_minutes INTEGER DEFAULT 0,
+  used_storage_gb DECIMAL(10,2) DEFAULT 0,
+
+  -- Overage amounts (calculated)
+  overage_resolutions INTEGER GENERATED ALWAYS AS (GREATEST(used_resolutions - included_resolutions, 0)) STORED,
+  overage_voice_minutes INTEGER GENERATED ALWAYS AS (GREATEST(used_voice_minutes - included_voice_minutes, 0)) STORED,
+  overage_video_minutes INTEGER GENERATED ALWAYS AS (GREATEST(used_video_minutes - included_video_minutes, 0)) STORED,
+  overage_storage_gb DECIMAL(10,2) GENERATED ALWAYS AS (GREATEST(used_storage_gb - included_storage_gb, 0)) STORED,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT valid_period CHECK (period_end > period_start),
+  CONSTRAINT valid_usage CHECK (
+    used_resolutions >= 0 AND
+    used_voice_minutes >= 0 AND
+    used_video_minutes >= 0 AND
+    used_storage_gb >= 0
+  )
+);
+
+CREATE UNIQUE INDEX idx_usage_quotas_tenant_period ON usage_quotas(tenant_id, period_start);
+CREATE INDEX idx_usage_quotas_subscription ON usage_quotas(subscription_id);
+```
+
+**4. `resolutions` Table**
+```sql
+CREATE TABLE resolutions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+
+  -- Resolution details
+  status VARCHAR(20) NOT NULL, -- 'successful', 'failed', 'escalated'
+  resolution_type VARCHAR(30), -- 'direct_answer', 'knowledge_base', 'guided_workflow'
+  confidence_score DECIMAL(3,2), -- 0.00 to 1.00
+
+  -- User satisfaction (optional, collected post-resolution)
+  user_rating INTEGER, -- 1-5 stars
+  user_feedback TEXT,
+
+  -- Metadata
+  resolved_at TIMESTAMPTZ DEFAULT NOW(),
+  escalated_at TIMESTAMPTZ,
+  escalation_reason TEXT,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT valid_status CHECK (status IN ('successful', 'failed', 'escalated')),
+  CONSTRAINT valid_confidence CHECK (confidence_score BETWEEN 0 AND 1),
+  CONSTRAINT valid_rating CHECK (user_rating BETWEEN 1 AND 5 OR user_rating IS NULL)
+);
+
+CREATE INDEX idx_resolutions_tenant ON resolutions(tenant_id);
+CREATE INDEX idx_resolutions_session ON resolutions(session_id);
+CREATE INDEX idx_resolutions_status ON resolutions(status);
+CREATE INDEX idx_resolutions_resolved_at ON resolutions(resolved_at);
+```
+
+**5. `overage_charges` Table**
+```sql
+CREATE TABLE overage_charges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  subscription_id UUID NOT NULL REFERENCES tenant_subscriptions(id) ON DELETE CASCADE,
+  quota_id UUID NOT NULL REFERENCES usage_quotas(id) ON DELETE CASCADE,
+
+  -- Billing period
+  period_start TIMESTAMPTZ NOT NULL,
+  period_end TIMESTAMPTZ NOT NULL,
+
+  -- Overage quantities
+  overage_resolutions INTEGER DEFAULT 0,
+  overage_voice_minutes INTEGER DEFAULT 0,
+  overage_video_minutes INTEGER DEFAULT 0,
+  overage_storage_gb DECIMAL(10,2) DEFAULT 0,
+
+  -- Pricing (cents per unit)
+  price_per_resolution INTEGER DEFAULT 75, -- $0.75
+  price_per_voice_minute INTEGER DEFAULT 2, -- $0.015 rounded to nearest cent
+  price_per_video_minute INTEGER DEFAULT 3, -- $0.025 rounded to nearest cent
+  price_per_storage_gb INTEGER DEFAULT 5, -- $0.05
+
+  -- Total charges (cents)
+  resolutions_charge INTEGER GENERATED ALWAYS AS (overage_resolutions * price_per_resolution) STORED,
+  voice_minutes_charge INTEGER GENERATED ALWAYS AS (overage_voice_minutes * price_per_voice_minute) STORED,
+  video_minutes_charge INTEGER GENERATED ALWAYS AS (overage_video_minutes * price_per_video_minute) STORED,
+  storage_charge INTEGER GENERATED ALWAYS AS (CAST(overage_storage_gb * price_per_storage_gb AS INTEGER)) STORED,
+  total_charge INTEGER GENERATED ALWAYS AS (
+    (overage_resolutions * price_per_resolution) +
+    (overage_voice_minutes * price_per_voice_minute) +
+    (overage_video_minutes * price_per_video_minute) +
+    CAST(overage_storage_gb * price_per_storage_gb AS INTEGER)
+  ) STORED,
+
+  -- Stripe invoice details
+  stripe_invoice_id VARCHAR(255),
+  stripe_invoice_status VARCHAR(50),
+  invoiced_at TIMESTAMPTZ,
+  paid_at TIMESTAMPTZ,
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  CONSTRAINT valid_period CHECK (period_end > period_start),
+  CONSTRAINT valid_overages CHECK (
+    overage_resolutions >= 0 AND
+    overage_voice_minutes >= 0 AND
+    overage_video_minutes >= 0 AND
+    overage_storage_gb >= 0
+  )
+);
+
+CREATE INDEX idx_overage_charges_tenant ON overage_charges(tenant_id);
+CREATE INDEX idx_overage_charges_subscription ON overage_charges(subscription_id);
+CREATE INDEX idx_overage_charges_quota ON overage_charges(quota_id);
+CREATE INDEX idx_overage_charges_period ON overage_charges(period_start, period_end);
+CREATE INDEX idx_overage_charges_stripe_invoice ON overage_charges(stripe_invoice_id);
+```
+
+**6. Update `budget_alerts` Table** (Multi-Threshold)
+```sql
+-- Extend existing budget_alerts table
+ALTER TABLE budget_alerts
+  ADD COLUMN threshold_70_triggered BOOLEAN DEFAULT false,
+  ADD COLUMN threshold_90_triggered BOOLEAN DEFAULT false,
+  ADD COLUMN threshold_100_triggered BOOLEAN DEFAULT false,
+  ADD COLUMN threshold_110_triggered BOOLEAN DEFAULT false,
+  ADD COLUMN threshold_120_triggered BOOLEAN DEFAULT false,
+  ADD COLUMN last_alert_sent_at TIMESTAMPTZ,
+  ADD COLUMN alert_frequency_hours INTEGER DEFAULT 24; -- Prevent alert spam
+
+-- Add indexes
+CREATE INDEX idx_budget_alerts_triggered ON budget_alerts(tenant_id, threshold_100_triggered);
+
+-- Update existing constraint
+ALTER TABLE budget_alerts
+  DROP CONSTRAINT IF EXISTS budget_alerts_amount_check,
+  ADD CONSTRAINT valid_budget_amount CHECK (budget_amount > 0);
+```
+
+#### RLS Policies for New Tables
+
+```sql
+-- subscription_plans: Read-only for all authenticated tenants
+CREATE POLICY "Tenants can view all subscription plans"
+  ON subscription_plans FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- tenant_subscriptions: Tenant-isolated
+CREATE POLICY "Tenants can view own subscriptions"
+  ON tenant_subscriptions FOR SELECT
+  TO authenticated
+  USING (tenant_id = get_current_tenant_id());
+
+CREATE POLICY "Tenants can update own subscriptions"
+  ON tenant_subscriptions FOR UPDATE
+  TO authenticated
+  USING (tenant_id = get_current_tenant_id());
+
+-- usage_quotas: Tenant-isolated
+CREATE POLICY "Tenants can view own usage quotas"
+  ON usage_quotas FOR SELECT
+  TO authenticated
+  USING (tenant_id = get_current_tenant_id());
+
+CREATE POLICY "System can update usage quotas"
+  ON usage_quotas FOR UPDATE
+  TO service_role
+  USING (true);
+
+-- resolutions: Tenant-isolated
+CREATE POLICY "Tenants can view own resolutions"
+  ON resolutions FOR SELECT
+  TO authenticated
+  USING (tenant_id = get_current_tenant_id());
+
+CREATE POLICY "System can insert resolutions"
+  ON resolutions FOR INSERT
+  TO service_role
+  WITH CHECK (true);
+
+-- overage_charges: Tenant-isolated
+CREATE POLICY "Tenants can view own overage charges"
+  ON overage_charges FOR SELECT
+  TO authenticated
+  USING (tenant_id = get_current_tenant_id());
+
+CREATE POLICY "System can insert overage charges"
+  ON overage_charges FOR INSERT
+  TO service_role
+  WITH CHECK (true);
+
+-- Enable RLS
+ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usage_quotas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resolutions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE overage_charges ENABLE ROW LEVEL SECURITY;
+```
+
+### 2.3 Pricing Implementation Roadmap
+
+#### Phase 10 Week 1: Database + Core Billing Logic
+
+**Day 1-2: Schema Migration**
+- [ ] Create migration `010_pricing_billing.sql`
+- [ ] Create 6 new tables (subscription_plans, tenant_subscriptions, usage_quotas, resolutions, overage_charges, budget_alerts updates)
+- [ ] Add RLS policies for all new tables
+- [ ] Seed subscription_plans with 3 tiers (free, professional, enterprise)
+- [ ] Test migration rollback and forward
+
+**Day 3-4: Stripe Integration**
+- [ ] Set up Stripe account + test mode
+- [ ] Install Stripe SDK: `pnpm add stripe @stripe/stripe-js`
+- [ ] Create Stripe webhook endpoint (`packages/api/src/webhooks/stripe.ts`)
+- [ ] Handle webhook events:
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `invoice.payment_succeeded`
+  - `invoice.payment_failed`
+- [ ] Implement subscription creation flow (Professional tier self-serve)
+- [ ] Test Stripe test mode with test cards
+
+**Day 5-7: Usage Tracking Service**
+- [ ] Create `packages/billing/src/usage-tracker.ts`
+- [ ] Implement real-time usage tracking:
+  - Resolution completed → increment `usage_quotas.used_resolutions`
+  - Voice call → increment `usage_quotas.used_voice_minutes`
+  - Video session → increment `usage_quotas.used_video_minutes`
+  - Storage upload → update `usage_quotas.used_storage_gb`
+- [ ] Add usage tracking to LiveKit agent (Python)
+- [ ] Add usage tracking to dashboard API (TypeScript)
+- [ ] Implement usage aggregation job (runs every 15 minutes)
+
+#### Phase 10 Week 2: Pricing Page + Dashboard
+
+**Day 8-10: Public Pricing Page**
+- [ ] Create `apps/landing/src/pages/pricing.tsx`
+- [ ] Build pricing tier comparison table
+- [ ] Add real-time cost calculator (interactive)
+  - Input: conversations/month, avg voice minutes, avg video minutes
+  - Output: Estimated monthly cost, savings vs competitors
+- [ ] Add FAQ section (common pricing questions)
+- [ ] Add "Start Free Trial" CTA (Professional tier)
+- [ ] Add "Contact Sales" CTA (Enterprise tier, 100+ seats)
+- [ ] Mobile responsive design
+
+**Day 11-14: Usage Dashboard + Alerts**
+- [ ] Create `apps/dashboard/src/pages/billing/usage.tsx`
+- [ ] Real-time usage display:
+  - Progress bars showing % of included amounts used
+  - Resolutions: 35/50 (70% used)
+  - Voice minutes: 320/500 (64% used)
+  - Video minutes: 45/100 (45% used)
+  - Storage: 0.7/1 GB (70% used)
+- [ ] Overage forecast:
+  - "At current rate, you'll use 65 resolutions this month (+15 overage = +$11.25)"
+- [ ] Cost breakdown chart (daily/weekly/monthly trends)
+- [ ] Budget alert configuration:
+  - Set budget cap (optional hard limit)
+  - Alert thresholds: 70%, 90%, 100%, 110%, 120%
+  - Email + Slack webhook notifications
+- [ ] Export usage data (CSV for finance teams)
+
+#### Phase 10 Week 3: Resolution Tracking + Overage Billing
+
+**Day 15-17: Resolution Classification**
+- [ ] Add resolution tracking to LiveKit agent:
+  - Successful resolution: confidence >70%, user satisfied
+  - Failed resolution: confidence <50%, user frustrated
+  - Escalated: explicit user request for human agent
+- [ ] Implement resolution confidence scoring (LLM-based)
+- [ ] Store resolution data in `resolutions` table
+- [ ] Add resolution rate to Performance Dashboard (Week 3 existing work)
+
+**Day 18-21: Overage Billing**
+- [ ] Create billing job (`packages/workers/src/jobs/calculate-overages.ts`)
+- [ ] Run at end of billing period:
+  - Calculate overage quantities from `usage_quotas`
+  - Create `overage_charges` record
+  - Generate Stripe invoice for overage
+  - Send invoice email to tenant admin
+- [ ] Test overage calculation accuracy
+- [ ] Add overage charges to billing history page
+
+#### Phase 10 Week 4: Free Trial + Abuse Prevention
+
+**Day 22-24: Free Trial Flow**
+- [ ] Build trial signup flow:
+  - Email + credit card required (Stripe SetupIntent)
+  - Create tenant with `status='trial'`
+  - Set `trial_ends_at` to 14 days from now
+- [ ] Implement trial expiration job (runs daily):
+  - Find trials expiring today
+  - Send "Trial Ending" email (Day 12)
+  - Convert to free tier (text-only) or paid plan
+- [ ] Build trial upgrade flow (self-serve)
+
+**Day 25-27: Abuse Prevention**
+- [ ] Email verification (existing)
+- [ ] Phone/SMS verification for free tier signups (Twilio)
+- [ ] Rate limiting:
+  - Free tier: 50 API calls/hour max
+  - Professional: 500 API calls/hour max
+  - Enterprise: 2000 API calls/hour max
+- [ ] Device fingerprinting (FingerprintJS)
+- [ ] Behavioral monitoring:
+  - Flag accounts maxing limits immediately after signup
+  - Alert admin for manual review
+  - Auto-suspend suspicious accounts (restore after review)
+- [ ] Duplicate account detection (email/phone/fingerprint)
+
+**Day 28-30: Testing + Documentation**
+- [ ] End-to-end pricing flow testing:
+  - Free trial signup → trial usage → conversion → overage → payment
+- [ ] Test all Stripe webhook scenarios
+- [ ] Test budget alerts at all thresholds
+- [ ] Test abuse prevention (create test accounts)
+- [ ] Write pricing system documentation
+- [ ] Write runbooks for common billing issues
+
+### 2.4 Competitive Positioning
+
+**Our Pricing vs Competitors**:
+
+| Platform | Base Plan | Resolution Cost | Seat Cost | Our Advantage |
+|----------|-----------|----------------|-----------|---------------|
+| **Intercom Fin** | $85-139/seat | $0.99 flat | $29-139/seat | ✅ 25% cheaper resolutions ($0.75) |
+| **Zendesk AI** | $55-169/seat | $1.00-2.00 | $55-169/seat | ✅ 25-62% cheaper resolutions |
+| **Thunai** | $9+/seat | Unknown | $9+ | ✅ Multi-modal + enterprise features |
+| **Salesforce** | $125-550/user | $2.00/conv | $125-550/user | ✅ 62% cheaper resolutions |
+| **Our Platform** | **$89-149/seat** | **$0.75** | **$89-149/seat** | 🎯 Best price-to-feature ratio |
+
+**Value Proposition**:
+- **25% cheaper than Intercom** on per-resolution cost
+- **Native multi-modal** (voice, video, screen sharing) included
+- **Transparent cost tracking** (real-time usage dashboard)
+- **75-85% infrastructure cost savings** passed to customers
+- **Public transparent pricing** (no "Contact Sales" required for SMB)
+- **14-day trial with full features** (credit card required for high conversion)
+
+---
+
+## Part 3: Prioritized Implementation Roadmap
 
 ### Week 1: Foundation + Quick Wins
 
