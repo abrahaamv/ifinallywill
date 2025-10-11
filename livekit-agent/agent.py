@@ -31,6 +31,7 @@ from livekit.agents import (
     llm,
     voice,
 )
+from livekit.agents.llm import function_tool  # Function calling support (Phase 13+)
 from livekit.plugins import anthropic, cartesia, deepgram, google, openai, silero
 
 from ai_router import AIRouter, ComplexityLevel
@@ -44,6 +45,127 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# FUNCTION CALLING TOOLS (Phase 13+ - Infrastructure Ready)
+# =============================================================================
+#
+# CURRENT STATUS (Phase 10-12):
+# - Core operations (RAG search, cost logging) remain HARDCODED for optimal performance
+# - Infrastructure ready for Phase 13+ external integrations
+# - New tools added here will be automatically available to LLM
+#
+# WHEN TO ADD NEW TOOLS:
+# - Phase 13+: External integrations (Salesforce, Zendesk, Calendar, Payment)
+# - Multi-step workflows requiring conditional execution
+# - Agent SDK launch requiring developer-friendly tool definitions
+#
+# PATTERN FOR NEW TOOLS:
+# @function_tool
+# async def your_tool_name(
+#     param1: str,
+#     param2: int = 5
+# ) -> str:
+#     """
+#     Tool description shown to LLM.
+#
+#     Args:
+#         param1: Description of param1
+#         param2: Description of param2 with default
+#
+#     Returns:
+#         Description of return value
+#     """
+#     # Implementation
+#     return result
+#
+# Then pass to VisionAwareAgent: tools=[your_tool_name]
+# =============================================================================
+
+# Example placeholder tools for Phase 13+ (currently unused)
+
+# @function_tool
+# async def create_zendesk_ticket(
+#     subject: str,
+#     description: str,
+#     priority: str = "normal"
+# ) -> str:
+#     """
+#     Create a support ticket in Zendesk when escalation is needed.
+#
+#     Args:
+#         subject: Ticket subject line
+#         description: Detailed problem description
+#         priority: Ticket priority (low, normal, high, urgent)
+#
+#     Returns:
+#         Ticket ID and confirmation message
+#     """
+#     # Phase 13+ implementation
+#     logger.info(f"Creating Zendesk ticket: {subject}")
+#     # ticket_id = await zendesk_client.create_ticket(...)
+#     # return f"Ticket #{ticket_id} created successfully"
+#     return "Tool not yet implemented (Phase 13+)"
+
+
+# @function_tool
+# async def schedule_appointment(
+#     date: str,
+#     time: str,
+#     duration_minutes: int = 30
+# ) -> str:
+#     """
+#     Schedule an appointment in the calendar system.
+#
+#     Args:
+#         date: Appointment date (YYYY-MM-DD format)
+#         time: Appointment time (HH:MM format, 24-hour)
+#         duration_minutes: Meeting duration in minutes
+#
+#     Returns:
+#         Confirmation with appointment details
+#     """
+#     # Phase 13+ implementation
+#     logger.info(f"Scheduling appointment: {date} at {time}")
+#     # appointment_id = await calendar_client.create_appointment(...)
+#     # return f"Appointment scheduled for {date} at {time}"
+#     return "Tool not yet implemented (Phase 13+)"
+
+
+# @function_tool
+# async def update_crm_contact(
+#     contact_id: str,
+#     field: str,
+#     value: str
+# ) -> str:
+#     """
+#     Update contact information in CRM (Salesforce/HubSpot).
+#
+#     Args:
+#         contact_id: Unique contact identifier
+#         field: Field to update (email, phone, address, etc.)
+#         value: New value for the field
+#
+#     Returns:
+#         Confirmation of update
+#     """
+#     # Phase 13+ implementation
+#     logger.info(f"Updating CRM contact {contact_id}: {field} = {value}")
+#     # await crm_client.update_contact(...)
+#     # return f"Contact {contact_id} updated successfully"
+#     return "Tool not yet implemented (Phase 13+)"
+
+
+# List of tools to pass to VisionAwareAgent
+# Phase 10-12: Empty list (use hardcoded operations)
+# Phase 13+: Uncomment tools above and add to this list
+AVAILABLE_TOOLS = [
+    # Placeholder for Phase 13+ tools
+    # create_zendesk_ticket,
+    # schedule_appointment,
+    # update_crm_contact,
+]
 
 
 class MultiModalAgent:
@@ -750,6 +872,8 @@ async def entrypoint(ctx: JobContext):
     system_instructions = agent.tenant_config.system_prompt or "You are a helpful AI assistant."
 
     # Create VisionAwareAgent with proper extension points
+    # Phase 10-12: tools=AVAILABLE_TOOLS (empty list - hardcoded operations)
+    # Phase 13+: Uncomment tools in AVAILABLE_TOOLS for external integrations
     vision_agent = VisionAwareAgent(
         instructions=system_instructions,
         vision_context_getter=lambda: agent._vision_context,  # Pass vision buffer
@@ -763,9 +887,13 @@ async def entrypoint(ctx: JobContext):
         tts=cartesia.TTS(
             model=agent.tenant_config.tts_model or "sonic-2",  # Cartesia Sonic model
         ),
+        # Function calling infrastructure (Phase 13+ ready)
+        # Currently empty - core operations (RAG, cost logging) remain hardcoded
+        # Add new integration tools to AVAILABLE_TOOLS list above
+        **({} if not AVAILABLE_TOOLS else {"tools": AVAILABLE_TOOLS})
     )
 
-    logger.info("✅ VisionAwareAgent created with pipeline overrides")
+    logger.info(f"✅ VisionAwareAgent created with {len(AVAILABLE_TOOLS)} tools available")
 
     # Create AgentSession and start with the vision-aware agent
     session = voice.AgentSession()
