@@ -4,7 +4,7 @@
  */
 
 import { Badge, Button, Card, CardContent, Input } from '@platform/ui';
-import { Bot, Loader2, MessageCircle, Minimize2, Send, Sparkles, User, X } from 'lucide-react';
+import { Bot, Loader2, MessageCircle, Minimize2, Send, Sparkles, Target, User, X, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -271,12 +271,18 @@ export function ChatWidget() {
                           </div>
                           {message.metadata.ragChunksRetrieved !== undefined && message.metadata.ragChunksRetrieved > 0 && (
                             <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
-                              <span>📚 RAG: {message.metadata.ragChunksRetrieved} chunks***</span>
+                              <span className="flex items-center gap-1">
+                                📚 RAG: {message.metadata.ragChunksRetrieved} chunks***
+                              </span>
                               {message.metadata.ragProcessingTimeMs && (
-                                <span>⚡ {message.metadata.ragProcessingTimeMs}ms</span>
+                                <span className="flex items-center gap-1">
+                                  <Zap className="w-3 h-3" /> {message.metadata.ragProcessingTimeMs}ms
+                                </span>
                               )}
                               {message.metadata.ragTopRelevance && message.metadata.ragTopRelevance !== 'none' && (
-                                <span>🎯 {message.metadata.ragTopRelevance} relevance</span>
+                                <span className="flex items-center gap-1">
+                                  <Target className="w-3 h-3" /> {message.metadata.ragTopRelevance} relevance
+                                </span>
                               )}
                             </div>
                           )}
