@@ -1511,6 +1511,13 @@ export const chatRouter = router({
     .input(z.object({
       messages: z.array(z.any()),
       tenantId: z.string().uuid(),
+      endUserId: z.string().uuid(),
+      uploadedFiles: z.array(z.object({
+        name: z.string(),
+        url: z.string(),
+        type: z.string(),
+        size: z.number(),
+      })).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Extract problem description from messages
@@ -1519,30 +1526,142 @@ export const chatRouter = router({
         .map(m => m.content)
         .join(' ');
 
-      // Search RAG system for relevant docs
+      // 1. Check if this is an existing unresolved problem
+      const existingProblem = await checkForSimilarProblem(
+        input.tenantId,
+        problemDescription,
+        0.85 // similarity threshold
+      );
+
+      if (existingProblem.exists) {
+        // Problem already exists and is unresolved
+        return {
+          blocked: true,
+          reason: 'existing_problem',
+          problemId: existingProblem.problemId,
+          message: `This issue is already being worked on. ${existingProblem.affectedUserCount} users have reported it.`,
+        };
+      }
+
+      // 2. Search RAG system for relevant docs
       const relevantDocs = await searchKnowledgeBase({
         tenantId: input.tenantId,
         query: problemDescription,
         limit: 5,
       });
 
-      // Cache results for LiveKit agent (10-minute TTL)
-      const cacheKey = `video_context:${crypto.randomUUID()}`;
-      await redis.setex(cacheKey, 600, JSON.stringify({
-        messages: input.messages,
-        relevantDocs,
-        tenantId: input.tenantId,
-      }));
+      // 3. Process uploaded files (screenshots, logs, etc.)
+      const processedFiles = input.uploadedFiles ? await Promise.all(
+        input.uploadedFiles.map(async (file) => {
+          // Extract text from PDFs, analyze images, parse logs
+          const extracted = await extractFileContent(file.url, file.type);
+          return {
+            ...file,
+            extractedContent: extracted,
+          };
+        })
+      ) : [];
 
-      // Generate LiveKit token with cache key in metadata
+      // 4. Generate comprehensive context for LiveKit agent
+      const context = {
+        messages: input.messages,
+        problemDescription,
+        relevantDocs,
+        uploadedFiles: processedFiles,
+        tenantId: input.tenantId,
+        endUserId: input.endUserId,
+
+        // Pre-computed context to speed up LiveKit agent
+        hasSimilarSolutions: relevantDocs.length > 0,
+        complexity: estimateProblemComplexity(problemDescription),
+        requiredResources: identifyRequiredResources(problemDescription),
+      };
+
+      // 5. Cache results for LiveKit agent (10-minute TTL)
+      const cacheKey = `video_context:${crypto.randomUUID()}`;
+      await redis.setex(cacheKey, 600, JSON.stringify(context));
+
+      // 6. Generate LiveKit token with cache key in metadata
       const token = await generateLiveKitToken({
         tenantId: input.tenantId,
-        metadata: { cacheKey },
+        metadata: { cacheKey, endUserId: input.endUserId },
       });
 
-      return { token, cacheKey };
+      return {
+        token,
+        cacheKey,
+        blocked: false,
+        preloadedDocsCount: relevantDocs.length,
+        estimatedComplexity: context.complexity,
+      };
+    }),
+
+  // New endpoint for file upload during chat
+  uploadChatFile: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      fileName: z.string(),
+      fileType: z.string(),
+      fileSize: z.number(),
+      fileContent: z.string(), // base64 encoded
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Upload to storage (S3, Supabase Storage, etc.)
+      const fileUrl = await uploadToStorage({
+        bucket: 'chat-files',
+        path: `${input.sessionId}/${input.fileName}`,
+        content: Buffer.from(input.fileContent, 'base64'),
+        contentType: input.fileType,
+      });
+
+      // Save file metadata to database
+      await ctx.db.insert(chatFiles).values({
+        sessionId: input.sessionId,
+        fileName: input.fileName,
+        fileType: input.fileType,
+        fileSize: input.fileSize,
+        fileUrl,
+        uploadedAt: new Date(),
+      });
+
+      return { fileUrl, fileName: input.fileName };
     }),
 });
+
+// Helper functions
+async function extractFileContent(fileUrl: string, fileType: string): Promise<string> {
+  if (fileType.startsWith('image/')) {
+    // Use Vision API to analyze screenshot
+    return await analyzeImageWithVision(fileUrl);
+  } else if (fileType === 'application/pdf') {
+    // Extract text from PDF
+    return await extractPdfText(fileUrl);
+  } else if (fileType === 'text/plain' || fileType.includes('log')) {
+    // Parse log files
+    return await parseLogFile(fileUrl);
+  }
+  return '';
+}
+
+function estimateProblemComplexity(description: string): 'simple' | 'moderate' | 'complex' {
+  // Simple heuristic based on keywords and length
+  const technicalKeywords = ['error', 'crash', 'bug', 'integration', 'API', 'database'];
+  const keywordCount = technicalKeywords.filter(k => description.toLowerCase().includes(k)).length;
+  const wordCount = description.split(' ').length;
+
+  if (keywordCount >= 3 || wordCount > 100) return 'complex';
+  if (keywordCount >= 1 || wordCount > 50) return 'moderate';
+  return 'simple';
+}
+
+function identifyRequiredResources(description: string): string[] {
+  const resources = [];
+  if (/login|auth|password/i.test(description)) resources.push('authentication');
+  if (/payment|billing|invoice/i.test(description)) resources.push('payments');
+  if (/api|endpoint|integration/i.test(description)) resources.push('api');
+  if (/email|notification|sms/i.test(description)) resources.push('communications');
+  return resources;
+}
 ```
 
 **LiveKit Agent** (use cached context):
@@ -1788,23 +1907,114 @@ export async function validateLiveKitSession(
 | Survey (AI call 100%) | $0.15 | - | - |
 | Survey (40% modal, 60% AI) | - | $0.09 | $0.06 |
 | Problem deduplication | - | - | $0.10 (fewer failed attempts) |
-| Chat-first (RAG pre-load) | - | - | $0.04 (faster LiveKit) |
+| Chat-first optimization (gather all problem details, check existing problems in DB, pre-load RAG context, collect files from end_user before starting expensive LiveKit infrastructure) | - | - | $0.04 (faster LiveKit) |
 | **Total Resolution Cost** | **$1.10** | **$0.88** | **$0.22 (20%)** |
 
-**Revised Pricing Options** (user requested reconsideration):
+**Revised Pricing Strategy** (Optimization = Profit Model):
 
-**Option A: Lower Overage Price** (Recommended)
-- Professional: $89/seat + **$0.60/resolution** (was $0.75, now 39% below Intercom)
-- Enterprise: $149/seat + **$0.60/resolution**
-- Profit margin: ~68% (was 60%)
+**Final Pricing Model** (Recommended)
 
-**Option B: Increase Included Resolutions**
-- Professional: $89/seat + **80 included** (was 50) + $0.75 overage
-- Enterprise: $149/seat + **250 included** (was 150) + $0.75 overage
+| Tier | Monthly Price | Included Resolutions | Overage Rate | LiveKit Minutes |
+|------|---------------|---------------------|--------------|-----------------|
+| **Starter** | $25/seat | 10 | $0.70 | 100 |
+| **Professional** | $99/seat | 50 | $0.70 | 500 |
+| **Enterprise** | $159/seat | 150 | $0.70 | 2,000 |
 
-**Option C: Keep Same Pricing** (Higher Profit)
-- Professional: $89/seat + $0.75/resolution
-- Profit margin increases to 75% (was 60%)
+**Starter Tier**:
+- Target: Small businesses, testing/evaluation phase
+- 10 AI resolutions included per seat
+- 100 LiveKit participant minutes (audio + video combined)
+- Text chat only in free tier after trial
+
+**Professional Tier**:
+- 50 AI resolutions included per seat
+- 500 LiveKit participant minutes (audio + video combined)
+- 29% cheaper than Intercom ($0.99/resolution)
+
+**Enterprise Tier**:
+- 150 AI resolutions included per seat
+- 2,000 LiveKit participant minutes (audio + video combined)
+- Priority support and dedicated account manager
+
+### Cost Structure & Profit Model
+
+**Pricing Philosophy**: Build optimization into profit, not user-facing complexity.
+
+**Three-Tier AI Escalation Strategy**:
+
+Our AI routing automatically escalates to more powerful models on retry attempts:
+
+```
+Attempt 1 (60% of queries): Gemini Flash-Lite 8B + pHash
+- Simple queries and first-time attempts
+- Cost: $0.06/resolution
+- Vision: $0.075/1M tokens
+- Text: $0.075/1M tokens
+
+Attempt 2 (25% of queries): Gemini Flash + pHash
+- Moderate complexity or second attempt
+- Cost: $0.08/resolution
+- Vision: $0.20/1M tokens
+- Text: $0.20/1M tokens
+
+Attempt 3 (15% of queries): Claude Sonnet 4.5 + pHash
+- Complex reasoning or final attempt before human escalation
+- Cost: $0.40/resolution
+- Vision: $3.00/1M tokens
+- Text: $3.00/1M tokens
+- Best reasoning model for difficult problems
+
+Total worst-case (all 3 attempts): $0.54/resolution
+Still under our $0.70 overage price!
+```
+
+**Why This Works**:
+- **Upgrade the brain, not the eyes**: pHash optimization kept across all tiers
+- **80% single-attempt success rate**: Most resolutions complete on attempt 1
+- **Intelligent escalation**: Better reasoning for difficult problems
+- **Cost-effective**: Even 3 attempts ($0.54) is under our pricing ($0.70)
+
+**Single Resolution Cost Breakdown (Attempt 1)**:
+```
+Per Resolution (8 min avg, single attempt):
+- LiveKit: 8 min × $0.004 = $0.032
+- Gemini Flash-Lite vision (with pHash): 120-192 frames × $0.075/1K = $0.009-$0.014
+- Gemini Flash-Lite text: 3 calls × $0.075/1M = $0.0002
+- Total optimized: $0.04-$0.05/resolution
+
+Our optimization + smart routing = 85% cost reduction
+```
+
+**Actual Cost (with Phase 5 optimization + Three-Tier Routing)**:
+```
+Weighted average across all attempts:
+- 60% × $0.06 (Attempt 1) = $0.036
+- 25% × $0.08 (Attempt 2) = $0.020
+- 15% × $0.40 (Attempt 3) = $0.060
+- Average cost: $0.116/resolution
+
+With pHash deduplication (60-75% frame reduction):
+- Actual frames: 120-192 frames (not 480)
+- Actual vision cost: $0.009-$0.014 (not $0.12)
+- Total optimized with smart routing: $0.116/resolution
+
+Our optimization = 87% cost savings = MASSIVE PROFIT
+```
+
+**Profit Margins by Tier**:
+
+| Tier | Revenue | Worst-Case Cost | Optimized Cost | Profit Margin |
+|------|---------|-----------------|----------------|---------------|
+| **Starter** (10 res) | $25 | $8.80 | $6.00 | 76% |
+| **Professional** (50 res) | $99 | $44.00 | $30.00 | 70% |
+| **Enterprise** (150 res) | $159 | $132.00 | $90.00 | 43% |
+
+**Key Insights**:
+- Base pricing assumes **worst-case** (60 frames/min)
+- Our pHash optimization (Phase 5) saves 60-75% on frames
+- Users never hit "frame limits" mid-session (bundled with minutes)
+- Better optimization = higher profit margins (not lower prices)
+- Competitive vs Intercom ($0.99/resolution) even at worst-case
 
 **User Note**: "we will be reviewing the real prices after staging and testing to know and calculate real values with mock data and testing"
 
