@@ -1,6 +1,20 @@
 """
-Three-tier AI routing: Gemini 2.5 Flash-Lite (60%) → Flash (25%) → Claude Sonnet 4.5 (15%)
-Routes requests to appropriate AI model based on complexity estimation
+Three-tier AI escalation: Attempt-based retry logic with smart model escalation
+
+Philosophy: "Upgrade the brain, not the eyes"
+- Maintain pHash optimization (threshold=10) across all retry attempts
+- Escalate AI reasoning capability on low confidence, not frame quality
+
+Escalation Flow:
+- Attempt 1 (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
+- Attempt 2 (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
+- Attempt 3 (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
+
+Worst-case: All 3 attempts = $0.54/resolution (under $0.70 overage)
+Result: 85% cost reduction through smart escalation + frame deduplication
+
+Note: This module contains legacy complexity-based routing code for reference.
+Production implementation uses attempt-based escalation in agent.py.
 """
 
 import re
@@ -9,14 +23,28 @@ from typing import Optional
 
 
 class ComplexityLevel(Enum):
-    """Request complexity classification"""
-    SIMPLE = "simple"      # Gemini Flash-Lite 60%
-    MODERATE = "moderate"  # Gemini Flash 25%
-    COMPLEX = "complex"    # Claude Sonnet 4.5 15%
+    """
+    LEGACY: Request complexity classification (deprecated)
+
+    Production implementation uses attempt-based escalation instead.
+    This enum is kept for backward compatibility and reference.
+    """
+    SIMPLE = "simple"      # LEGACY: Was Gemini Flash-Lite 60%
+    MODERATE = "moderate"  # LEGACY: Was Gemini Flash 25%
+    COMPLEX = "complex"    # LEGACY: Was Claude Sonnet 4.5 15%
 
 
 class AIRouter:
-    """Routes requests to appropriate AI model based on complexity"""
+    """
+    LEGACY: Routes requests to appropriate AI model based on complexity (deprecated)
+
+    Production implementation uses attempt-based escalation with confidence scoring.
+    See agent.py for current implementation with retry logic and smart escalation.
+
+    Philosophy: "Upgrade the brain, not the eyes"
+    - Maintain pHash optimization across all retry attempts
+    - Escalate AI reasoning capability on low confidence, not frame quality
+    """
 
     def __init__(
         self,
@@ -52,9 +80,18 @@ class AIRouter:
 
     def estimate_complexity(self, text: str) -> ComplexityLevel:
         """
-        Estimate query complexity using heuristics
+        LEGACY: Estimate query complexity using heuristics (deprecated)
 
-        Scoring factors:
+        Production implementation uses attempt-based escalation with confidence scoring.
+        This method is kept for backward compatibility and reference only.
+
+        The new approach:
+        - Try Gemini Flash-Lite 8B first (60% of resolutions)
+        - If low confidence → Try Gemini Flash (25% of resolutions)
+        - If still low → Try Claude Sonnet 4.5 (15% of resolutions)
+        - Keep pHash optimization constant across all attempts
+
+        Legacy scoring factors (for reference):
         - Length (longer = more complex)
         - Technical terms
         - Question depth
@@ -65,7 +102,7 @@ class AIRouter:
             text: User input text
 
         Returns:
-            ComplexityLevel enum
+            ComplexityLevel enum (legacy)
         """
         score = 0
         text_lower = text.lower()

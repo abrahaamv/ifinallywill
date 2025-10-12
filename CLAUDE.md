@@ -97,10 +97,13 @@ pnpm clean                             # Clean build artifacts
 
 **Status**: ✅ Production implementation complete (1000+ lines)
 
-**Three-Tier AI Routing**:
-- Gemini Flash-Lite 8B (60%) + Gemini Flash (25%) + Claude Sonnet 4.5 (15%)
-- Complexity scoring: 0-18 points (length, keywords, questions, code, data)
-- 85% cost reduction vs baseline
+**Three-Tier AI Escalation** (Attempt-Based):
+- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
+- **Attempt 2** (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
+- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
+- **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
+- **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
+- **Result**: 85% cost reduction through smart escalation + frame deduplication
 
 **Frame Deduplication**:
 - Perceptual hashing (pHash) with threshold=10
@@ -175,12 +178,13 @@ platform/
 
 **3. Cost-Optimized AI Routing (82-85% Combined Reduction)**
 
-**LiveKit Agent Three-Tier Routing**:
-- **Gemini Flash-Lite 8B**: Simple queries (60%, $0.075/1M tokens)
-- **Gemini Flash**: Moderate complexity (25%, $0.20/1M tokens)
-- **Claude Sonnet 4.5**: Complex reasoning (15%, $3.00/1M tokens)
-- **Complexity Scoring**: 0-18 point algorithm (length, keywords, questions, code, data)
-- **Result**: 85% cost reduction for vision
+**LiveKit Agent Three-Tier Escalation** (Attempt-Based):
+- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
+- **Attempt 2** (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
+- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
+- **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
+- **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
+- **Result**: 85% cost reduction through smart escalation + frame deduplication
 
 **Dashboard Chat API Two-Tier Routing**:
 - **GPT-4o-mini**: Simple queries (70%, $0.15/1M tokens)

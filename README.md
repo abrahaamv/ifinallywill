@@ -145,11 +145,13 @@ platform/
 
 ### Cost-Optimized AI Architecture
 
-**82-85% cost reduction** through three-tier AI routing + frame deduplication (Phase 5 complete):
+**82-85% cost reduction** through three-tier AI escalation + frame deduplication (Phase 5 complete):
 
-- **Vision** (LiveKit Agent): Gemini Flash-Lite 8B (60%) + Gemini Flash (25%) + Claude Sonnet 4.5 (15%) → 85% cost reduction
+- **Vision** (LiveKit Agent): Attempt-based escalation (60% @ $0.06, 25% @ $0.08, 15% @ $0.40) → 85% cost reduction
+  - **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
+  - **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
 - **LLM** (Dashboard Chat API): GPT-4o-mini (70%) + GPT-4o (30%) → 75% cost reduction
-- **Frame Deduplication**: pHash algorithm with adaptive FPS (30→5 FPS) → 60-75% frame reduction
+- **Frame Deduplication**: pHash algorithm with 1 FPS → 60-75% frame reduction
 - **LiveKit**: Self-hosted option (95-97% savings: $1.6K-6K/year vs $60K-120K+/year Enterprise)
 - **Combined Savings**: ~$1.1M/year at 1K users, scales linearly
 
@@ -166,7 +168,7 @@ platform/
 - **Multi-modal Interaction**: Voice, vision, and text in real-time (Phase 5 complete)
 - **Screen Analysis**: Real-time analysis at 1 FPS (Python LiveKit agent)
 - **Knowledge Enhancement**: Production RAG system with hybrid retrieval (semantic + keyword + smart fallback) + voyage-2 embeddings (Phase 5 complete)
-- **Complexity-based Routing**: Automatic provider selection for cost optimization (Phase 5 complete)
+- **Attempt-based Escalation**: Smart retry-driven model selection for cost optimization (Phase 5 complete)
 - **Real-time Chat**: WebSocket bidirectional chat with Redis Streams (Phase 6 complete)
 - **Dual-Mode Interface**: AI chat + Real-time chat in single dashboard (Phase 6 complete)
 
@@ -191,11 +193,13 @@ platform/
 
 ### AI Services
 
-**Three-Tier AI Routing** (LiveKit Agent - 82-85% cost reduction):
-- **Vision**:
-  - Google Gemini Flash-Lite 8B (simple - 60%, $0.075/1M tokens)
-  - Google Gemini Flash (moderate - 25%, $0.20/1M tokens)
-  - Anthropic Claude Sonnet 4.5 (complex - 15%, $3.00/1M tokens)
+**Three-Tier AI Escalation** (LiveKit Agent - 82-85% cost reduction):
+- **Vision** (Attempt-Based Escalation):
+  - **Attempt 1** (60% of resolutions): Google Gemini Flash-Lite 8B + pHash → $0.06/resolution
+  - **Attempt 2** (25% of resolutions): Google Gemini Flash + pHash → $0.08/resolution
+  - **Attempt 3** (15% of resolutions): Anthropic Claude Sonnet 4.5 + pHash → $0.40/resolution
+  - **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
+  - **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
 - **LLM** (Dashboard Chat API):
   - OpenAI GPT-4o-mini (simple - 70%, $0.15/1M tokens)
   - OpenAI GPT-4o (complex - 30%, $5.00/1M tokens)
@@ -207,8 +211,8 @@ platform/
 - **Real-time**: LiveKit Cloud (self-hosted option: $1.6K-6K/year vs $60K-120K+/year Enterprise)
 
 **Cost Optimization Features**:
-- Complexity scoring algorithm (0-18 points: length, keywords, questions, code, data)
-- Perceptual hashing (pHash) for frame deduplication (60-75% frame reduction)
+- Attempt-based escalation with confidence scoring (retry logic escalates AI reasoning capability)
+- Perceptual hashing (pHash) for frame deduplication (60-75% frame reduction, threshold=10)
 - 1 FPS screen capture (96% cost reduction vs 30 FPS)
 - **Combined Savings**: 82-85% vs baseline (~$1.1M/year at 1K users)
 

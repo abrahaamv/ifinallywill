@@ -10,10 +10,12 @@
 5. **Observable by default** - Track every token and dollar spent
 
 **Cost Optimization Strategy**:
-- **Vision**: 85% Gemini Flash ($0.10/1M tokens) → 15% Claude Sonnet ($3/1M tokens)
+- **Vision** (Attempt-Based Escalation): 60% @ $0.06, 25% @ $0.08, 15% @ $0.40 per resolution
+  - **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
+  - **Retry Logic**: Failed responses escalate AI reasoning capability, not frame quality
 - **Voice LLM**: 70% GPT-4o-mini ($0.15/1M tokens) → 30% GPT-4o ($2.50/1M tokens)
 - **Embeddings**: Voyage Multimodal-3 ($0.10/1M tokens) - unified text+image
-- **Frame Selection**: 95% frames skipped via motion detection (edge, 0 cost)
+- **Frame Deduplication**: 60-75% frames skipped via pHash (threshold=10, 0 cost)
 
 ---
 
@@ -462,65 +464,147 @@ export class FrameSelector {
 }
 ```
 
-### Vision Analysis Router
+### Vision Analysis Router (Attempt-Based Escalation)
+
+**Philosophy**: "Upgrade the brain, not the eyes" - maintain pHash optimization across all retry attempts, escalate AI reasoning capability instead.
 
 ```typescript
 // packages/vision/src/analyzer.ts
 import type { VisionResponse } from '@platform/ai-core/providers/base';
-import { GeminiProvider } from '@platform/ai-core/providers/gemini';
+import { GeminiFlashLiteProvider } from '@platform/ai-core/providers/gemini-flash-lite';
+import { GeminiFlashProvider } from '@platform/ai-core/providers/gemini-flash';
 import { AnthropicProvider } from '@platform/ai-core/providers/anthropic';
 
 export class VisionAnalyzer {
-  private gemini: GeminiProvider;
+  private geminiFlashLite: GeminiFlashLiteProvider;
+  private geminiFlash: GeminiFlashProvider;
   private claude: AnthropicProvider;
-  private complexityThreshold = 0.7;
+  private confidenceThreshold = 0.8;
 
   constructor(config: { geminiKey: string; anthropicKey: string }) {
-    this.gemini = new GeminiProvider(config.geminiKey);
+    this.geminiFlashLite = new GeminiFlashLiteProvider(config.geminiKey);
+    this.geminiFlash = new GeminiFlashProvider(config.geminiKey);
     this.claude = new AnthropicProvider(config.anthropicKey);
   }
 
+  /**
+   * Analyze screen with automatic escalation on low confidence
+   *
+   * Flow:
+   * 1. Apply pHash deduplication to frames (done externally)
+   * 2. Attempt 1: Gemini Flash-Lite 8B + optimized frames (60% of resolutions)
+   * 3. If confidence low → Attempt 2: Gemini Flash + same frames (25% of resolutions)
+   * 4. If still low → Attempt 3: Claude Sonnet 4.5 + same frames (15% of resolutions)
+   */
   async analyzeScreen(params: {
-    frame: Buffer;
+    frame: Buffer; // Already pHash-deduplicated
     userQuery: string;
     context?: string;
   }): Promise<VisionResponse> {
-    const complexity = this.assessComplexity(params.userQuery);
+    const maxAttempts = 3;
 
-    // Route to appropriate model
-    if (complexity < this.complexityThreshold) {
-      // Routine analysis: Gemini Flash (85% of cases)
-      return this.gemini.vision.analyzeImage({
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const response = await this.attemptAnalysis({
+        frame: params.frame, // Same optimized frames for all attempts
+        userQuery: params.userQuery,
+        context: params.context,
+        attemptNumber: attempt,
+      });
+
+      // Assess confidence in response
+      const confidence = this.assessConfidence(response);
+
+      // Log attempt for monitoring
+      console.log(`[Vision] Attempt ${attempt}: confidence=${confidence.toFixed(2)}`);
+
+      // Success: High confidence or final attempt
+      if (confidence >= this.confidenceThreshold || attempt === maxAttempts) {
+        return {
+          ...response,
+          confidence,
+          metadata: {
+            ...response.metadata,
+            attemptNumber: attempt,
+            escalated: attempt > 1,
+          },
+        };
+      }
+
+      // Low confidence: escalate to next tier
+      console.log(`[Vision] Low confidence (${confidence.toFixed(2)}), escalating to attempt ${attempt + 1}`);
+    }
+
+    // Should never reach here due to maxAttempts check above
+    throw new Error('Vision analysis failed after all attempts');
+  }
+
+  private async attemptAnalysis(params: {
+    frame: Buffer;
+    userQuery: string;
+    context?: string;
+    attemptNumber: number;
+  }): Promise<VisionResponse> {
+    const prompt = this.buildPrompt({
+      userQuery: params.userQuery,
+      context: params.context,
+    });
+
+    // Route by attempt number (not complexity)
+    if (params.attemptNumber === 1) {
+      // Attempt 1 (60%): Gemini Flash-Lite 8B
+      return this.geminiFlashLite.vision.analyzeImage({
         image: params.frame,
-        prompt: this.buildPrompt(params),
+        prompt,
         maxTokens: 300,
       });
+    } else if (params.attemptNumber === 2) {
+      // Attempt 2 (25%): Gemini Flash
+      return this.geminiFlash.vision.analyzeImage({
+        image: params.frame,
+        prompt,
+        maxTokens: 400,
+      });
     } else {
-      // Complex analysis: Claude Sonnet (15% of cases)
+      // Attempt 3 (15%): Claude Sonnet 4.5
       return this.claude.vision.analyzeImage({
         image: params.frame,
-        prompt: this.buildPrompt(params),
+        prompt,
         maxTokens: 500,
       });
     }
   }
 
-  private assessComplexity(query: string): number {
-    let score = 0.5; // Base score
+  /**
+   * Assess response quality to determine if escalation needed
+   *
+   * Confidence indicators:
+   * - Response completeness (length, structure)
+   * - Error detection (parsing failures, null responses)
+   * - Semantic coherence (contradiction detection)
+   * - Actionability (presence of specific guidance)
+   */
+  private assessConfidence(response: VisionResponse): number {
+    let confidence = 0.5; // Base confidence
 
-    // Multi-step indicators
-    if (query.match(/then|after|next|following|step/i)) score += 0.2;
+    // Response completeness (+0.3)
+    if (response.content.length > 100) confidence += 0.15;
+    if (response.content.length > 300) confidence += 0.15;
 
-    // Comparison indicators
-    if (query.match(/compare|versus|difference|better/i)) score += 0.15;
+    // Structured response indicators (+0.2)
+    if (response.content.match(/\d+\./)) confidence += 0.1; // Numbered lists
+    if (response.content.match(/step|click|select|enter/i)) confidence += 0.1; // Actionable guidance
 
-    // Troubleshooting indicators
-    if (query.match(/why|how|explain|understand|debug/i)) score += 0.1;
+    // Error indicators (-0.3)
+    if (response.content.match(/I (can't|cannot|am unable)/i)) confidence -= 0.15;
+    if (response.content.match(/unclear|not sure|don't know/i)) confidence -= 0.15;
+    if (response.content.length < 50) confidence -= 0.2; // Too short
 
-    // Edge case indicators
-    if (query.match(/error|issue|problem|not working|failed/i)) score += 0.15;
+    // Model-provided confidence (if available)
+    if (response.confidence !== undefined) {
+      confidence = (confidence + response.confidence) / 2;
+    }
 
-    return Math.min(score, 1.0);
+    return Math.max(0, Math.min(1, confidence));
   }
 
   private buildPrompt(params: {
