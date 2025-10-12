@@ -398,14 +398,19 @@ Total cost: $0.00158/minute (12% cheaper)
 **Timeline**: Day 8 (1-2 days implementation)
 
 #### B. Vision Model Routing (ALREADY IMPLEMENTED)
-**Status**: ✅ Already in codebase (livekit-agent/agent.py three-tier routing)
+**Status**: ✅ Already in codebase (livekit-agent/agent.py attempt-based escalation)
 
-**Current Implementation**:
-- Gemini Flash-Lite 8B (60%): Simple queries
-- Gemini Flash (25%): Moderate complexity
-- Claude Sonnet 4.5 (15%): Complex reasoning
+**Current Implementation** (Attempt-Based Escalation):
+- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
+- **Attempt 2** (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
+- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
 
-**Validation**: Complexity scoring algorithm (0-18 points) based on length, keywords, questions, code, data
+**Philosophy**: "Upgrade the brain, not the eyes"
+- Maintain pHash optimization (threshold=10) across all retry attempts
+- Escalate AI reasoning capability on low confidence, not frame quality
+- **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage price)
+
+**Validation**: Confidence scoring on response quality determines escalation need
 
 **No Action Required**: Already delivering 85% cost reduction vs baseline
 
@@ -1821,7 +1826,10 @@ ALTER TABLE overage_charges ENABLE ROW LEVEL SECURITY;
 ## Part 3: Cost Impact Summary
 
 ### Current Cost Optimization (Already Implemented)
-- Three-tier AI routing (Gemini Flash-Lite 60% / Flash 25% / Claude 15%): **85% savings**
+- **Three-tier attempt-based escalation** (Gemini Flash-Lite 60% / Flash 25% / Claude 15%): **85% savings**
+  - Philosophy: "Upgrade the brain, not the eyes" - retry with better models, not more frames
+  - Cost: $0.06 → $0.08 → $0.40 per resolution (worst-case $0.54, under $0.70 overage)
+  - Users charged on 1 FPS baseline, optimizations (pHash, adaptive thresholds) = profit
 - Dashboard chat routing (GPT-4o-mini 70% / GPT-4o 30%): **75% savings**
 - 1 FPS screen capture (vs 30 FPS): **96% savings**
 - pHash frame deduplication (fixed threshold): **60-75% reduction**
@@ -1845,10 +1853,11 @@ ALTER TABLE overage_charges ENABLE ROW LEVEL SECURITY;
 - Vision (30 FPS, 6 min avg): 1,000 × 10,800 frames × $0.30/1K = $3,240
 - **TOTAL: $3,244.75/month**
 
-**With Phase 10 Optimizations**:
+**With Phase 10 Optimizations** (Actual Cost to Us):
 - LLM (GPT-4o-mini 70% / GPT-4o 30%): $0.45 (text)
-- Vision (three-tier routing + 1 FPS + pHash + adaptive thresholds + caching):
-  - Frames: 1,000 × 360 frames (1 FPS) × 0.3 (dedup) × 0.88 (adaptive) = 95K frames
+- Vision (attempt-based escalation + 1 FPS + pHash + adaptive thresholds + caching):
+  - **Pricing Model**: Users charged on 1 FPS baseline, our optimizations = profit margin
+  - Frames: 1,000 × 360 frames (1 FPS) × 0.3 (dedup) × 0.88 (adaptive) = 95K frames analyzed
   - Flash-Lite (60%): 57K × $0.075/1K = $4.28
   - Flash (25%): 24K × $0.20/1K = $4.80
   - Claude (15%, with caching 87% reduction): 14K × $3/1K × 0.13 = $5.46
@@ -1856,7 +1865,9 @@ ALTER TABLE overage_charges ENABLE ROW LEVEL SECURITY;
 - Reranking: 1,000 × $0.002 = $2.00
 - Embeddings: 1,000 × $0.01 = $10.00
 - Memory: 1,000 × 10 messages × $0.00008 = $0.80
-- **TOTAL: $27.79/month**
+- **TOTAL COST TO US: $27.79/month**
+- **USER PRICING**: Based on 1 FPS baseline (see Phase 11 pricing tiers)
+- **PROFIT MARGIN**: pHash (60-75% savings) + adaptive thresholds (12% savings) = our margin
 
 **SAVINGS: $3,244.75 - $27.79 = $3,216.96/month (99.1% reduction)**
 
