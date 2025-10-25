@@ -10,7 +10,7 @@
  * - error: error message if session fetch failed
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Auth.js User type (extended with platform fields)

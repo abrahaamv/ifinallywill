@@ -4,7 +4,18 @@
  */
 
 import { Badge, Button, Card, CardContent, Input } from '@platform/ui';
-import { Bot, Loader2, MessageCircle, Minimize2, Send, Sparkles, Target, User, X, Zap } from 'lucide-react';
+import {
+  Bot,
+  Loader2,
+  MessageCircle,
+  Minimize2,
+  Send,
+  Sparkles,
+  Target,
+  User,
+  X,
+  Zap,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -156,9 +167,7 @@ export function ChatWidget() {
       {isOpen && (
         <div
           className={`fixed z-50 transition-all ${
-            isMinimized
-              ? 'bottom-6 right-6 w-80'
-              : 'bottom-6 right-6 w-96 h-[600px]'
+            isMinimized ? 'bottom-6 right-6 w-80' : 'bottom-6 right-6 w-96 h-[600px]'
           } flex flex-col bg-background border border-border rounded-lg shadow-2xl`}
         >
           {/* Header */}
@@ -245,7 +254,9 @@ export function ChatWidget() {
                         }`}
                       >
                         <CardContent className="p-3">
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                            {message.content}
+                          </p>
                         </CardContent>
                       </Card>
 
@@ -269,23 +280,27 @@ export function ChatWidget() {
                               <span>{message.metadata.latencyMs}ms</span>
                             )}
                           </div>
-                          {message.metadata.ragChunksRetrieved !== undefined && message.metadata.ragChunksRetrieved > 0 && (
-                            <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
-                              <span className="flex items-center gap-1">
-                                📚 RAG: {message.metadata.ragChunksRetrieved} chunks***
-                              </span>
-                              {message.metadata.ragProcessingTimeMs && (
+                          {message.metadata.ragChunksRetrieved !== undefined &&
+                            message.metadata.ragChunksRetrieved > 0 && (
+                              <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
                                 <span className="flex items-center gap-1">
-                                  <Zap className="w-3 h-3" /> {message.metadata.ragProcessingTimeMs}ms
+                                  📚 RAG: {message.metadata.ragChunksRetrieved} chunks***
                                 </span>
-                              )}
-                              {message.metadata.ragTopRelevance && message.metadata.ragTopRelevance !== 'none' && (
-                                <span className="flex items-center gap-1">
-                                  <Target className="w-3 h-3" /> {message.metadata.ragTopRelevance} relevance
-                                </span>
-                              )}
-                            </div>
-                          )}
+                                {message.metadata.ragProcessingTimeMs && (
+                                  <span className="flex items-center gap-1">
+                                    <Zap className="w-3 h-3" />{' '}
+                                    {message.metadata.ragProcessingTimeMs}ms
+                                  </span>
+                                )}
+                                {message.metadata.ragTopRelevance &&
+                                  message.metadata.ragTopRelevance !== 'none' && (
+                                    <span className="flex items-center gap-1">
+                                      <Target className="w-3 h-3" />{' '}
+                                      {message.metadata.ragTopRelevance} relevance
+                                    </span>
+                                  )}
+                              </div>
+                            )}
                         </div>
                       )}
                     </div>

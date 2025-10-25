@@ -35,14 +35,17 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     fetchCsrfToken();
 
     // Refresh token every 30 minutes (before 1 hour expiry)
-    const interval = setInterval(async () => {
-      try {
-        const { token } = await CSRFService.getToken();
-        csrfTokenRef.current = token;
-      } catch (error) {
-        console.error('Failed to refresh CSRF token:', error);
-      }
-    }, 30 * 60 * 1000);
+    const interval = setInterval(
+      async () => {
+        try {
+          const { token } = await CSRFService.getToken();
+          csrfTokenRef.current = token;
+        } catch (error) {
+          console.error('Failed to refresh CSRF token:', error);
+        }
+      },
+      30 * 60 * 1000
+    );
 
     return () => clearInterval(interval);
   }, []);
