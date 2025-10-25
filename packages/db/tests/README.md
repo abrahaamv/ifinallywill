@@ -102,7 +102,7 @@ pnpm test:watch
 
 **Phase 2 - Database Layer**: ✅ Implementation complete, ⚠️ Test limitations documented
 
-- ✅ 15 database tables with TypeScript types
+- ✅ 18 database tables with TypeScript types (includes Phase 8 security tables: apiKeys, auditLogs, dataRequests)
 - ✅ FORCE RLS on 14 tenant-scoped tables (56 policies)
 - ✅ Helper function for tenant context
 - ✅ Migrations 001-005 applied successfully

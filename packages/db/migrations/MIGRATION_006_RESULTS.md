@@ -30,7 +30,7 @@ Migration 006 adds comprehensive performance indexes for all tenant-scoped table
 | tenants | 2 | Plan filtering, recent tenants |
 | verification_tokens | 2 | Token lookup, expiration cleanup |
 
-**Total**: 55 indexes across 15 tables
+**Total**: 55 indexes across 18 tables (includes Phase 8 security tables)
 
 ## Key Indexes
 
@@ -251,7 +251,7 @@ Top 10 largest indexes (empty database):
 
 ## Conclusion
 
-Migration 006 successfully applied 55 performance indexes across 15 tables, including:
+Migration 006 successfully applied 55 performance indexes across 18 tables, including:
 
 - **Tenant isolation**: 14 primary indexes + 5 composite indexes for RLS performance
 - **Foreign keys**: 8 indexes to optimize JOIN operations

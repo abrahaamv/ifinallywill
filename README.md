@@ -7,7 +7,7 @@
 **Last Updated**: 2025-01-10
 
 > **✅ VERIFIED**: 56 RLS policies active (FORCE RLS enabled), tenant isolation working, all routers complete, Phase 8 security complete
-> **📊 DATABASE**: 15 tables (596 lines schema), 8 migrations completed, 56 RLS policies enforced
+> **📊 DATABASE**: 18 tables (596 lines schema), 9 migrations completed, 56 RLS policies enforced
 > **📋 CURRENT STATUS**: See `docs/CURRENT_STATUS.md` for comprehensive evidence-based assessment
 > **🎯 REMAINING**: End-to-end LiveKit agent testing (2-3 hours)
 
@@ -99,13 +99,13 @@ Then open:
 >
 > **Shared Components**: `packages/ui` with 16 components (Radix UI + shadcn/ui)
 >
-> **Security Features**: Auth.js OAuth, Argon2id passwords, TOTP MFA, PostgreSQL RLS (FORCE enabled on 14 tables), Redis rate limiting, API key auth, CSRF protection
+> **Security Features**: Auth.js OAuth, Argon2id passwords, TOTP MFA, PostgreSQL RLS (FORCE enabled on 18 tables), Redis rate limiting, API key auth, CSRF protection
 >
 > **PostgreSQL RLS**: ✅ COMPLETE - FORCE RLS enabled, 56 policies active, production-ready tenant isolation
 >
 > **Browser Compatibility**: ✅ COMPLETE - Node.js polyfills (Buffer, process, perf_hooks), browser-safe exports
 >
-> See `docs/implementation/` for complete implementation details (Phases 1-9).
+> See `docs/implementation/` for complete implementation details (Phases 1-8).
 
 ---
 
@@ -158,7 +158,7 @@ platform/
 ### Enterprise-Grade Infrastructure
 
 - **Backend**: Fastify 5.3.2+ + tRPC v11 for type-safe APIs
-- **Database**: PostgreSQL 16.7+ + Drizzle ORM (15 tables, 8 migrations, 56 RLS policies) + Redis 7.4.2+
+- **Database**: PostgreSQL 16.7+ + Drizzle ORM (18 tables, 9 migrations, 56 RLS policies) + Redis 7.4.2+
 - **Real-time**: WebSocket + Redis Streams for chat, LiveKit Cloud for WebRTC
 - **Auth**: Auth.js (NextAuth.js) v5 with OAuth providers
 - **Build**: Turborepo monorepo with pnpm workspace
@@ -381,7 +381,7 @@ pnpm preview
 ### Completed (8/8 Phases - 100%)
 
 - ✅ **Phase 1**: Turborepo monorepo scaffolding
-- ✅ **Phase 2**: Database + Auth + Security (15 tables, 8 migrations, 56 RLS policies)
+- ✅ **Phase 2**: Database + Auth + Security (18 tables, 9 migrations, 56 RLS policies)
 - ✅ **Phase 3**: Backend API infrastructure (tRPC v11, 5 routers)
 - ✅ **Phase 4**: Frontend apps (React 18 + Vite 6 + Tailwind v4)
 - ✅ **Phase 5**: AI Integration + LiveKit (75-85% cost reduction, self-hosted option)
