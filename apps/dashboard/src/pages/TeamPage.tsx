@@ -1,18 +1,51 @@
 /**
- * Team Page
- * Team member management, roles, permissions, and activity tracking
- * Based on product strategy: RBAC, team collaboration, activity logs*
+ * Team Page - Complete Redesign
+ * Modern member cards with role badges and activity tracking
+ * Inspired by team management interfaces
  */
 
-import { Avatar, AvatarFallback, Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@platform/ui';
-import { Clock, Mail, MoreVertical, Plus, Search, Shield, UserCheck, UserPlus, Users } from 'lucide-react';
+import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+} from '@platform/ui';
+import {
+  AlertCircle,
+  Clock,
+  Mail,
+  MessageSquare,
+  Search,
+  Shield,
+  UserCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
+import { trpc } from '../utils/trpc';
 
 export function TeamPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
 
-  // Mock team members data**
+  const { isLoading, error } = trpc.users.list.useQuery({
+    limit: 100,
+    offset: 0,
+  });
+
+  // Mock team members data
   const teamMembers = [
     {
       id: 'user-001',
@@ -58,76 +91,16 @@ export function TeamPage() {
       conversations: 156,
       avgResponseTime: '5.2 min',
     },
-    {
-      id: 'user-005',
-      name: 'Lisa Anderson',
-      email: 'lisa.anderson@acme.com',
-      role: 'viewer',
-      status: 'inactive',
-      joinedAt: '2024-04-05',
-      lastActive: '2024-10-08 16:30',
-      conversations: 0,
-      avgResponseTime: '—',
-    },
   ];
 
-  // Mock activity log data***
-  const activityLog = [
-    {
-      id: 'act-001',
-      user: 'Sarah Johnson',
-      action: 'Handled escalated conversation',
-      target: 'conv-003',
-      timestamp: '2024-10-11 14:52',
-      type: 'conversation',
-    },
-    {
-      id: 'act-002',
-      user: 'Michael Chen',
-      action: 'Updated knowledge base article',
-      target: 'API Rate Limiting',
-      timestamp: '2024-10-11 14:45',
-      type: 'knowledge',
-    },
-    {
-      id: 'act-003',
-      user: 'Emily Davis',
-      action: 'Resolved escalation',
-      target: 'esc-002',
-      timestamp: '2024-10-11 13:20',
-      type: 'escalation',
-    },
-    {
-      id: 'act-004',
-      user: 'Robert Martinez',
-      action: 'Modified team permissions',
-      target: 'Team Settings',
-      timestamp: '2024-10-11 12:15',
-      type: 'admin',
-    },
-    {
-      id: 'act-005',
-      user: 'Sarah Johnson',
-      action: 'Added new team member',
-      target: 'Alex Kim',
-      timestamp: '2024-10-11 09:30',
-      type: 'admin',
-    },
-  ];
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive';
-      case 'manager':
-        return 'default';
-      case 'agent':
-        return 'secondary';
-      case 'viewer':
-        return 'outline';
-      default:
-        return 'outline';
-    }
+  const getRoleBadgeColor = (role: string): 'destructive' | 'default' | 'secondary' | 'outline' => {
+    const variants: Record<string, 'destructive' | 'default' | 'secondary' | 'outline'> = {
+      admin: 'destructive',
+      manager: 'default',
+      agent: 'secondary',
+      viewer: 'outline',
+    };
+    return variants[role] || 'outline';
   };
 
   const getInitials = (name: string) => {
@@ -148,90 +121,87 @@ export function TeamPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Users className="h-8 w-8 text-primary" />
-            Team Management
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage team members, roles, and permissions
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
+          <p className="mt-2 text-gray-600">Manage team members, roles, and permissions</p>
         </div>
         <Button>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Invite Team Member
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Member
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Members</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamMembers.length}</div>
-            <p className="text-xs text-muted-foreground">Active users</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Now</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {teamMembers.filter((m) => m.status === 'active').length}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Total Members</p>
+              <Users className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="text-xs text-muted-foreground">Online today</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {isLoading ? '—' : teamMembers.length}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Conversations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {teamMembers.reduce((sum, m) => sum + m.conversations, 0)}
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Active Now</p>
+              <UserCheck className="h-5 w-5 text-green-600" />
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {isLoading ? '—' : teamMembers.filter((m) => m.status === 'active').length}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Response Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3.8 min</div>
-            <p className="text-xs text-muted-foreground">Team average</p>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Conversations</p>
+              <MessageSquare className="h-5 w-5 text-primary-600" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {isLoading ? '—' : teamMembers.reduce((sum, m) => sum + m.conversations, 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Avg Response</p>
+              <Clock className="h-5 w-5 text-primary-600" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '3.8 min'}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
+      {/* Search and Filter */}
+      <Card className="border-gray-200 shadow-card">
         <CardHeader>
-          <CardTitle>Filter Team Members</CardTitle>
+          <CardTitle>Filter Members</CardTitle>
           <CardDescription>Search by name, email, or filter by role</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 placeholder="Search team members..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-9"
               />
             </div>
             <Select value={filterRole} onValueChange={setFilterRole}>
-              <SelectTrigger className="w-full md:w-[200px]">
+              <SelectTrigger className="w-[200px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -246,198 +216,163 @@ export function TeamPage() {
         </CardContent>
       </Card>
 
-      {/* Team Members Table */}
-      <Card>
+      {/* Team Members Grid */}
+      <Card className="border-gray-200 shadow-card">
         <CardHeader>
-          <CardTitle>Team Members*</CardTitle>
+          <CardTitle>Team Members</CardTitle>
           <CardDescription>
             {filteredMembers.length} member{filteredMembers.length !== 1 ? 's' : ''} found
           </CardDescription>
         </CardHeader>
+
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Conversations</TableHead>
-                <TableHead className="text-right">Avg Response</TableHead>
-                <TableHead>Last Active</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          {error ? (
+            <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+              <AlertCircle className="h-5 w-5" />
+              <p>Failed to load team members: {error.message}</p>
+            </div>
+          ) : isLoading ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-48" />
+              ))}
+            </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Users className="mb-4 h-16 w-16 text-gray-400" />
+              <p className="text-gray-600">No team members found</p>
+              <p className="mt-1 text-sm text-gray-500">Try adjusting your filters</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredMembers.map((member) => (
-                <TableRow key={member.id} className="hover:bg-secondary/50">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground">
+                <Card
+                  key={member.id}
+                  className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-primary-100 text-sm font-medium text-primary-700">
                           {getInitials(member.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <div className="flex-1">
+                        <CardTitle className="text-base">{member.name}</CardTitle>
+                        <CardDescription className="mt-1 flex items-center gap-1 text-xs">
                           <Mail className="h-3 w-3" />
                           {member.email}
-                        </div>
+                        </CardDescription>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getRoleBadgeColor(member.role)} className="capitalize">
-                      {member.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${member.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}
-                      />
-                      <span className="text-sm capitalize">{member.status}</span>
+                  </CardHeader>
+
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Role:</span>
+                        <Badge variant={getRoleBadgeColor(member.role)} className="capitalize">
+                          {member.role}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Status:</span>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`h-2 w-2 rounded-full ${member.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}
+                          />
+                          <span className="text-xs capitalize">{member.status}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Conversations:</span>
+                        <span className="text-xs font-medium">{member.conversations}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Avg Response:</span>
+                        <span className="text-xs font-medium font-mono">
+                          {member.avgResponseTime}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 text-xs text-gray-500 pt-2 border-t">
+                        <Clock className="h-3 w-3" />
+                        <span>Last active: {member.lastActive}</span>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{member.conversations}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">{member.avgResponseTime}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {member.lastActive}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
+                  </CardContent>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Roles and Permissions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Roles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Role Definitions**
-            </CardTitle>
-            <CardDescription>Access levels and permissions by role</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="destructive">Admin</Badge>
-                  <span className="text-xs text-muted-foreground">Full Access</span>
-                </div>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Manage team members and permissions</li>
-                  <li>Configure integrations and webhooks</li>
-                  <li>View all analytics and reports</li>
-                  <li>Manage billing and subscriptions</li>
-                </ul>
+      {/* Role Definitions */}
+      <Card className="border-gray-200 shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Role Definitions
+          </CardTitle>
+          <CardDescription>Access levels and permissions by role</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="destructive">Admin</Badge>
+                <span className="text-xs text-gray-500">Full Access</span>
               </div>
-
-              <div className="p-3 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge>Manager</Badge>
-                  <span className="text-xs text-muted-foreground">Team Management</span>
-                </div>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Handle escalated conversations</li>
-                  <li>View team analytics and performance</li>
-                  <li>Manage knowledge base content</li>
-                  <li>Assign conversations to agents</li>
-                </ul>
-              </div>
-
-              <div className="p-3 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="secondary">Agent</Badge>
-                  <span className="text-xs text-muted-foreground">Conversation Handling</span>
-                </div>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Handle assigned conversations</li>
-                  <li>View own performance metrics</li>
-                  <li>Update knowledge base articles</li>
-                  <li>Create escalations when needed</li>
-                </ul>
-              </div>
-
-              <div className="p-3 rounded-lg border">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="outline">Viewer</Badge>
-                  <span className="text-xs text-muted-foreground">Read Only</span>
-                </div>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>View conversations and transcripts</li>
-                  <li>Access analytics dashboards</li>
-                  <li>Read knowledge base content</li>
-                  <li>No editing or management permissions</li>
-                </ul>
-              </div>
+              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                <li>Manage team members and permissions</li>
+                <li>Configure integrations and webhooks</li>
+                <li>View all analytics and reports</li>
+                <li>Manage billing and subscriptions</li>
+              </ul>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Activity Log */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCheck className="h-5 w-5" />
-              Recent Activity***
-            </CardTitle>
-            <CardDescription>Team member actions and changes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {activityLog.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-secondary/50">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-secondary text-xs">
-                      {getInitials(activity.user)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{activity.user}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {activity.type}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {activity.action}
-                      {activity.target && (
-                        <span className="font-medium ml-1">• {activity.target}</span>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {activity.timestamp}
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Badge>Manager</Badge>
+                <span className="text-xs text-gray-500">Team Management</span>
+              </div>
+              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                <li>Handle escalated conversations</li>
+                <li>View team analytics and performance</li>
+                <li>Manage knowledge base content</li>
+                <li>Assign conversations to agents</li>
+              </ul>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Footer Annotations */}
-      <Card className="border-dashed">
-        <CardContent className="pt-6">
-          <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>* Team members - Real system includes OAuth SSO, SAML integration, and custom role creation</p>
-            <p>** Role permissions - Production includes granular permissions (RBAC) with custom permission sets and API-level access control</p>
-            <p>*** Activity log - Full audit trail with IP tracking, device fingerprinting, and 90-day retention for compliance</p>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="secondary">Agent</Badge>
+                <span className="text-xs text-gray-500">Conversation Handling</span>
+              </div>
+              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                <li>Handle assigned conversations</li>
+                <li>View own performance metrics</li>
+                <li>Update knowledge base articles</li>
+                <li>Create escalations when needed</li>
+              </ul>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Badge variant="outline">Viewer</Badge>
+                <span className="text-xs text-gray-500">Read Only</span>
+              </div>
+              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                <li>View conversations and transcripts</li>
+                <li>Access analytics dashboards</li>
+                <li>Read knowledge base content</li>
+                <li>No editing or management permissions</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>

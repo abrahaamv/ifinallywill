@@ -4,7 +4,26 @@
  * Based on product strategy: Human handoff workflows, priority management*
  */
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@platform/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@platform/ui';
 import { AlertTriangle, CheckCircle2, Clock, MessageCircle, User, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -135,7 +154,9 @@ export function EscalationsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border-red-200 bg-red-50 dark:bg-red-950">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-900 dark:text-red-100">Critical</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-900 dark:text-red-100">
+              Critical
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
@@ -147,7 +168,9 @@ export function EscalationsPage() {
 
         <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-orange-900 dark:text-orange-100">High</CardTitle>
+            <CardTitle className="text-sm font-medium text-orange-900 dark:text-orange-100">
+              High
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
@@ -175,7 +198,10 @@ export function EscalationsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {escalations.filter((e) => e.status === 'in-progress' || e.status === 'assigned').length}
+              {
+                escalations.filter((e) => e.status === 'in-progress' || e.status === 'assigned')
+                  .length
+              }
             </div>
             <p className="text-xs text-muted-foreground">Being handled</p>
           </CardContent>
@@ -224,7 +250,8 @@ export function EscalationsPage() {
         <CardHeader>
           <CardTitle>Active Escalations*</CardTitle>
           <CardDescription>
-            {filteredEscalations.length} escalation{filteredEscalations.length !== 1 ? 's' : ''} found
+            {filteredEscalations.length} escalation{filteredEscalations.length !== 1 ? 's' : ''}{' '}
+            found
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -347,9 +374,18 @@ export function EscalationsPage() {
         <CardContent className="pt-6">
           <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>* Mock data - Real escalations will be triggered automatically by AI confidence thresholds and explicit user requests</p>
-            <p>** Escalation reasons - AI analyzes conversation context to determine escalation category and suggested priority</p>
-            <p>*** SLA tracking - Production system will monitor response times and alert when SLAs are at risk of being missed</p>
+            <p>
+              * Mock data - Real escalations will be triggered automatically by AI confidence
+              thresholds and explicit user requests
+            </p>
+            <p>
+              ** Escalation reasons - AI analyzes conversation context to determine escalation
+              category and suggested priority
+            </p>
+            <p>
+              *** SLA tracking - Production system will monitor response times and alert when SLAs
+              are at risk of being missed
+            </p>
           </div>
         </CardContent>
       </Card>

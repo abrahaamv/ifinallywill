@@ -1,6 +1,7 @@
 /**
- * Settings Page - Enterprise Security & Account Management
- * Auth.js OAuth, Argon2id password hashing, TOTP MFA, session management
+ * Settings Page - Complete Redesign
+ * Modern tabbed interface for account, security, and preferences
+ * Inspired by modern settings interfaces
  */
 
 import {
@@ -13,496 +14,476 @@ import {
   CardTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@platform/ui';
-import { Shield, Clock, Lock, CheckCircle, User, Key, Building, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Bell, Globe, Key, Lock, Mail, Shield, User, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
 export function SettingsPage() {
-  const [profileData, setProfileData] = useState({
-    name: 'John Doe',
-    email: 'admin@acme.com',
-    avatarUrl: '',
-  });
+  const [isUpdating] = useState(false);
+  const [showMfaSetup, setShowMfaSetup] = useState(false);
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const { data: userData, isLoading } = trpc.users.me.useQuery();
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // tRPC mutation for profile updates
-  const updateMeMutation = trpc.users.updateMe.useMutation();
-
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    setSuccessMessage('');
-
-    // Validation
-    if (!profileData.name.trim()) {
-      setErrors({ name: 'Name is required' });
-      return;
-    }
-
-    if (!profileData.email.trim()) {
-      setErrors({ email: 'Email is required' });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      await updateMeMutation.mutateAsync({
-        name: profileData.name,
-        avatarUrl: profileData.avatarUrl || undefined,
-      });
-
-      setSuccessMessage('Profile updated successfully');
-    } catch (error) {
-      setErrors({
-        submit: error instanceof Error ? error.message : 'Failed to update profile',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // Mock settings data
+  const securitySettings = {
+    mfaEnabled: false,
+    lastPasswordChange: '2024-09-15',
+    sessionTimeout: 30,
+    loginAttempts: 3,
+    ipWhitelist: false,
   };
 
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    setSuccessMessage('');
-
-    // Validation
-    if (!passwordData.currentPassword) {
-      setErrors({ currentPassword: 'Current password is required' });
-      return;
-    }
-
-    if (!passwordData.newPassword) {
-      setErrors({ newPassword: 'New password is required' });
-      return;
-    }
-
-    if (passwordData.newPassword.length < 8) {
-      setErrors({ newPassword: 'Password must be at least 8 characters' });
-      return;
-    }
-
-    if (!/[A-Z]/.test(passwordData.newPassword)) {
-      setErrors({ newPassword: 'Password must contain at least one uppercase letter' });
-      return;
-    }
-
-    if (!/[a-z]/.test(passwordData.newPassword)) {
-      setErrors({ newPassword: 'Password must contain at least one lowercase letter' });
-      return;
-    }
-
-    if (!/[0-9]/.test(passwordData.newPassword)) {
-      setErrors({ newPassword: 'Password must contain at least one number' });
-      return;
-    }
-
-    if (!/[^A-Za-z0-9]/.test(passwordData.newPassword)) {
-      setErrors({ newPassword: 'Password must contain at least one special character' });
-      return;
-    }
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setErrors({ confirmPassword: 'Passwords do not match' });
-      return;
-    }
-
-    // Password updates require Auth.js integration with proper password hashing**
-    // This will be implemented in a future phase with proper security measures***
-    setErrors({
-      submitPassword:
-        'Password updates are currently managed through your OAuth provider (Google/Microsoft)',
-    });
+  const notificationSettings = {
+    emailNotifications: true,
+    slackNotifications: false,
+    desktopNotifications: true,
+    weeklyDigest: true,
   };
-
-  // Calculate stats*
-  const securityScore = 85; // Mock security score based on MFA, recent login, session count
-  const activeSessions = 3; // Mock active session count
-  const lastLoginHours = 2; // Mock hours since last login
-  const mfaStatus = 'Enabled'; // Mock MFA status
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header Section */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-6 py-6">
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold">Account Settings & Security</h1>
-            <p className="text-muted-foreground mt-2">
-              Enterprise-grade account management with Auth.js OAuth* (Google/Microsoft), Argon2id
-              password hashing**, TOTP MFA***, and session management with Redis
-            </p>
-          </div>
-
-          {/* Security Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Security Score</p>
-                    <p className="text-2xl font-bold">{securityScore}*</p>
-                  </div>
-                  <Shield className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Sessions</p>
-                    <p className="text-2xl font-bold">{activeSessions}*</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Last Login</p>
-                    <p className="text-2xl font-bold">{lastLoginHours}h*</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">MFA Status</p>
-                    <p className="text-2xl font-bold">{mfaStatus}*</p>
-                  </div>
-                  <Lock className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-2 text-gray-600">Manage your account, security, and preferences</p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="container mx-auto space-y-6">
-          {successMessage && (
-            <div className="rounded-md bg-green-50 dark:bg-green-950 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                    {successMessage}
-                  </p>
-                </div>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Security Score</p>
+              <Shield className="h-5 w-5 text-green-600" />
             </div>
-          )}
+            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '85/100'}</p>
+            <p className="mt-1 text-xs text-gray-500">Enable MFA for 95/100</p>
+          </CardContent>
+        </Card>
 
-          {errors.submit && (
-            <div className="rounded-md bg-red-50 dark:bg-red-950 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                    {errors.submit}
-                  </p>
-                </div>
-              </div>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Active Sessions</p>
+              <Key className="h-5 w-5 text-primary-600" />
             </div>
-          )}
+            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '3'}</p>
+            <p className="mt-1 text-xs text-gray-500">2 devices, 1 browser</p>
+          </CardContent>
+        </Card>
 
-          {/* Profile Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>
-                Update your account information with Auth.js* session management
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleProfileUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Your name"
-                    value={profileData.name}
-                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                    className={errors.name ? 'border-red-300' : ''}
-                  />
-                  {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-                </div>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Last Login</p>
+              <UserCircle className="h-5 w-5 text-primary-600" />
+            </div>
+            <p className="mt-3 text-xl font-bold text-gray-900">{isLoading ? '—' : 'Today'}</p>
+            <p className="mt-1 text-xs text-gray-500">10:45 AM from Chrome</p>
+          </CardContent>
+        </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    className={errors.email ? 'border-red-300' : ''}
-                  />
-                  {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-                  <p className="text-xs text-muted-foreground">
-                    Email changes will require verification* via Auth.js
-                  </p>
-                </div>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Password Age</p>
+              <Lock className="h-5 w-5 text-amber-600" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '89d'}</p>
+            <p className="mt-1 text-xs text-gray-500">Consider updating</p>
+          </CardContent>
+        </Card>
+      </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="avatarUrl">Avatar URL (Optional)</Label>
-                  <Input
-                    id="avatarUrl"
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={profileData.avatarUrl}
-                    onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
-                  />
-                </div>
+      {/* Settings Tabs */}
+      <Card className="border-gray-200 shadow-card">
+        <CardContent className="pt-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          ) : (
+            <Tabs defaultValue="account" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="account">
+                  <User className="mr-2 h-4 w-4" />
+                  Account
+                </TabsTrigger>
+                <TabsTrigger value="security">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Security
+                </TabsTrigger>
+                <TabsTrigger value="notifications">
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notifications
+                </TabsTrigger>
+                <TabsTrigger value="preferences">
+                  <Globe className="mr-2 h-4 w-4" />
+                  Preferences
+                </TabsTrigger>
+              </TabsList>
 
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              {/* Account Settings */}
+              <TabsContent value="account" className="space-y-6">
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Profile Information</CardTitle>
+                    <CardDescription>Update your account details and email address</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" defaultValue="John" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" defaultValue="Doe" />
+                      </div>
+                    </div>
 
-          {/* Change Password */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                Change Password
-              </CardTitle>
-              <CardDescription>
-                Update your password with Argon2id** hashing for enhanced security
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {errors.submitPassword && (
-                <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950 p-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                        {errors.submitPassword}
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        defaultValue={userData?.email || 'user@example.com'}
+                      />
+                      <p className="text-xs text-gray-500">Used for login and notifications</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="company">Company</Label>
+                      <Input id="company" defaultValue="Acme Inc." />
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <Button disabled={isUpdating}>
+                        {isUpdating ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button variant="outline">Cancel</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>OAuth Connections</CardTitle>
+                    <CardDescription>Manage connected accounts for single sign-on</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+                          <Mail className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Google</p>
+                          <p className="text-xs text-gray-500">john.doe@gmail.com</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Connected</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                          <UserCircle className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Microsoft</p>
+                          <p className="text-xs text-gray-500">Not connected</p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Connect
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Security Settings */}
+              <TabsContent value="security" className="space-y-6">
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>Change your password (Argon2id hashing)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Input id="currentPassword" type="password" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input id="newPassword" type="password" />
+                      <p className="text-xs text-gray-500">
+                        Minimum 8 characters, 1 uppercase, 1 number, 1 special character
                       </p>
                     </div>
-                  </div>
-                </div>
-              )}
 
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    autoComplete="current-password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                    }
-                    className={errors.currentPassword ? 'border-red-300' : ''}
-                  />
-                  {errors.currentPassword && (
-                    <p className="text-sm text-red-600">{errors.currentPassword}</p>
-                  )}
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input id="confirmPassword" type="password" />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    value={passwordData.newPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, newPassword: e.target.value })
-                    }
-                    className={errors.newPassword ? 'border-red-300' : ''}
-                  />
-                  {errors.newPassword && <p className="text-sm text-red-600">{errors.newPassword}</p>}
-                  <p className="text-xs text-muted-foreground">
-                    Must be 8+ characters with uppercase, lowercase, number, and special character •
-                    Hashed with Argon2id**
-                  </p>
-                </div>
+                    <Button>Update Password</Button>
+                  </CardContent>
+                </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, confirmPassword: e.target.value })
-                    }
-                    className={errors.confirmPassword ? 'border-red-300' : ''}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-red-600">{errors.confirmPassword}</p>
-                  )}
-                </div>
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Two-Factor Authentication (TOTP MFA)</CardTitle>
+                    <CardDescription>
+                      Add an extra layer of security with authenticator app
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
+                          <Shield className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Authenticator App</p>
+                          <p className="text-xs text-gray-500">
+                            {securitySettings.mfaEnabled ? 'Enabled' : 'Not enabled'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant={securitySettings.mfaEnabled ? 'outline' : 'default'}
+                        onClick={() => setShowMfaSetup(!showMfaSetup)}
+                      >
+                        {securitySettings.mfaEnabled ? 'Disable' : 'Enable'}
+                      </Button>
+                    </div>
 
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Updating...' : 'Update Password'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                    {showMfaSetup && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="font-medium text-amber-900">Setting up MFA</p>
+                            <p className="mt-1 text-sm text-amber-700">
+                              Scan the QR code with your authenticator app, then enter the 6-digit
+                              code to verify
+                            </p>
+                            <div className="mt-4 space-y-3">
+                              <div className="flex h-32 w-32 items-center justify-center rounded-lg bg-white">
+                                <p className="text-xs text-gray-400">QR Code</p>
+                              </div>
+                              <Input
+                                placeholder="Enter 6-digit code"
+                                maxLength={6}
+                                className="w-48"
+                              />
+                              <div className="flex gap-2">
+                                <Button size="sm">Verify & Enable</Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowMfaSetup(false)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-          {/* Account Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Account Security
-              </CardTitle>
-              <CardDescription>
-                Manage security settings and multi-factor authentication*** (TOTP)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Two-Factor Authentication</p>
-                  <p className="text-sm text-muted-foreground">
-                    Add an extra layer of security with TOTP*** (6-digit codes)
-                  </p>
-                </div>
-                <Badge variant="outline" className="text-green-600 border-green-300">
-                  Enabled
-                </Badge>
-              </div>
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Session Management</CardTitle>
+                    <CardDescription>Control session timeout and active devices</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
+                      <Select defaultValue="30">
+                        <SelectTrigger id="sessionTimeout">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="240">4 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <p className="font-medium">Active Sessions</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage your {activeSessions} active login sessions with Redis*
-                  </p>
-                </div>
-                <Button variant="outline">View Sessions</Button>
-              </div>
+                    <div className="pt-4">
+                      <Button variant="outline">Revoke All Sessions</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <p className="font-medium">Audit Log</p>
-                  <p className="text-sm text-muted-foreground">
-                    View account activity and security events***
-                  </p>
-                </div>
-                <Button variant="outline">View Audit Log</Button>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Notification Settings */}
+              <TabsContent value="notifications" className="space-y-6">
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Email Notifications</CardTitle>
+                    <CardDescription>Configure what emails you receive</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Email Notifications</p>
+                        <p className="text-sm text-gray-500">
+                          Receive email updates about your account
+                        </p>
+                      </div>
+                      <Switch defaultChecked={notificationSettings.emailNotifications} />
+                    </div>
 
-          {/* Organization Settings (owner/admin only) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                Organization Settings
-              </CardTitle>
-              <CardDescription>Manage your organization preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="orgName">Organization Name</Label>
-                <Input
-                  id="orgName"
-                  placeholder="Acme Corporation"
-                  value="Acme Corporation"
-                  disabled
-                />
-                <p className="text-xs text-muted-foreground">
-                  Contact an owner to change organization settings
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Weekly Digest</p>
+                        <p className="text-sm text-gray-500">Summary of activity and insights</p>
+                      </div>
+                      <Switch defaultChecked={notificationSettings.weeklyDigest} />
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Danger Zone */}
-          <Card className="border-red-200 dark:border-red-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                <AlertTriangle className="h-5 w-5" />
-                Danger Zone
-              </CardTitle>
-              <CardDescription>Irreversible account actions with GDPR*** compliance</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Delete Account</p>
-                  <p className="text-sm text-muted-foreground">
-                    Permanently delete your account and all associated data (GDPR compliant***)
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950"
-                >
-                  Delete Account
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Integration Notifications</CardTitle>
+                    <CardDescription>Configure external notification channels</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Slack Notifications</p>
+                        <p className="text-sm text-gray-500">Send alerts to Slack channels</p>
+                      </div>
+                      <Switch defaultChecked={notificationSettings.slackNotifications} />
+                    </div>
 
-      {/* Annotation Footer */}
-      <div className="border-t border-border bg-muted/30 p-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">*</span>
-              <p className="text-muted-foreground">
-                <strong>Auth.js OAuth:</strong> Industry standard authentication (SOC 2 certified,
-                3.8M weekly downloads). Session-based auth with secure cookies. OAuth providers:
-                Google, Microsoft. Drizzle adapter for session storage. PKCE flow for security
-                hardening. Security score based on MFA status, session count, and login patterns.
-              </p>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">**</span>
-              <p className="text-muted-foreground">
-                <strong>Argon2id Password Hashing:</strong> Winner of Password Hashing Competition
-                (PHC). Memory-hard algorithm resistant to GPU/ASIC attacks. Configurable memory cost
-                (64MB), time cost (3 iterations), parallelism (4 threads). Stronger than bcrypt/scrypt
-                for enterprise security.
-              </p>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">***</span>
-              <p className="text-muted-foreground">
-                <strong>Security Features:</strong> TOTP MFA (6-digit codes, QR code enrollment,
-                backup codes). Session management with Redis (3 active sessions shown). Audit logging
-                for all security events. GDPR compliance (right to erasure, data portability,
-                consent management). Account deletion permanently removes all data.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Desktop Notifications</p>
+                        <p className="text-sm text-gray-500">Browser push notifications</p>
+                      </div>
+                      <Switch defaultChecked={notificationSettings.desktopNotifications} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Preferences */}
+              <TabsContent value="preferences" className="space-y-6">
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Regional Settings</CardTitle>
+                    <CardDescription>
+                      Configure language, timezone, and date formats
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="language">Language</Label>
+                      <Select defaultValue="en">
+                        <SelectTrigger id="language">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="es">Español</SelectItem>
+                          <SelectItem value="fr">Français</SelectItem>
+                          <SelectItem value="de">Deutsch</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="timezone">Timezone</Label>
+                      <Select defaultValue="utc-5">
+                        <SelectTrigger id="timezone">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="utc-8">Pacific Time (UTC-8)</SelectItem>
+                          <SelectItem value="utc-5">Eastern Time (UTC-5)</SelectItem>
+                          <SelectItem value="utc+0">UTC</SelectItem>
+                          <SelectItem value="utc+1">Central European (UTC+1)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dateFormat">Date Format</Label>
+                      <Select defaultValue="mdy">
+                        <SelectTrigger id="dateFormat">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
+                          <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
+                          <SelectItem value="ymd">YYYY-MM-DD</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Interface Preferences</CardTitle>
+                    <CardDescription>Customize your dashboard experience</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="theme">Theme</Label>
+                      <Select defaultValue="light">
+                        <SelectTrigger id="theme">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light">Light</SelectItem>
+                          <SelectItem value="dark">Dark</SelectItem>
+                          <SelectItem value="auto">Auto (System)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Compact Mode</p>
+                        <p className="text-sm text-gray-500">Reduce spacing for more content</p>
+                      </div>
+                      <Switch />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

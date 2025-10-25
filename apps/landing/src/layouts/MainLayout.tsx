@@ -1,15 +1,26 @@
 /**
- * Main Layout
- * Header, navigation, footer for landing pages
+ * Main Layout - Production Ready
+ * Responsive header with mobile menu, navigation, and footer
  */
 
 import { Button } from '@platform/ui';
+import { Menu, X, Zap } from 'lucide-react';
+import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 export function MainLayout() {
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
+
+  const navigationLinks = [
+    { path: '/', label: 'Home' },
+    { path: '/features', label: 'Features' },
+    { path: '/pricing', label: 'Pricing' },
+    { path: '/about', label: 'About' },
+    { path: '/contact', label: 'Contact' },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -19,64 +30,28 @@ export function MainLayout() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+              <Zap className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold">AI Assistant</span>
+            <span className="text-xl font-bold">Platform</span>
           </Link>
 
-          {/* Navigation */}
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/') ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/features"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/features') ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/pricing') ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/about') ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/contact') ? 'text-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              Contact
-            </Link>
+            {navigationLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  isActive(link.path) ? 'text-foreground' : 'text-muted-foreground'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
 
-          {/* CTA Buttons */}
-          <div className="flex items-center space-x-4">
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" asChild>
               <a href="http://localhost:5174/login">Sign In</a>
             </Button>
@@ -84,7 +59,45 @@ export function MainLayout() {
               <a href="http://localhost:5174/login">Get Started</a>
             </Button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            type="button"
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background">
+            <nav className="container mx-auto px-4 py-4 space-y-4">
+              {navigationLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={`block text-sm font-medium transition-colors hover:text-primary ${
+                    isActive(link.path) ? 'text-foreground' : 'text-muted-foreground'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <Button variant="ghost" asChild className="w-full">
+                  <a href="http://localhost:5174/login">Sign In</a>
+                </Button>
+                <Button asChild className="w-full">
+                  <a href="http://localhost:5174/login">Get Started</a>
+                </Button>
+              </div>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}

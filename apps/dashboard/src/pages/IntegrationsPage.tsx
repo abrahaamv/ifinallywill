@@ -1,17 +1,50 @@
 /**
- * Integrations Page
- * Third-party integrations, API configuration, and webhooks
- * Based on product strategy: Slack, Zendesk, Intercom, Salesforce, custom webhooks*
+ * Integrations Page - Complete Redesign
+ * Third-party integrations, webhooks, and API configuration
+ * Modern card-based layout with category filtering
  */
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@platform/ui';
-import { AlertCircle, Check, CheckCircle2, Code, ExternalLink, Plug, Plus, Settings, Webhook, X } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@platform/ui';
+import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Code,
+  ExternalLink,
+  Plug,
+  Plus,
+  Settings,
+  Webhook,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export function IntegrationsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Mock integrations data**
+  // Mock integrations data
   const availableIntegrations = [
     {
       id: 'slack',
@@ -69,7 +102,7 @@ export function IntegrationsPage() {
     },
   ];
 
-  // Mock webhooks data***
+  // Mock webhooks data
   const webhooks = [
     {
       id: 'wh-001',
@@ -105,78 +138,77 @@ export function IntegrationsPage() {
       ? availableIntegrations
       : availableIntegrations.filter((int) => int.category === selectedCategory);
 
+  const connectedCount = availableIntegrations.filter((i) => i.status === 'connected').length;
+  const availableCount = availableIntegrations.filter((i) => i.status === 'available').length;
+  const activeWebhooks = webhooks.filter((w) => w.status === 'active').length;
+
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Plug className="h-8 w-8 text-primary" />
-            Integrations
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Connect with your favorite tools and platforms
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
+          <p className="mt-2 text-gray-600">Connect with your favorite tools and platforms</p>
         </div>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Custom Webhook
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Connected</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {availableIntegrations.filter((i) => i.status === 'connected').length}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Connected</p>
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
-            <p className="text-xs text-muted-foreground">Active integrations</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900">{connectedCount}</p>
+            <p className="mt-1 text-xs text-gray-500">Active integrations</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Available</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {availableIntegrations.filter((i) => i.status === 'available').length}
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Available</p>
+              <Plug className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="text-xs text-muted-foreground">Ready to connect</p>
+            <p className="mt-3 text-3xl font-bold text-gray-900">{availableCount}</p>
+            <p className="mt-1 text-xs text-gray-500">Ready to connect</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Webhooks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{webhooks.filter((w) => w.status === 'active').length}</div>
-            <p className="text-xs text-muted-foreground">Active endpoints</p>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Webhooks</p>
+              <Webhook className="h-5 w-5 text-primary-600" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-gray-900">{activeWebhooks}</p>
+            <p className="mt-1 text-xs text-gray-500">Active endpoints</p>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50 dark:bg-green-950">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">Health</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">99.9%</div>
-            <p className="text-xs text-green-800 dark:text-green-200">Webhook success rate</p>
+        <Card className="border-gray-200 shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-600">Health</p>
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-gray-900">99.9%</p>
+            <p className="mt-1 text-xs text-gray-500">Webhook success rate</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Available Integrations */}
-      <Card>
+      <Card className="border-gray-200 shadow-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Available Integrations*</CardTitle>
+              <CardTitle>Available Integrations</CardTitle>
               <CardDescription>Connect with popular platforms and tools</CardDescription>
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -194,17 +226,20 @@ export function IntegrationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredIntegrations.map((integration) => (
-              <Card key={integration.id} className="hover:shadow-md transition-shadow">
+              <Card
+                key={integration.id}
+                className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="text-3xl">{integration.icon}</div>
                       <div>
                         <CardTitle className="text-base">{integration.name}</CardTitle>
-                        <Badge variant="outline" className="mt-1">
-                          {integration.category}
+                        <Badge variant="outline" className="mt-1 capitalize">
+                          {integration.category.replace('-', ' ')}
                         </Badge>
                       </div>
                     </div>
@@ -214,11 +249,11 @@ export function IntegrationsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">{integration.description}</p>
+                  <p className="text-sm text-gray-600">{integration.description}</p>
 
                   <div className="space-y-1">
                     {integration.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
                         <Check className="h-3 w-3 text-green-600" />
                         {feature}
                       </div>
@@ -228,7 +263,7 @@ export function IntegrationsPage() {
                   {integration.status === 'connected' ? (
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1">
-                        <Settings className="h-4 w-4 mr-2" />
+                        <Settings className="mr-2 h-4 w-4" />
                         Configure
                       </Button>
                       <Button variant="ghost" size="sm">
@@ -237,7 +272,7 @@ export function IntegrationsPage() {
                     </div>
                   ) : integration.status === 'available' ? (
                     <Button size="sm" className="w-full">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Connect
                     </Button>
                   ) : (
@@ -253,11 +288,11 @@ export function IntegrationsPage() {
       </Card>
 
       {/* Webhooks */}
-      <Card>
+      <Card className="border-gray-200 shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Webhook className="h-5 w-5" />
-            Webhooks**
+            Webhooks
           </CardTitle>
           <CardDescription>Configure custom webhook endpoints for real-time events</CardDescription>
         </CardHeader>
@@ -270,17 +305,17 @@ export function IntegrationsPage() {
                 <TableHead>Events</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Success Rate</TableHead>
-                <TableHead></TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {webhooks.map((webhook) => (
-                <TableRow key={webhook.id} className="hover:bg-secondary/50">
+                <TableRow key={webhook.id} className="hover:bg-gray-50">
                   <TableCell className="font-medium">{webhook.name}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-mono">{webhook.url}</span>
+                      <Code className="h-4 w-4 text-gray-400" />
+                      <span className="font-mono text-sm">{webhook.url}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -298,7 +333,9 @@ export function IntegrationsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <span className="text-sm font-medium text-green-600">{webhook.successRate}%</span>
+                    <span className="text-sm font-medium text-green-600">
+                      {webhook.successRate}%
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
@@ -318,20 +355,20 @@ export function IntegrationsPage() {
       </Card>
 
       {/* API Configuration */}
-      <Card>
+      <Card className="border-gray-200 shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code className="h-5 w-5" />
-            API Configuration***
+            API Configuration
           </CardTitle>
           <CardDescription>Configure API keys and authentication settings</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="api-endpoint">API Endpoint</Label>
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex gap-2">
                   <Input id="api-endpoint" value="https://api.platform.ai/v1" readOnly />
                   <Button variant="outline" size="icon">
                     <ExternalLink className="h-4 w-4" />
@@ -341,18 +378,16 @@ export function IntegrationsPage() {
 
               <div>
                 <Label htmlFor="api-key">Production API Key</Label>
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex gap-2">
                   <Input id="api-key" type="password" value="pk_live_xxxxxxxxxxxxx" readOnly />
                   <Button variant="outline">Regenerate</Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Last used: 2024-10-11 14:52
-                </p>
+                <p className="mt-1 text-xs text-gray-500">Last used: 2024-10-11 14:52</p>
               </div>
 
               <div>
                 <Label htmlFor="test-api-key">Test API Key</Label>
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex gap-2">
                   <Input id="test-api-key" type="password" value="pk_test_xxxxxxxxxxxxx" readOnly />
                   <Button variant="outline">Regenerate</Button>
                 </div>
@@ -360,12 +395,12 @@ export function IntegrationsPage() {
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950">
-                <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-900">
                   <AlertCircle className="h-4 w-4" />
                   Security Best Practices
                 </h4>
-                <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                <ul className="list-inside list-disc space-y-1 text-xs text-blue-800">
                   <li>Never expose API keys in client-side code</li>
                   <li>Use environment variables for key storage</li>
                   <li>Regenerate keys if compromised</li>
@@ -375,7 +410,7 @@ export function IntegrationsPage() {
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-semibold text-sm">API Features</h4>
+                <h4 className="text-sm font-semibold">API Features</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="rate-limiting" className="cursor-pointer text-sm">
@@ -398,18 +433,6 @@ export function IntegrationsPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer Annotations */}
-      <Card className="border-dashed">
-        <CardContent className="pt-6">
-          <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>* Available integrations - Production system includes OAuth flows, configuration wizards, and field mapping for each integration</p>
-            <p>** Webhooks - Real system supports payload customization, retry policies, webhook signatures, and detailed delivery logs</p>
-            <p>*** API configuration - Production includes API versioning, GraphQL endpoint, WebSocket subscriptions, and comprehensive API documentation</p>
           </div>
         </CardContent>
       </Card>

@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from '@platform/ui';
-import { Key, Shield, TrendingUp, CheckCircle, Plus, Copy, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle, Copy, Eye, EyeOff, Key, Plus, Shield, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -248,7 +248,8 @@ export function ApiKeysPage() {
                 Your API Keys ({keys.length})
               </CardTitle>
               <CardDescription>
-                Manage your existing API keys with 90-day expiration** and security best practices***
+                Manage your existing API keys with 90-day expiration** and security best
+                practices***
               </CardDescription>
             </CardHeader>
             <CardContent>

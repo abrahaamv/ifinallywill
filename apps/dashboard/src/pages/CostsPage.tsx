@@ -4,8 +4,38 @@
  * Based on product strategy: 82-85% cost reduction, transparent AI routing costs*
  */
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Progress, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@platform/ui';
-import { AlertTriangle, ArrowDown, ArrowUp, DollarSign, Download, PieChart, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@platform/ui';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  DollarSign,
+  Download,
+  PieChart,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export function CostsPage() {
@@ -21,18 +51,18 @@ export function CostsPage() {
   };
 
   const costBreakdown = [
-    { tier: 'Gemini Flash-Lite 8B', usage: '60%', cost: 747.40, requests: 12847, avgCost: 0.058 },
+    { tier: 'Gemini Flash-Lite 8B', usage: '60%', cost: 747.4, requests: 12847, avgCost: 0.058 },
     { tier: 'Gemini Flash', usage: '25%', cost: 311.42, requests: 5353, avgCost: 0.058 },
     { tier: 'Claude Sonnet 4.5', usage: '15%', cost: 186.85, requests: 3208, avgCost: 0.058 },
   ];
 
   const dailyCosts = [
-    { date: '10/05', total: 42.34, tier1: 25.40, tier2: 10.58, tier3: 6.36 },
+    { date: '10/05', total: 42.34, tier1: 25.4, tier2: 10.58, tier3: 6.36 },
     { date: '10/06', total: 38.92, tier1: 23.35, tier2: 9.73, tier3: 5.84 },
     { date: '10/07', total: 45.18, tier1: 27.11, tier2: 11.29, tier3: 6.78 },
-    { date: '10/08', total: 41.67, tier1: 25.00, tier2: 10.42, tier3: 6.25 },
+    { date: '10/08', total: 41.67, tier1: 25.0, tier2: 10.42, tier3: 6.25 },
     { date: '10/09', total: 48.23, tier1: 28.94, tier2: 12.06, tier3: 7.23 },
-    { date: '10/10', total: 39.84, tier1: 23.90, tier2: 9.96, tier3: 5.98 },
+    { date: '10/10', total: 39.84, tier1: 23.9, tier2: 9.96, tier3: 5.98 },
     { date: '10/11', total: 43.56, tier1: 26.14, tier2: 10.89, tier3: 6.53 },
   ];
 
@@ -40,13 +70,15 @@ export function CostsPage() {
   const monthlyChange =
     ((currentMonth.total - currentMonth.previousMonth) / currentMonth.previousMonth) * 100;
 
+  const isLoading = false; // Will be true when tRPC integration is added
+
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
+    <div className="min-h-screen bg-[var(--color-background)] p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <DollarSign className="h-8 w-8 text-primary" />
+            <DollarSign className="h-8 w-8 text-primary-600" />
             Cost Intelligence
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -83,12 +115,12 @@ export function CostsPage() {
             <div className="text-3xl font-bold">${currentMonth.total.toFixed(2)}</div>
             <div className="flex items-center gap-1 mt-2">
               {monthlyChange > 0 ? (
-                <ArrowUp className="h-4 w-4 text-red-600" />
+                <ArrowUp className="h-4 w-4 text-[var(--color-error-600)]" />
               ) : (
-                <ArrowDown className="h-4 w-4 text-green-600" />
+                <ArrowDown className="h-4 w-4 text-[var(--color-success-600)]" />
               )}
               <span
-                className={`text-sm font-medium ${monthlyChange > 0 ? 'text-red-600' : 'text-green-600'}`}
+                className={`text-sm font-medium ${monthlyChange > 0 ? 'text-[var(--color-error-600)]' : 'text-[var(--color-success-600)]'}`}
               >
                 {Math.abs(monthlyChange).toFixed(1)}%
               </span>
@@ -111,16 +143,18 @@ export function CostsPage() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow border-green-200 bg-green-50 dark:bg-green-950">
+        <Card className="hover:shadow-md transition-shadow border-[var(--color-success-200)] bg-[var(--color-success-50)]">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">
+            <CardTitle className="text-sm font-medium text-[var(--color-success-900)]">
               Cost Savings***
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-green-600" />
+            <TrendingDown className="h-4 w-4 text-[var(--color-success-600)]" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">${currentMonth.savings.toFixed(2)}</div>
-            <p className="text-xs text-green-800 dark:text-green-200 mt-2">
+            <div className="text-3xl font-bold text-[var(--color-success-600)]">
+              ${currentMonth.savings.toFixed(2)}
+            </div>
+            <p className="text-xs text-[var(--color-success-800)] mt-2">
               {currentMonth.savingsPercentage.toFixed(1)}% vs standard pricing
             </p>
           </CardContent>
@@ -128,7 +162,9 @@ export function CostsPage() {
 
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg per Request</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Avg per Request
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -170,13 +206,16 @@ export function CostsPage() {
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end">
                         <span className="font-medium">{item.usage}</span>
-                        <Progress value={parseFloat(item.usage)} className="h-1.5 w-16 mt-1" />
+                        <Progress
+                          value={Number.parseFloat(item.usage)}
+                          className="h-1.5 w-16 mt-1"
+                        />
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono text-sm">
                       {item.requests.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right font-mono font-medium text-green-600">
+                    <TableCell className="text-right font-mono font-medium text-[var(--color-success-600)]">
                       ${item.cost.toFixed(2)}
                     </TableCell>
                   </TableRow>
@@ -187,7 +226,7 @@ export function CostsPage() {
                   <TableCell className="text-right font-mono">
                     {costBreakdown.reduce((sum, item) => sum + item.requests, 0).toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-green-600">
+                  <TableCell className="text-right font-mono text-[var(--color-success-600)]">
                     ${costBreakdown.reduce((sum, item) => sum + item.cost, 0).toFixed(2)}
                   </TableCell>
                 </TableRow>
@@ -217,10 +256,18 @@ export function CostsPage() {
                 {dailyCosts.map((day, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{day.date}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">${day.tier1.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">${day.tier2.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">${day.tier3.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono font-medium">${day.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      ${day.tier1.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      ${day.tier2.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      ${day.tier3.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-medium">
+                      ${day.total.toFixed(2)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -230,36 +277,40 @@ export function CostsPage() {
       </div>
 
       {/* Budget Alerts */}
-      <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950">
+      <Card className="border-[var(--color-warning-200)] bg-[var(--color-warning-50)]">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-900 dark:text-orange-100">
+          <CardTitle className="flex items-center gap-2 text-[var(--color-warning-900)]">
             <AlertTriangle className="h-5 w-5" />
             Budget Alerts & Notifications
           </CardTitle>
-          <CardDescription className="text-orange-800 dark:text-orange-200">
+          <CardDescription className="text-[var(--color-warning-800)]">
             Automated monitoring and threshold alerts
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-orange-200 bg-white dark:bg-orange-900">
-              <div className="h-2 w-2 rounded-full bg-green-500 mt-1.5" />
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-warning-200)] bg-white">
+              <div className="h-2 w-2 rounded-full bg-[var(--color-success-500)] mt-1.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">Budget Status: Healthy</p>
-                <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                  You're using {budgetStatus.toFixed(1)}% of your monthly budget. On track for the month.
+                <p className="text-sm font-medium text-[var(--color-warning-900)]">
+                  Budget Status: Healthy
+                </p>
+                <p className="text-xs text-[var(--color-warning-700)] mt-1">
+                  You're using {budgetStatus.toFixed(1)}% of your monthly budget. On track for the
+                  month.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-orange-200 bg-white dark:bg-orange-900">
-              <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5" />
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-[var(--color-warning-200)] bg-white">
+              <div className="h-2 w-2 rounded-full bg-[var(--color-info-500)] mt-1.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
+                <p className="text-sm font-medium text-[var(--color-warning-900)]">
                   Optimization Opportunity
                 </p>
-                <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                  15% of Tier 3 requests could be handled by Tier 2 AI. Potential savings: $28.03/month.
+                <p className="text-xs text-[var(--color-warning-700)] mt-1">
+                  15% of Tier 3 requests could be handled by Tier 2 AI. Potential savings:
+                  $28.03/month.
                 </p>
               </div>
             </div>
@@ -272,9 +323,18 @@ export function CostsPage() {
         <CardContent className="pt-6">
           <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>* AI Tier costs - Gemini Flash-Lite 8B ($0.075/1M tokens), Gemini Flash ($0.20/1M), Claude Sonnet 4.5 ($3.00/1M)</p>
-            <p>** Daily trends - Real system tracks costs per conversation session with LiveKit and AI provider usage</p>
-            <p>*** Cost savings - Calculated against standard pricing without three-tier routing (estimated baseline ~$8K/month)</p>
+            <p>
+              * AI Tier costs - Gemini Flash-Lite 8B ($0.075/1M tokens), Gemini Flash ($0.20/1M),
+              Claude Sonnet 4.5 ($3.00/1M)
+            </p>
+            <p>
+              ** Daily trends - Real system tracks costs per conversation session with LiveKit and
+              AI provider usage
+            </p>
+            <p>
+              *** Cost savings - Calculated against standard pricing without three-tier routing
+              (estimated baseline ~$8K/month)
+            </p>
           </div>
         </CardContent>
       </Card>

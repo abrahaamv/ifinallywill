@@ -4,8 +4,35 @@
  * Based on product strategy: Multi-channel widget deployment, customization options*
  */
 
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Textarea } from '@platform/ui';
-import { Check, Code, Copy, Globe, MessageCircle, Palette, Rocket, Settings, Smartphone } from 'lucide-react';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Textarea,
+} from '@platform/ui';
+import {
+  Check,
+  Code,
+  Copy,
+  Globe,
+  MessageCircle,
+  Palette,
+  Rocket,
+  Settings,
+  Smartphone,
+} from 'lucide-react';
 import { useState } from 'react';
 
 export function DeployPage() {
@@ -92,11 +119,15 @@ export function DeployPage() {
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                   <div>
                     <div className="text-xs text-muted-foreground">Impressions</div>
-                    <div className="text-lg font-bold">{deployment.impressions.toLocaleString()}</div>
+                    <div className="text-lg font-bold">
+                      {deployment.impressions.toLocaleString()}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Conversations</div>
-                    <div className="text-lg font-bold">{deployment.conversations.toLocaleString()}</div>
+                    <div className="text-lg font-bold">
+                      {deployment.conversations.toLocaleString()}
+                    </div>
                   </div>
                 </div>
               )}
@@ -327,9 +358,18 @@ export function DeployPage() {
         <CardContent className="pt-6">
           <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>* Widget customization - Real system supports full theme customization, custom CSS, and internationalization</p>
-            <p>** Installation code - Production widget includes Shadow DOM isolation, TypeScript definitions, and React hooks</p>
-            <p>*** Advanced settings - Additional options include rate limiting, session persistence, GDPR compliance, and analytics integration</p>
+            <p>
+              * Widget customization - Real system supports full theme customization, custom CSS,
+              and internationalization
+            </p>
+            <p>
+              ** Installation code - Production widget includes Shadow DOM isolation, TypeScript
+              definitions, and React hooks
+            </p>
+            <p>
+              *** Advanced settings - Additional options include rate limiting, session persistence,
+              GDPR compliance, and analytics integration
+            </p>
           </div>
         </CardContent>
       </Card>

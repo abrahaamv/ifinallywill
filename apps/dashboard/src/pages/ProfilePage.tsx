@@ -17,7 +17,7 @@ import {
   Input,
   Label,
 } from '@platform/ui';
-import { User, Calendar, CheckCircle, TrendingUp, Edit, Save, X } from 'lucide-react';
+import { Calendar, CheckCircle, Edit, Save, TrendingUp, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -123,8 +123,12 @@ export function ProfilePage() {
 
   // Calculate stats*
   const profileCompletion = user?.avatarUrl ? 100 : 80; // Mock completion percentage
-  const lastUpdated = user?.updatedAt ? Math.floor((Date.now() - new Date(user.updatedAt).getTime()) / (1000 * 60 * 60 * 24)) : 0; // Days since last update
-  const accountAge = user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0; // Account age in days
+  const lastUpdated = user?.updatedAt
+    ? Math.floor((Date.now() - new Date(user.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
+    : 0; // Days since last update
+  const accountAge = user?.createdAt
+    ? Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+    : 0; // Account age in days
   const loginStreak = 7; // Mock login streak
 
   if (isLoading) {
@@ -441,10 +445,10 @@ export function ProfilePage() {
             <div className="flex items-start gap-2">
               <span className="font-bold text-primary">**</span>
               <p className="text-muted-foreground">
-                <strong>Secure Data Handling:</strong> All profile updates encrypted in transit
-                (TLS 1.3) and at rest (AES-256). Avatar URLs validated before storage. Session
-                cookies with HttpOnly and Secure flags. CSRF protection on all mutations. Audit
-                logging for profile changes.
+                <strong>Secure Data Handling:</strong> All profile updates encrypted in transit (TLS
+                1.3) and at rest (AES-256). Avatar URLs validated before storage. Session cookies
+                with HttpOnly and Secure flags. CSRF protection on all mutations. Audit logging for
+                profile changes.
               </p>
             </div>
             <div className="flex items-start gap-2">

@@ -1,6 +1,6 @@
 /**
- * Pricing Page
- * Subscription tiers with feature comparison
+ * Pricing Page - Production Ready
+ * Subscription tiers with feature comparison and icons
  */
 
 import {
@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@platform/ui';
+import { Check } from 'lucide-react';
 
 export function PricingPage() {
   return (
@@ -40,67 +41,18 @@ export function PricingPage() {
           <CardContent>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 10 AI conversations/day
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Text-only interactions
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                1 knowledge base document
+                <Check className="mr-2 h-4 w-4 text-primary" />1 knowledge base document
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Community support
               </li>
             </ul>
@@ -126,83 +78,23 @@ export function PricingPage() {
           <CardContent>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Unlimited AI conversations
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Voice + Vision + Text
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 50 knowledge base documents
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Priority email support
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 API access
               </li>
             </ul>
@@ -226,83 +118,23 @@ export function PricingPage() {
           <CardContent>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Everything in Pro
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Unlimited knowledge base
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Custom AI model fine-tuning
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 Dedicated support
               </li>
               <li className="flex items-center">
-                <svg
-                  className="mr-2 h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <Check className="mr-2 h-4 w-4 text-primary" />
                 SSO + Advanced security
               </li>
             </ul>

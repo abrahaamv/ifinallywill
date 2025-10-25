@@ -9,12 +9,12 @@ import {
   LiveKitRoom,
   ParticipantTile,
   RoomAudioRenderer,
-  useTracks,
   useDataChannel,
   useRoomContext,
+  useTracks,
 } from '@livekit/components-react';
 import { Track } from 'livekit-client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@livekit/components-styles';
 import { Button, Input } from '@platform/ui';
@@ -365,12 +365,7 @@ function ChatPanel({
           className="text-white hover:text-gray-300"
           aria-label="Close chat"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -405,9 +400,7 @@ function ChatPanel({
           messages.map((message, index) => (
             <div
               key={index}
-              className={`space-y-1 ${
-                message.sender === 'You' ? 'text-right' : 'text-left'
-              }`}
+              className={`space-y-1 ${message.sender === 'You' ? 'text-right' : 'text-left'}`}
             >
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span className="font-semibold">
@@ -418,9 +411,7 @@ function ChatPanel({
               </div>
               <div
                 className={`inline-block max-w-[85%] rounded-lg p-3 ${
-                  message.sender === 'You'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-800'
+                  message.sender === 'You' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>

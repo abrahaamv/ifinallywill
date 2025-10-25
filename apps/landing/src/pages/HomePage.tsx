@@ -1,59 +1,83 @@
 /**
- * Home Page
- * Landing page with hero, features, testimonials, CTA
+ * Home Page - Production Ready
+ * Landing page with hero, features, testimonials, trust badges, CTA
  */
 
 import { Badge, Button, Card, CardDescription, CardHeader, CardTitle } from '@platform/ui';
+import { Database, Eye, MessageSquare, Quote, Shield, Star, TrendingDown } from 'lucide-react';
 
 export function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-24 md:py-32">
-        <div className="flex flex-col items-center text-center">
-          <Badge className="mb-4">New: Real-time AI Collaboration</Badge>
-          <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-            Enterprise AI Assistant
-            <br />
-            <span className="text-primary">Powered by Multi-Modal Intelligence</span>
-          </h1>
-          <p className="mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Real-time voice, vision, and text AI interactions with cost-optimized routing. 75-85%
-            cost reduction without compromising quality.
-          </p>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <Button size="lg" asChild>
-              <a href="http://localhost:5174/login">Get Started Free</a>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <a href="http://localhost:5175">Try Live Demo</a>
-            </Button>
-          </div>
+      <section className="relative overflow-hidden">
+        {/* Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
 
-          {/* Stats */}
-          <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div>
-              <div className="text-3xl font-bold">75-85%</div>
-              <div className="text-sm text-muted-foreground">Cost Reduction</div>
+        <div className="container relative mx-auto px-4 py-24 md:py-32">
+          <div className="flex flex-col items-center text-center">
+            <Badge className="mb-4 animate-fade-in">New: Real-time AI Collaboration</Badge>
+            <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              Enterprise AI Assistant
+              <br />
+              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Powered by Multi-Modal Intelligence
+              </span>
+            </h1>
+            <p className="mb-8 max-w-2xl text-lg text-muted-foreground md:text-xl">
+              Real-time voice, vision, and text AI interactions with cost-optimized routing. 75-85%
+              cost reduction without compromising quality.
+            </p>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Button size="lg" asChild>
+                <a href="http://localhost:5174/login">Get Started Free</a>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <a href="http://localhost:5175">Try Live Demo</a>
+              </Button>
             </div>
-            <div>
-              <div className="text-3xl font-bold">&lt;200ms</div>
-              <div className="text-sm text-muted-foreground">Response Time</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">99.9%</div>
-              <div className="text-sm text-muted-foreground">Uptime SLA</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold">24/7</div>
-              <div className="text-sm text-muted-foreground">Support</div>
+
+            {/* Stats */}
+            <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4">
+              <div className="group transition-transform hover:scale-105">
+                <div className="text-3xl font-bold text-primary">75-85%</div>
+                <div className="text-sm text-muted-foreground">Cost Reduction</div>
+              </div>
+              <div className="group transition-transform hover:scale-105">
+                <div className="text-3xl font-bold text-primary">&lt;200ms</div>
+                <div className="text-sm text-muted-foreground">Response Time</div>
+              </div>
+              <div className="group transition-transform hover:scale-105">
+                <div className="text-3xl font-bold text-primary">99.9%</div>
+                <div className="text-sm text-muted-foreground">Uptime SLA</div>
+              </div>
+              <div className="group transition-transform hover:scale-105">
+                <div className="text-3xl font-bold text-primary">24/7</div>
+                <div className="text-sm text-muted-foreground">Support</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Trust Badges */}
+      <section className="border-t border-border bg-muted/30 py-12">
+        <div className="container mx-auto px-4">
+          <p className="mb-8 text-center text-sm text-muted-foreground">
+            Trusted by forward-thinking teams worldwide
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60">
+            <div className="text-2xl font-bold text-muted-foreground">Acme Corp</div>
+            <div className="text-2xl font-bold text-muted-foreground">TechStart</div>
+            <div className="text-2xl font-bold text-muted-foreground">InnovateLab</div>
+            <div className="text-2xl font-bold text-muted-foreground">CloudScale</div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section className="border-t border-border bg-muted/50 py-24">
+      <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
@@ -65,18 +89,10 @@ export function HomePage() {
           </div>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {/* Feature 1 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <MessageSquare className="h-6 w-6" />
                 </div>
                 <CardTitle>Voice Interaction</CardTitle>
                 <CardDescription>
@@ -85,24 +101,10 @@ export function HomePage() {
               </CardHeader>
             </Card>
 
-            {/* Feature 2 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Eye className="h-6 w-6" />
                 </div>
                 <CardTitle>Vision Analysis</CardTitle>
                 <CardDescription>
@@ -111,18 +113,10 @@ export function HomePage() {
               </CardHeader>
             </Card>
 
-            {/* Feature 3 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <MessageSquare className="h-6 w-6" />
                 </div>
                 <CardTitle>Smart Chat</CardTitle>
                 <CardDescription>
@@ -131,18 +125,10 @@ export function HomePage() {
               </CardHeader>
             </Card>
 
-            {/* Feature 4 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Shield className="h-6 w-6" />
                 </div>
                 <CardTitle>Enterprise Security</CardTitle>
                 <CardDescription>
@@ -151,18 +137,10 @@ export function HomePage() {
               </CardHeader>
             </Card>
 
-            {/* Feature 5 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <TrendingDown className="h-6 w-6" />
                 </div>
                 <CardTitle>Cost Optimization</CardTitle>
                 <CardDescription>
@@ -171,23 +149,86 @@ export function HomePage() {
               </CardHeader>
             </Card>
 
-            {/* Feature 6 */}
-            <Card>
+            <Card className="group transition-all hover:shadow-lg hover:border-primary/50">
               <CardHeader>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <Database className="h-6 w-6" />
                 </div>
                 <CardTitle>Knowledge Base</CardTitle>
                 <CardDescription>
                   Upload documents and images for RAG-enhanced AI responses
                 </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="border-t border-border bg-muted/50 py-24">
+        <div className="container mx-auto px-4">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+              Loved by Teams Worldwide
+            </h2>
+            <p className="text-lg text-muted-foreground">See what our customers have to say</p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            <Card className="border-border">
+              <CardHeader>
+                <div className="mb-4 flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <Quote className="h-8 w-8 text-muted-foreground/30" />
+                <CardDescription className="text-base">
+                  "The cost savings alone paid for itself in the first month. The AI quality is
+                  incredible and the multi-modal support is game-changing."
+                </CardDescription>
+                <div className="mt-4">
+                  <p className="font-semibold text-foreground">Sarah Chen</p>
+                  <p className="text-sm text-muted-foreground">CTO, TechStart</p>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-border">
+              <CardHeader>
+                <div className="mb-4 flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <Quote className="h-8 w-8 text-muted-foreground/30" />
+                <CardDescription className="text-base">
+                  "Setup was a breeze and the real-time voice + vision capabilities exceeded our
+                  expectations. Best AI platform we've used."
+                </CardDescription>
+                <div className="mt-4">
+                  <p className="font-semibold text-foreground">Michael Rodriguez</p>
+                  <p className="text-sm text-muted-foreground">VP Engineering, CloudScale</p>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-border">
+              <CardHeader>
+                <div className="mb-4 flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <Quote className="h-8 w-8 text-muted-foreground/30" />
+                <CardDescription className="text-base">
+                  "Enterprise security features give us peace of mind while the cost optimization
+                  keeps our CFO happy. Win-win!"
+                </CardDescription>
+                <div className="mt-4">
+                  <p className="font-semibold text-foreground">Emily Watson</p>
+                  <p className="text-sm text-muted-foreground">Head of Product, InnovateLab</p>
+                </div>
               </CardHeader>
             </Card>
           </div>

@@ -9,8 +9,8 @@
  * 4. Support MFA (TOTP) when enabled
  */
 
-import { useState } from 'react';
 import { Button } from '@platform/ui';
+import { useState } from 'react';
 
 export function LoginPage() {
   const [formData, setFormData] = useState({

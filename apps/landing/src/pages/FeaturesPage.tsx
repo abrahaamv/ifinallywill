@@ -1,9 +1,27 @@
 /**
- * Features Page
- * Detailed feature descriptions and use cases
+ * Features Page - Production Ready
+ * Detailed feature descriptions and use cases with icons
  */
 
 import { Card, CardDescription, CardHeader, CardTitle } from '@platform/ui';
+import {
+  Book,
+  Brain,
+  Code,
+  Database,
+  Eye,
+  FileSearch,
+  FileText,
+  Globe,
+  Key,
+  Lock,
+  MessageSquare,
+  Share2,
+  Shield,
+  TrendingDown,
+  Users,
+  Zap,
+} from 'lucide-react';
 
 export function FeaturesPage() {
   return (
@@ -24,6 +42,7 @@ export function FeaturesPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
+                <MessageSquare className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Voice Conversations</CardTitle>
                 <CardDescription>
                   Natural voice interactions with real-time transcription powered by Deepgram.
@@ -34,6 +53,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Eye className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Vision Analysis</CardTitle>
                 <CardDescription>
                   Screen sharing and image analysis with optimized 1 FPS capture. 96% cost reduction
@@ -44,6 +64,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <FileText className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Text Chat</CardTitle>
                 <CardDescription>
                   Real-time text conversations with context awareness and message history.
@@ -54,6 +75,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Share2 className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>File Sharing</CardTitle>
                 <CardDescription>
                   Share documents, images, and files during conversations. AI analyzes and
@@ -70,6 +92,7 @@ export function FeaturesPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
+                <TrendingDown className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Cost-Optimized Routing</CardTitle>
                 <CardDescription>
                   Intelligent provider selection: Gemini Flash 2.5 for 85% of routine tasks, Claude
@@ -80,6 +103,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Database className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Knowledge Enhancement (RAG)</CardTitle>
                 <CardDescription>
                   Upload documents and images for context-aware responses. Hybrid retrieval with
@@ -90,6 +114,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Brain className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Context Awareness</CardTitle>
                 <CardDescription>
                   AI maintains conversation history and references previous messages. Understands
@@ -100,6 +125,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Globe className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Multi-Language Support</CardTitle>
                 <CardDescription>
                   Supports 100+ languages for text and 30+ for voice transcription. Automatic
@@ -116,6 +142,7 @@ export function FeaturesPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
+                <Shield className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Multi-Tenant Isolation</CardTitle>
                 <CardDescription>
                   Complete data separation with PostgreSQL Row-Level Security (RLS). Tenant context
@@ -126,6 +153,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Key className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>OAuth Authentication</CardTitle>
                 <CardDescription>
                   Secure authentication with Auth.js supporting Google, Microsoft, and custom
@@ -136,6 +164,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Lock className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Data Encryption</CardTitle>
                 <CardDescription>
                   End-to-end encryption for data in transit (TLS 1.3) and at rest (AES-256). Secure
@@ -146,6 +175,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <FileSearch className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Audit Logging</CardTitle>
                 <CardDescription>
                   Comprehensive audit trails for compliance and security monitoring. Tracks all user
@@ -162,6 +192,7 @@ export function FeaturesPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
+                <Code className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>REST + tRPC APIs</CardTitle>
                 <CardDescription>
                   Type-safe APIs with tRPC for TypeScript projects. REST endpoints for broad
@@ -172,6 +203,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Zap className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>WebSocket Real-time</CardTitle>
                 <CardDescription>
                   Low-latency real-time communication with Redis Streams for multi-instance scaling.
@@ -182,6 +214,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Users className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Embeddable Widget</CardTitle>
                 <CardDescription>
                   NPM package and CDN-hosted widget for embedding AI assistant in your apps. Shadow
@@ -192,6 +225,7 @@ export function FeaturesPage() {
 
             <Card>
               <CardHeader>
+                <Book className="mb-3 h-8 w-8 text-primary" />
                 <CardTitle>Comprehensive Docs</CardTitle>
                 <CardDescription>
                   Detailed API documentation, code examples, and integration guides. Interactive
