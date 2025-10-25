@@ -2060,6 +2060,136 @@ ALTER TABLE resolutions
 - LiveKit session: Only start after context gathered
 - Survey AI call: 60-90 second max duration
 
+### 3.4 Phase 12 Enterprise Features Integration (Future)
+
+> **📌 Future Integration Note**: This section documents how Phase 11 components will integrate with Phase 12's enterprise AI support features (CRM sync, A/B testing, quality assurance).
+
+**3.4.1 CRM Synchronization via `end_users` Table**
+
+Phase 12's CRM integration (Salesforce, HubSpot) will use the `end_users.external_id` field as the primary synchronization key:
+
+```typescript
+// Phase 12 CRM sync implementation (future)
+interface CRMSyncConfig {
+  provider: 'salesforce' | 'hubspot';
+  syncFields: {
+    external_id: string;      // Maps to CRM contact ID
+    email: string;             // Primary identifier
+    phone?: string;            // Secondary identifier
+    full_name?: string;        // Contact name
+    preferred_language?: string; // Localization
+  };
+}
+
+// Bi-directional sync strategy
+class CRMSyncService {
+  async syncEndUserToCRM(endUserId: UUID): Promise<void> {
+    const endUser = await db.query.endUsers.findFirst({
+      where: eq(endUsers.id, endUserId)
+    });
+
+    // Create or update CRM contact using external_id
+    const crmContact = await this.crmProvider.upsertContact({
+      id: endUser.external_id,  // CRM-specific ID
+      email: endUser.email,
+      phone: endUser.phone,
+      name: endUser.full_name,
+      customFields: {
+        totalSessions: endUser.session_count,
+        lastInteraction: endUser.last_seen_at,
+        surveyResponses: endUser.survey_count,
+        escalations: endUser.escalation_count
+      }
+    });
+
+    // Update external_id if new contact created
+    if (!endUser.external_id) {
+      await db.update(endUsers)
+        .set({ external_id: crmContact.id })
+        .where(eq(endUsers.id, endUserId));
+    }
+  }
+}
+```
+
+**Required Fields for CRM Integration**:
+- `external_id` - CRM contact ID (Salesforce: 18-char, HubSpot: numeric)
+- `email` - Primary unique identifier
+- `phone` - Secondary identifier (E.164 format)
+- `session_count`, `escalation_count` - Engagement metrics for CRM analytics
+
+**3.4.2 Survey Data for Phase 12 A/B Testing**
+
+Phase 12's A/B testing framework will leverage survey responses to measure feature effectiveness:
+
+```typescript
+// Phase 12 A/B testing integration (future)
+interface ABTestSurveyMetrics {
+  testId: string;
+  variantId: string;
+  surveyData: {
+    rating: number;              // From survey_responses.rating
+    satisfaction: number;        // Derived from rating (1-2: poor, 3-4: good, 5: excellent)
+    nps_score?: number;          // Net Promoter Score (-100 to +100)
+    followup_needed: boolean;    // From survey_responses.requires_followup
+    response_time: number;       // Time to complete survey (seconds)
+  };
+}
+
+// Example: Test prompt variation effectiveness
+class ABTestingSurveyAnalyzer {
+  async analyzePromptVariant(testId: string, variantId: string): Promise<ABTestResults> {
+    // Query survey responses for sessions in this A/B test
+    const surveyMetrics = await db.select({
+      avgRating: avg(surveyResponses.rating),
+      totalResponses: count(surveyResponses.id),
+      followupRate: avg(
+        sql`CASE WHEN ${surveyResponses.requires_followup} THEN 1.0 ELSE 0.0 END`
+      ),
+      npsScore: this.calculateNPS(surveyResponses.rating)
+    })
+    .from(surveyResponses)
+    .innerJoin(sessions, eq(sessions.id, surveyResponses.session_id))
+    .where(
+      and(
+        eq(sessions.ab_test_id, testId),
+        eq(sessions.ab_variant_id, variantId)
+      )
+    );
+
+    return {
+      testId,
+      variantId,
+      metrics: {
+        satisfaction: surveyMetrics.avgRating,
+        responseRate: surveyMetrics.totalResponses / totalSessions,
+        nps: surveyMetrics.npsScore,
+        escalationRate: surveyMetrics.followupRate
+      },
+      statistically_significant: this.runChiSquareTest(surveyMetrics)
+    };
+  }
+
+  private calculateNPS(ratings: number[]): number {
+    // NPS = % Promoters (5) - % Detractors (1-2)
+    const promoters = ratings.filter(r => r === 5).length;
+    const detractors = ratings.filter(r => r <= 2).length;
+    return ((promoters - detractors) / ratings.length) * 100;
+  }
+}
+```
+
+**Survey Schema Extensions for A/B Testing**:
+- Add `ab_test_id` and `ab_variant_id` to `sessions` table
+- Add `response_time_seconds` to `survey_responses` table
+- Add `nps_category` enum: 'promoter' | 'passive' | 'detractor'
+
+**Key Integration Points**:
+1. **Resolution Quality**: Survey ratings validate A/B test success (target: 4.2+ avg)
+2. **Escalation Impact**: Measure whether prompt changes reduce escalations
+3. **Response Time**: Fast surveys (< 60s) indicate good UX in test variants
+4. **Follow-up Rate**: Lower `requires_followup` = better AI resolution in variant
+
 ---
 
 ## Part 4: Security & Compliance

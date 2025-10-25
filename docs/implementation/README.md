@@ -33,7 +33,7 @@ This directory contains detailed implementation documentation for all 8 developm
 ### [Phase 2: Security + Database + Auth](./phase-2-implementation.md) ✅
 **Completion**: 2025-01-06 (schema) | 2025-10-07 (RLS applied) | **Lines**: 795
 
-- Database schema: 15 tables (596 lines in `packages/db/src/schema/index.ts`)
+- Database schema: 18 tables (15 core + 3 Auth.js) - 596 lines in `packages/db/src/schema/index.ts`
 - 8 migrations completed (001-008): RLS policies, Auth.js alignment, performance indexes
 - **PostgreSQL RLS: FORCE enabled on 14 tables** (Migration 008 - 2025-10-07)
 - 56 RLS policies (SELECT, INSERT, UPDATE, DELETE per table)
@@ -51,7 +51,7 @@ This directory contains detailed implementation documentation for all 8 developm
 ### [Phase 3: Backend API Infrastructure](./phase-3-implementation.md) ✅
 **Completion**: 2025-10-06 | **Lines**: 760
 
-- 5 tRPC routers with automatic RLS enforcement
+- 11 tRPC routers with automatic RLS enforcement (6 core Phase 3 + 5 added in later phases)
 - Auth.js middleware with request-scoped tenant context
 - Health check system (comprehensive + K8s probes)
 - Monitoring and metrics infrastructure

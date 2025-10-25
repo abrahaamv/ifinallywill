@@ -495,13 +495,13 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
 
 ## 🔍 Indexes for Performance
 
-> **⚠️ TODO**: Indexes temporarily removed due to Drizzle ORM 0.44.6 compatibility issue
+> **✅ IMPLEMENTED**: 55 performance indexes added in Migration 006 (Phase 2 - 2025-10-06)
 >
-> Standalone index exports caused runtime errors in Drizzle 0.44.6. Indexes will be added via SQL migration in future phase.
+> All indexes implemented via SQL migration to avoid Drizzle ORM 0.44.6 compatibility issues.
 >
-> See `packages/db/src/schema/index.ts` line 454 for implementation note.
+> See `docs/implementation/phase-2-security-database-auth.md` for complete implementation details.
 
-**Planned Indexes** (to be implemented via SQL migration):
+**Implemented Indexes** (Migration 006 - 55 total):
 
 ```sql
 -- Tenant lookups

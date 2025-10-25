@@ -12,7 +12,7 @@ Phase 2 implemented production-grade database infrastructure with multi-tenant R
 
 ### Schema Implementation
 
-**15 Tables Implemented**:
+**18 Tables Implemented** (15 core + 3 Auth.js):
 
 1. **Tenants** (`tenants`):
    - Multi-tenant root table
@@ -241,7 +241,7 @@ export const sql = client; // Raw SQL for RLS context
 | tenants | 2 | Tenant lookup |
 | verification_tokens | 2 | Email verification |
 
-**Total**: 55 indexes across 15 tables
+**Total**: 55 indexes across 18 tables
 
 ### Post-Migration Tasks
 
@@ -683,7 +683,7 @@ cannot be named without a reference to Next.js internals
 - ✅ Performance benchmark documentation
 
 ### Database Schema
-- ✅ 15 tables with Drizzle ORM
+- ✅ 18 tables with Drizzle ORM (15 core + 3 Auth.js)
 - ✅ Multi-tenant architecture
 - ✅ Vector embeddings support (pgvector)
 - ✅ JSONB for flexible metadata
@@ -772,7 +772,7 @@ Phase 2 is production-ready with two documented blockers for Phase 3:
 2. **Drizzle Adapter Schema** - Migration 007 required
 
 ### Production-Ready Components
-- ✅ Database schema (15 tables)
+- ✅ Database schema (18 tables: 15 core + 3 Auth.js)
 - ✅ RLS policies (56 policies with FORCE enforcement)
 - ✅ Performance indexes (55 indexes with 10-1000x speedup)
 - ✅ Tenant context utilities (production-ready)
@@ -962,4 +962,4 @@ FROM users ORDER BY role DESC;
 - ✅ Account lockout protection
 - ✅ Session hijacking prevention
 
-**Updated Production Readiness**: Database ✅ (15 tables, 8 migrations, 56 RLS policies) | Auth ✅ (Phase 8 complete) | Overall 98%
+**Updated Production Readiness**: Database ✅ (18 tables, 8 migrations, 56 RLS policies) | Auth ✅ (Phase 8 complete) | Overall 98%

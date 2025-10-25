@@ -39,7 +39,7 @@ platform/
 │   ├── ai-core/             # AI service abstractions (vision, voice, chat)
 │   └── knowledge/           # RAG system + embeddings
 │
-├── livekit-agent/           # Python LiveKit agent (Phase 5 - pending)
+├── livekit-agent/           # Python LiveKit agent (Phase 5 - COMPLETE)
 │
 ├── infrastructure/
 │   └── docker/              # Docker Compose (PostgreSQL, Redis)
