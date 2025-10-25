@@ -116,3 +116,7 @@ export { Textarea } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
 
 export { Switch } from './components/switch';
+
+// Layout Components
+export { AppShell, AppHeader, Sidebar } from './components/layout';
+export type { SidebarItem, SidebarSection } from './components/layout';

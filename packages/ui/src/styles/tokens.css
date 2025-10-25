@@ -1,0 +1,355 @@
+/**
+ * Enterprise AI Platform - Design Tokens
+ * Complete color system with HEX values for maximum compatibility
+ * Tailwind CSS v4 @theme directive for CSS-first configuration
+ */
+
+@import "tailwindcss";
+
+/* Scan shared UI package for Tailwind classes (monorepo support) */
+@source "../components";
+
+/**
+ * DESIGN TOKENS - LIGHT THEME
+ * Blue-based enterprise palette with semantic colors
+ */
+@theme {
+  /* ===== PRIMARY BLUE SCALE ===== */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93bbfd;
+  --color-primary-400: #609afc;
+  --color-primary-500: #3b82f6; /* Brand primary */
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* ===== NEUTRAL GRAY SCALE ===== */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* ===== SUCCESS GREEN ===== */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e; /* Primary success */
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+
+  /* ===== WARNING AMBER ===== */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b; /* Primary warning */
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+
+  /* ===== ERROR RED ===== */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444; /* Primary error */
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+  --color-error-950: #450a0a;
+
+  /* ===== INFO BLUE ===== */
+  --color-info-50: #f0f9ff;
+  --color-info-100: #e0f2fe;
+  --color-info-200: #bae6fd;
+  --color-info-300: #7dd3fc;
+  --color-info-400: #38bdf8;
+  --color-info-500: #0ea5e9; /* Primary info */
+  --color-info-600: #0284c7;
+  --color-info-700: #0369a1;
+  --color-info-800: #075985;
+  --color-info-900: #0c4a6e;
+  --color-info-950: #082f49;
+
+  /* ===== TYPOGRAPHY ===== */
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
+  --text-2xl: 1.5rem; /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem; /* 36px */
+  --text-5xl: 3rem; /* 48px */
+
+  /* Font Weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* Line Heights */
+  --leading-none: 1.0;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2.0;
+
+  /* ===== SPACING SCALE ===== */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; /* 4px */
+  --spacing-2: 0.5rem; /* 8px */
+  --spacing-3: 0.75rem; /* 12px */
+  --spacing-4: 1rem; /* 16px */
+  --spacing-5: 1.25rem; /* 20px */
+  --spacing-6: 1.5rem; /* 24px */
+  --spacing-8: 2rem; /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
+  --spacing-12: 3rem; /* 48px */
+  --spacing-16: 4rem; /* 64px */
+  --spacing-20: 5rem; /* 80px */
+  --spacing-24: 6rem; /* 96px */
+
+  /* ===== BORDER RADIUS ===== */
+  --radius-none: 0;
+  --radius-sm: 0.25rem; /* 4px */
+  --radius-base: 0.375rem; /* 6px */
+  --radius-md: 0.5rem; /* 8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem; /* 16px */
+  --radius-2xl: 1.5rem; /* 24px */
+  --radius-full: 9999px;
+
+  /* ===== SHADOWS (Refined for modern UI) ===== */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.2);
+
+  /* Subtle border shadows for modern cards */
+  --shadow-border: 0 0 0 1px rgb(0 0 0 / 0.05);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.02);
+  --shadow-dropdown: 0 4px 6px -2px rgb(0 0 0 / 0.05), 0 10px 15px -3px rgb(0 0 0 / 0.08);
+
+  /* ===== SIDEBAR & LAYOUT ===== */
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 64px;
+  --content-max-width: 1400px;
+
+  /* ===== Z-INDEX SCALE ===== */
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* ===== TRANSITIONS ===== */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/**
+ * SEMANTIC COLOR MAPPINGS
+ * Map design tokens to Tailwind utility classes
+ */
+@theme inline {
+  /* Semantic colors */
+  --color-primary: var(--color-primary-500);
+  --color-success: var(--color-success-500);
+  --color-warning: var(--color-warning-500);
+  --color-error: var(--color-error-500);
+  --color-info: var(--color-info-500);
+
+  /* Background & foreground */
+  --color-background: var(--color-gray-50);
+  --color-foreground: var(--color-gray-900);
+  --color-surface: #ffffff;
+
+  /* Borders */
+  --color-border: var(--color-gray-200);
+  --color-border-hover: var(--color-gray-300);
+}
+
+/**
+ * DARK MODE THEME
+ * Applied when .dark class is present on html or body
+ * Comprehensive token overrides for optimal dark mode experience
+ */
+.dark {
+  /* ===== PRIMARY BLUE SCALE (Dark Mode Adjustments) ===== */
+  --color-primary-50: #172554; /* Darkest for backgrounds */
+  --color-primary-100: #1e3a8a;
+  --color-primary-200: #1e40af;
+  --color-primary-300: #1d4ed8;
+  --color-primary-400: #2563eb;
+  --color-primary-500: #3b82f6; /* Brand primary (unchanged for consistency) */
+  --color-primary-600: #60a5fa; /* Lighter for better visibility */
+  --color-primary-700: #93bbfd;
+  --color-primary-800: #bfdbfe;
+  --color-primary-900: #dbeafe;
+  --color-primary-950: #eff6ff; /* Lightest for text */
+
+  /* ===== GRAY SCALE (Inverted for Dark Mode) ===== */
+  --color-gray-50: #1f2937; /* Dark background */
+  --color-gray-100: #374151;
+  --color-gray-200: #4b5563;
+  --color-gray-300: #6b7280;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #d1d5db; /* Mid-point (adjusted for readability) */
+  --color-gray-600: #e5e7eb;
+  --color-gray-700: #f3f4f6;
+  --color-gray-800: #f9fafb;
+  --color-gray-900: #ffffff; /* Light text */
+  --color-gray-950: #ffffff;
+
+  /* ===== SEMANTIC COLORS (Dark Mode Adjustments) ===== */
+  /* Success - Lighter greens for visibility */
+  --color-success-50: #14532d;
+  --color-success-100: #166534;
+  --color-success-200: #15803d;
+  --color-success-300: #16a34a;
+  --color-success-400: #22c55e;
+  --color-success-500: #4ade80; /* Primary success (lighter) */
+  --color-success-600: #86efac;
+  --color-success-700: #bbf7d0;
+  --color-success-800: #dcfce7;
+  --color-success-900: #f0fdf4;
+
+  /* Warning - Adjusted yellows for contrast */
+  --color-warning-50: #713f12;
+  --color-warning-100: #78350f;
+  --color-warning-200: #92400e;
+  --color-warning-300: #b45309;
+  --color-warning-400: #d97706;
+  --color-warning-500: #fbbf24; /* Primary warning */
+  --color-warning-600: #fcd34d;
+  --color-warning-700: #fde68a;
+  --color-warning-800: #fef3c7;
+  --color-warning-900: #fffbeb;
+
+  /* Error - Lighter reds for dark backgrounds */
+  --color-error-50: #7f1d1d;
+  --color-error-100: #991b1b;
+  --color-error-200: #b91c1c;
+  --color-error-300: #dc2626;
+  --color-error-400: #ef4444;
+  --color-error-500: #f87171; /* Primary error (lighter) */
+  --color-error-600: #fca5a5;
+  --color-error-700: #fecaca;
+  --color-error-800: #fee2e2;
+  --color-error-900: #fef2f2;
+
+  /* Info - Lighter blues */
+  --color-info-50: #0c4a6e;
+  --color-info-100: #075985;
+  --color-info-200: #0369a1;
+  --color-info-300: #0284c7;
+  --color-info-400: #0ea5e9;
+  --color-info-500: #38bdf8; /* Primary info (lighter) */
+  --color-info-600: #7dd3fc;
+  --color-info-700: #bae6fd;
+  --color-info-800: #e0f2fe;
+  --color-info-900: #f0f9ff;
+
+  /* ===== BACKGROUND & SURFACES ===== */
+  --color-background: #0f172a; /* Deep dark background */
+  --color-surface: #1e293b; /* Card/panel background */
+  --color-surface-hover: #334155; /* Hover state */
+  --color-foreground: #f9fafb; /* Main text color */
+
+  /* ===== BORDERS ===== */
+  --color-border: #2d3347;
+  --color-border-hover: #3d4461;
+
+  /* ===== SHADOWS (Deeper for Dark Mode) ===== */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.7);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.8);
+  --shadow-border: 0 0 0 1px rgb(255 255 255 / 0.05);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.05);
+  --shadow-dropdown: 0 4px 6px -2px rgb(0 0 0 / 0.5), 0 10px 15px -3px rgb(0 0 0 / 0.6);
+}
+
+/**
+ * BASE STYLES
+ * Foundation for all components
+ */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Focus states for accessibility */
+  *:focus-visible {
+    outline: 3px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+}
+
+/**
+ * REDUCED MOTION SUPPORT
+ * Respect user preferences for motion
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/**
+ * MULTI-TENANT THEMING SUPPORT
+ * Tenants can override tokens via data attributes
+ * Example: <div data-theme="tenant-123">
+ */
+[data-theme] {
+  /* Tenant overrides will be injected here at runtime */
+}

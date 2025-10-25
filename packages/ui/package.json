@@ -9,7 +9,11 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./components/*": "./src/components/*.tsx",
+    "./lib/*": "./src/lib/*.ts",
+    "./styles/tokens": "./src/styles/tokens.css",
+    "./styles/globals": "./src/styles/globals.css"
   },
   "scripts": {
     "build": "tsc",
