@@ -175,10 +175,7 @@ export class LiveKitService {
   /**
    * Update room metadata
    */
-  async updateRoomMetadata(
-    fullRoomName: string,
-    metadata: Record<string, unknown>
-  ): Promise<void> {
+  async updateRoomMetadata(fullRoomName: string, metadata: Record<string, unknown>): Promise<void> {
     await this.client.updateRoomMetadata(fullRoomName, JSON.stringify(metadata));
   }
 
