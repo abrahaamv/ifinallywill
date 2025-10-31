@@ -57,3 +57,16 @@ export {
   detectKnowledgeGaps,
   estimateClusteringCost,
 } from './clustering';
+
+// LlamaIndex memory system (Phase 10)
+export type {
+  MemoryOptions,
+  MemorySummary,
+} from './memory';
+
+export {
+  ConversationMemory,
+  MemoryManager,
+  buildRAGPromptWithMemory,
+  estimateMemoryCost,
+} from './memory';
