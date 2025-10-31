@@ -32,3 +32,19 @@ export {
   toTRPCError,
   type ErrorOptions,
 } from './errors';
+
+// Phase 10 cost tracking utilities
+export {
+  calculateCacheCost,
+  calculateRerankingCost,
+  calculateMemoryCost,
+  calculateClusteringCost,
+  calculatePhase10Savings,
+  formatCost,
+  formatPercentage,
+  type CacheStatistics,
+  type RerankingCost,
+  type MemoryCost,
+  type ClusteringCost,
+  type Phase10CostSummary,
+} from './cost-tracking';
