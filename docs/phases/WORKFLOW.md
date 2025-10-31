@@ -19,10 +19,10 @@ This triggers the following auUpdate all docs and get ready for next phase"tomat
 ### 2. Phase Completion Documentation
 
 **Actions**:
-1. Create `docs/implementation/phase-N-implementation.md` for the completed phase
+1. Create `docs/phases/phase-N-implementation.md` for the completed phase
 2. Document all achievements, implementations, testing results
 3. Document known issues, blockers, and lessons learned
-4. Update `docs/implementation/README.md` to reflect phase completion
+4. Update `docs/adr/README.md` to reflect phase completion
 
 **Content Requirements**:
 - **Overview**: Phase objectives and completion status
@@ -99,7 +99,7 @@ This triggers the following auUpdate all docs and get ready for next phase"tomat
 **Actions**:
 1. Update `README.md` (root) - Status, dates, quick start
 2. Update `docs/guides/roadmap.md` - Phase status and achievements
-3. Update `docs/implementation/README.md` - Phase navigation
+3. Update `docs/adr/README.md` - Phase navigation
 4. Update `docs/README.md` - Documentation index
 
 ### 5. Git Commit Strategy
@@ -109,8 +109,8 @@ This triggers the following auUpdate all docs and get ready for next phase"tomat
 **Commit Pattern**:
 ```bash
 # Commit everything EXCEPT PHASE_N_READINESS.md
-git add docs/implementation/phase-N-implementation.md
-git add docs/implementation/README.md
+git add docs/phases/phase-N-implementation.md
+git add docs/adr/README.md
 git add README.md
 git add docs/guides/roadmap.md
 git add docs/README.md
@@ -189,7 +189,7 @@ When user says "update all docs and get ready for next phase":
 - [ ] Create `PHASE_(N+1)_READINESS.md` (SUPER COMPLETE)
 - [ ] Update `README.md` status and dates
 - [ ] Update `docs/guides/roadmap.md` achievements
-- [ ] Update `docs/implementation/README.md` navigation
+- [ ] Update `docs/adr/README.md` navigation
 - [ ] Update `docs/README.md` index
 - [ ] Validate all builds pass
 - [ ] Commit everything EXCEPT PHASE_N_READINESS.md

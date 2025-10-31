@@ -499,7 +499,7 @@ export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => 
 >
 > All indexes implemented via SQL migration to avoid Drizzle ORM 0.44.6 compatibility issues.
 >
-> See `docs/implementation/phase-2-security-database-auth.md` for complete implementation details.
+> See `docs/phases/phase-2-security-database-auth.md` for complete implementation details.
 
 **Implemented Indexes** (Migration 006 - 55 total):
 

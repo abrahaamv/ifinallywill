@@ -786,7 +786,7 @@ app.register(cors, corsConfig);
 
 ### 1. Comprehensive Security Audit
 
-**Implementation**: `docs/implementation/phase-8-security-audit.md`
+**Implementation**: `docs/phases/phase-8-security-audit.md`
 
 **Audit Scope**:
 - Authentication & Authorization (Auth.js, OAuth, sessions)
@@ -869,7 +869,7 @@ Compliance:
 ⚠️ Security Monitoring (Recommended Post-MVP)
 ```
 
-**Reference**: `docs/implementation/phase-8-security-audit.md`
+**Reference**: `docs/phases/phase-8-security-audit.md`
 
 ---
 
@@ -1264,7 +1264,7 @@ pnpm build      # Should build successfully
 - **NIST SP 800-38D**: Galois/Counter Mode (GCM) for Confidentiality and Authentication
 
 ### Documentation
-- `docs/implementation/phase-8-security-audit.md` - Comprehensive security audit report
+- `docs/phases/phase-8-security-audit.md` - Comprehensive security audit report
 - `packages/auth/src/services/password.service.ts` - Argon2id password hashing
 - `packages/auth/src/services/mfa.service.ts` - TOTP MFA implementation
 - `packages/auth/src/services/api-key.service.ts` - API key generation and validation

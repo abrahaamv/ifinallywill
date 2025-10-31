@@ -194,7 +194,7 @@ pnpm typecheck  # Should pass with empty files
 **Status**: Implementation complete with all objectives achieved + Phase 8 security tables
 
 **Completion Date**: 2025-10-06 (initial), 2025-01-10 (Phase 8 security tables)
-**Documentation**: See `docs/implementation/phase-2-implementation.md`
+**Documentation**: See `docs/phases/phase-2-implementation.md`
 
 **Achievements**:
 - ✅ Database schema: 15 tables, 596 lines in `packages/db/src/schema/index.ts`
@@ -337,7 +337,7 @@ const widgets = await tenant2Db.query.widgets.findMany();
 **Status**: Implementation complete with all objectives achieved
 
 **Completion Date**: 2025-10-06
-**Documentation**: See `docs/implementation/phase-3-implementation.md`
+**Documentation**: See `docs/phases/phase-3-implementation.md`
 
 **Achievements**:
 - ✅ 5 production-ready tRPC routers with RLS enforcement
@@ -466,7 +466,7 @@ PORT=3002 pnpm dev:api &
 **Status**: Ready to begin implementation
 
 **Start Date**: TBD
-**Documentation**: See `docs/implementation/PHASE_4_READINESS.md`
+**Documentation**: See `docs/adr/PHASE_4_READINESS.md`
 
 **Goal**: Build React frontend applications with tRPC integration and responsive UI
 
@@ -632,7 +632,7 @@ pnpm build  # Verify build succeeds
 **Status**: Implementation complete with all objectives achieved
 
 **Completion Date**: 2025-01-07
-**Documentation**: See `docs/implementation/phase-5-week-1-implementation.md` and `phase-5-week-2-implementation.md`
+**Documentation**: See `docs/phases/phase-5-week-1-implementation.md` and `phase-5-week-2-implementation.md`
 
 **Achievements**:
 - ✅ **Week 1**: AI Chat API with cost-optimized routing (75-85% cost reduction)
@@ -776,7 +776,7 @@ curl -X POST http://localhost:3001/trpc/ai.chat \
 **Status**: Implementation complete with all objectives achieved
 
 **Completion Date**: 2025-01-07
-**Documentation**: See `docs/implementation/phase-6-implementation.md`
+**Documentation**: See `docs/phases/phase-6-implementation.md`
 
 **Achievements**:
 - ✅ WebSocket server with Redis Streams (450 lines, port 3002)
