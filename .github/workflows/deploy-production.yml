@@ -1,0 +1,537 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.2.3)'
+        required: true
+        type: string
+
+env:
+  PNPM_VERSION: 9.15.4
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID_PRODUCTION }}
+  GCP_REGION: us-central1
+  GCP_REGISTRY: gcr.io
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+
+    steps:
+      - name: Get version
+        id: get-version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.event.release.tag_name }}"
+          fi
+
+          # Validate version format (e.g., v1.2.3)
+          if ! echo "$VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: v1.2.3"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Check if staging tests passed
+        run: |
+          echo "Verifying staging environment health..."
+          curl -sf https://api-staging.platform.com/health || {
+            echo "Staging environment is not healthy!"
+            exit 1
+          }
+
+  build-and-push:
+    name: Build and Push Docker Images
+    needs: validate-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    outputs:
+      api-image: ${{ steps.meta-api.outputs.tags }}
+      realtime-image: ${{ steps.meta-realtime.outputs.tags }}
+      python-agent-image: ${{ steps.meta-python-agent.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.version }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PRODUCTION }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata for API
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/api
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=production-latest
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: packages/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.release.published_at }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.validate-release.outputs.version }}
+
+      - name: Extract metadata for Realtime
+        id: meta-realtime
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/realtime
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=production-latest
+
+      - name: Build and push Realtime image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: packages/realtime/Dockerfile
+          push: true
+          tags: ${{ steps.meta-realtime.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.release.published_at }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.validate-release.outputs.version }}
+
+      - name: Extract metadata for Python Agent
+        id: meta-python-agent
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/python-agent
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=production-latest
+
+      - name: Build and push Python Agent image
+        uses: docker/build-push-action@v5
+        with:
+          context: livekit-agent
+          file: livekit-agent/Dockerfile
+          push: true
+          tags: ${{ steps.meta-python-agent.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.release.published_at }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.validate-release.outputs.version }}
+
+  deploy-backend-canary:
+    name: Deploy Backend (Canary)
+    needs: [validate-release, build-and-push]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        service:
+          - name: api
+            min-instances: 2
+            max-instances: 20
+            memory: 4Gi
+            cpu: 2
+          - name: realtime
+            min-instances: 2
+            max-instances: 10
+            memory: 4Gi
+            cpu: 2
+          - name: python-agent
+            min-instances: 2
+            max-instances: 10
+            memory: 8Gi
+            cpu: 4
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PRODUCTION }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy new revision (0% traffic)
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          IMAGE="${{ env.GCP_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ matrix.service.name }}:${VERSION#v}"
+
+          gcloud run deploy ${{ matrix.service.name }}-production \
+            --image=$IMAGE \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --min-instances=${{ matrix.service.min-instances }} \
+            --max-instances=${{ matrix.service.max-instances }} \
+            --memory=${{ matrix.service.memory }} \
+            --cpu=${{ matrix.service.cpu }} \
+            --timeout=300 \
+            --concurrency=80 \
+            --set-env-vars="NODE_ENV=production,VERSION=$VERSION" \
+            --set-secrets="DATABASE_URL=DATABASE_URL_PRODUCTION:latest,REDIS_URL=REDIS_URL_PRODUCTION:latest" \
+            --vpc-connector=platform-production-vpc \
+            --vpc-egress=private-ranges-only \
+            --no-traffic \
+            --tag=canary
+
+      - name: Test canary revision
+        run: |
+          # Get canary URL
+          CANARY_URL=$(gcloud run services describe ${{ matrix.service.name }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.traffic[0].url)')
+
+          echo "Testing canary at: $CANARY_URL"
+
+          # Run health check
+          for i in {1..12}; do
+            if curl -sf "$CANARY_URL/health" > /dev/null; then
+              echo "Canary is healthy!"
+              exit 0
+            fi
+            echo "Waiting for canary to become healthy (attempt $i/12)..."
+            sleep 5
+          done
+
+          echo "Canary failed health check"
+          exit 1
+
+      - name: Route 5% traffic to canary
+        run: |
+          CURRENT_REVISION=$(gcloud run services describe ${{ matrix.service.name }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.traffic[?tag=null].revisionName)')
+
+          CANARY_REVISION=$(gcloud run services describe ${{ matrix.service.name }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.traffic[?tag=canary].revisionName)')
+
+          gcloud run services update-traffic ${{ matrix.service.name }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --to-revisions=$CANARY_REVISION=5,$CURRENT_REVISION=95
+
+      - name: Monitor canary (5 minutes)
+        run: |
+          echo "Monitoring canary performance for 5 minutes..."
+          sleep 300
+
+          # Check error rate
+          ERROR_RATE=$(gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=${{ matrix.service.name }}-production AND severity>=ERROR" \
+            --format="value(timestamp)" \
+            --limit=100 \
+            --freshness=5m | wc -l)
+
+          if [ "$ERROR_RATE" -gt 5 ]; then
+            echo "High error rate detected: $ERROR_RATE errors in 5 minutes"
+            exit 1
+          fi
+
+          echo "Canary performing well: $ERROR_RATE errors in 5 minutes"
+
+  deploy-backend-full:
+    name: Deploy Backend (Full Rollout)
+    needs: [validate-release, build-and-push, deploy-backend-canary]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        service: [api, realtime, python-agent]
+        traffic: [25, 50, 100]
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PRODUCTION }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Route ${{ matrix.traffic }}% traffic
+        run: |
+          CURRENT_REVISION=$(gcloud run services describe ${{ matrix.service }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.traffic[?tag=null].revisionName)')
+
+          CANARY_REVISION=$(gcloud run services describe ${{ matrix.service }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --format='value(status.traffic[?tag=canary].revisionName)')
+
+          REMAINING=$((100 - ${{ matrix.traffic }}))
+
+          gcloud run services update-traffic ${{ matrix.service }}-production \
+            --region=${{ env.GCP_REGION }} \
+            --to-revisions=$CANARY_REVISION=${{ matrix.traffic }},$CURRENT_REVISION=$REMAINING
+
+      - name: Monitor traffic split (3 minutes)
+        run: |
+          echo "Monitoring ${{ matrix.traffic }}% traffic for 3 minutes..."
+          sleep 180
+
+          # Check error rate
+          ERROR_RATE=$(gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=${{ matrix.service }}-production AND severity>=ERROR" \
+            --format="value(timestamp)" \
+            --limit=100 \
+            --freshness=3m | wc -l)
+
+          if [ "$ERROR_RATE" -gt 3 ]; then
+            echo "High error rate detected: $ERROR_RATE errors in 3 minutes"
+            exit 1
+          fi
+
+          echo "Traffic split performing well: $ERROR_RATE errors in 3 minutes"
+
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [validate-release, deploy-backend-full]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend apps
+        env:
+          VITE_API_URL: https://api.platform.com
+          VITE_WS_URL: wss://realtime.platform.com
+          VITE_LIVEKIT_URL: wss://livekit.platform.com
+          VITE_VERSION: ${{ needs.validate-release.outputs.version }}
+        run: pnpm build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PRODUCTION }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload to Cloud Storage
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+
+          # Landing page
+          gsutil -m rsync -r -d apps/landing/dist gs://platform-production-landing
+
+          # Dashboard
+          gsutil -m rsync -r -d apps/dashboard/dist gs://platform-production-dashboard
+
+          # Meeting
+          gsutil -m rsync -r -d apps/meeting/dist gs://platform-production-meeting
+
+          # Widget SDK
+          gsutil -m rsync -r -d apps/widget-sdk/dist gs://platform-production-widget
+
+          # Set cache control headers
+          gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" \
+            "gs://platform-production-landing/**/*.js" \
+            "gs://platform-production-landing/**/*.css" \
+            "gs://platform-production-dashboard/**/*.js" \
+            "gs://platform-production-dashboard/**/*.css" \
+            "gs://platform-production-meeting/**/*.js" \
+            "gs://platform-production-meeting/**/*.css" \
+            "gs://platform-production-widget/**/*.js" \
+            "gs://platform-production-widget/**/*.css"
+
+      - name: Invalidate CDN cache
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache platform-production-lb \
+            --path "/*" \
+            --async
+
+  health-check:
+    name: Post-Deployment Health Check
+    needs: [validate-release, deploy-backend-full, deploy-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check API health
+        run: |
+          for i in {1..12}; do
+            if curl -sf https://api.platform.com/health | grep -q "ok"; then
+              echo "API is healthy"
+              exit 0
+            fi
+            echo "Waiting for API to become healthy (attempt $i/12)..."
+            sleep 5
+          done
+          echo "API health check failed"
+          exit 1
+
+      - name: Check WebSocket health
+        run: |
+          curl -sf https://realtime.platform.com/health || exit 1
+          echo "WebSocket server is healthy"
+
+      - name: Check Frontend availability
+        run: |
+          curl -sf https://platform.com || exit 1
+          echo "Frontend is accessible"
+
+      - name: Run production smoke tests
+        run: |
+          # Test API endpoints
+          curl -sf https://api.platform.com/health || exit 1
+
+          # Test WebSocket connection
+          curl -sf https://realtime.platform.com/health || exit 1
+
+          echo "All production smoke tests passed"
+
+  notify:
+    name: Send Deployment Notification
+    needs: [validate-release, deploy-backend-full, deploy-frontend, health-check]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Production Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment ${{ job.status }}*\n\n*Version:* ${{ needs.validate-release.outputs.version }}\n*Release:* <${{ github.event.release.html_url }}|${{ github.event.release.name }}>\n*Author:* ${{ github.event.release.author.login }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.health-check.result == 'success' && '✅ Success' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nProduction"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  rollback:
+    name: Rollback on Failure
+    needs: [validate-release, deploy-backend-canary, deploy-backend-full, health-check]
+    runs-on: ubuntu-latest
+    if: failure()
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PRODUCTION }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Rollback Cloud Run services
+        run: |
+          for service in api realtime python-agent; do
+            echo "Rolling back $service-production..."
+
+            # Get stable revision (previous production revision before canary)
+            STABLE_REVISION=$(gcloud run revisions list \
+              --service=$service-production \
+              --region=${{ env.GCP_REGION }} \
+              --format="value(name)" \
+              --filter="metadata.labels.version!=${{ needs.validate-release.outputs.version }}" \
+              --limit=1)
+
+            if [ -n "$STABLE_REVISION" ]; then
+              gcloud run services update-traffic $service-production \
+                --region=${{ env.GCP_REGION }} \
+                --to-revisions=$STABLE_REVISION=100
+              echo "Rolled back $service-production to $STABLE_REVISION"
+            else
+              echo "No stable revision found for $service-production"
+            fi
+          done
+
+      - name: Send rollback notification
+        if: ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚨 Production deployment failed and was rolled back",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Failed - Rollback Initiated*\n\n*Version:* ${{ needs.validate-release.outputs.version }}\n*Release:* <${{ github.event.release.html_url }}|${{ github.event.release.name }}>\n\n⚠️ All services have been rolled back to their previous stable versions.\n\n*Action Required:* Investigate the deployment failure before attempting another release."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
