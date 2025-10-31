@@ -160,12 +160,12 @@ export function MainLayout() {
                   </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <a href="https://blog.aiassistant.com" className="hover:text-foreground">
                     Blog
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <a href="https://careers.aiassistant.com" className="hover:text-foreground">
                     Careers
                   </a>
                 </li>
@@ -177,24 +177,24 @@ export function MainLayout() {
               <h4 className="mb-4 text-sm font-semibold">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <Link to="/privacy" className="hover:text-foreground">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <Link to="/terms" className="hover:text-foreground">
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <Link to="/cookies" className="hover:text-foreground">
                     Cookie Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground">
+                  <Link to="/security" className="hover:text-foreground">
                     Security
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
