@@ -44,3 +44,16 @@ export {
   isCohereRerankingEnabled,
   estimateCohereRerankingCost,
 } from './reranker';
+
+// DBSCAN clustering for knowledge gap detection (Phase 10)
+export type {
+  QueryCluster,
+  KnowledgeGap,
+  ClusteringOptions,
+} from './clustering';
+
+export {
+  clusterQueries,
+  detectKnowledgeGaps,
+  estimateClusteringCost,
+} from './clustering';
