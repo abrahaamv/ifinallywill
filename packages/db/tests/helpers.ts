@@ -1,10 +1,27 @@
 /**
  * Test helper utilities for database tests
+ *
+ * CRITICAL: Uses single-connection SQL client to avoid connection pooling issues
+ * with session-level SET commands for tenant context
  */
 
 import type { InferInsertModel } from 'drizzle-orm';
-import { sql } from '../src/client';
+import postgres from 'postgres';
 import type { tenants, users } from '../src/schema';
+
+// Create test-specific SQL client with single connection (max: 1)
+// This ensures SET commands persist across queries in the same test
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL environment variable is required for tests');
+}
+
+export const sql = postgres(connectionString, {
+  max: 1, // Single connection - eliminates pooling issues with SET commands
+  idle_timeout: 20,
+  connect_timeout: 10,
+  prepare: true,
+});
 
 /**
  * Test tenant IDs for isolation testing
@@ -17,7 +34,9 @@ export const TEST_TENANT_IDS = {
 
 /**
  * Set the current tenant context for RLS policies
- * Uses a simple query to set the session variable inline
+ *
+ * CRITICAL: Uses session-level SET (not SET LOCAL) to persist across queries
+ * in the same connection. Single connection (max: 1) ensures setting persists.
  */
 export async function setTenantContext(tenantId: string): Promise<void> {
   // Validate UUID format to prevent SQL injection
@@ -25,16 +44,30 @@ export async function setTenantContext(tenantId: string): Promise<void> {
   if (!uuidRegex.test(tenantId)) {
     throw new Error(`Invalid tenant ID format: ${tenantId}`);
   }
-  // Execute SET command and verify it worked
+
+  // Use session-level SET to persist across queries on this connection
   await sql.unsafe(`SET app.current_tenant_id = '${tenantId}'`);
+
+  // Verify the setting took effect (helps debug connection pooling issues)
+  const result = await sql.unsafe(
+    "SELECT current_setting('app.current_tenant_id', true) as tenant_id"
+  );
+  const actualTenantId = result[0]?.tenant_id;
+  if (actualTenantId !== tenantId) {
+    throw new Error(
+      `Failed to set tenant context: expected ${tenantId}, got ${actualTenantId || 'null'}`
+    );
+  }
 }
 
 /**
  * Clear the tenant context (simulates no authenticated user)
  * Sets to empty string which get_current_tenant_id() handles
+ *
+ * Uses RESET to clear the setting entirely from the session
  */
 export async function clearTenantContext(): Promise<void> {
-  await sql.unsafe("SET app.current_tenant_id = ''");
+  await sql.unsafe("RESET app.current_tenant_id");
 }
 
 /**

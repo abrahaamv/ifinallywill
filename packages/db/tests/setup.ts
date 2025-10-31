@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { sql } from '../src/client';
+import { createDatabaseLogger } from '@platform/shared';
+
+const logger = createDatabaseLogger();
 
 // Load environment variables from root .env
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +29,7 @@ beforeAll(async () => {
       throw new Error('Database connection test failed');
     }
   } catch (error) {
-    console.error('Failed to connect to test database:', error);
+    logger.error('Failed to connect to test database', { error });
     throw error;
   }
 });

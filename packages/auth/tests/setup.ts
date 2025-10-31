@@ -5,7 +5,10 @@
  */
 
 import { sql } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
 import { afterAll, beforeAll } from 'vitest';
+
+const logger = createModuleLogger('auth-tests');
 
 /**
  * Global setup - runs once before all tests
@@ -14,9 +17,9 @@ beforeAll(async () => {
   // Ensure database connection is ready
   try {
     await sql`SELECT 1`;
-    console.log('✅ Database connection established for auth tests');
+    logger.info('Database connection established for auth tests');
   } catch (error) {
-    console.error('❌ Failed to connect to database:', error);
+    logger.error('Failed to connect to database', { error });
     throw error;
   }
 });
@@ -26,5 +29,5 @@ beforeAll(async () => {
  */
 afterAll(async () => {
   // Close database connections
-  console.log('🧹 Cleaning up auth test environment');
+  logger.info('Cleaning up auth test environment');
 });

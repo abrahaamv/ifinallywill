@@ -12,13 +12,13 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { sql } from '../src/client';
 import {
   TEST_TENANT_IDS,
   checkRLSEnabled,
   clearTenantContext,
   getCurrentTenantContext,
   setTenantContext,
+  sql, // Use single-connection SQL client from helpers to avoid pooling issues
 } from './helpers';
 
 /**
@@ -29,6 +29,10 @@ beforeAll(async () => {
   await sql`ALTER TABLE tenants NO FORCE ROW LEVEL SECURITY`;
   await sql`ALTER TABLE users NO FORCE ROW LEVEL SECURITY`;
 
+  // Clean up any existing test data first (ensures deterministic state)
+  await sql`DELETE FROM users WHERE tenant_id IN (${TEST_TENANT_IDS.tenant1}, ${TEST_TENANT_IDS.tenant2}, ${TEST_TENANT_IDS.tenant3})`;
+  await sql`DELETE FROM tenants WHERE id IN (${TEST_TENANT_IDS.tenant1}, ${TEST_TENANT_IDS.tenant2}, ${TEST_TENANT_IDS.tenant3})`;
+
   // Create test tenants (api_key is required and must be unique)
   await sql`
     INSERT INTO tenants (id, name, api_key, plan, created_at, updated_at)
@@ -36,7 +40,6 @@ beforeAll(async () => {
       (${TEST_TENANT_IDS.tenant1}, 'Test Tenant 1', 'test_key_tenant1', 'business', NOW(), NOW()),
       (${TEST_TENANT_IDS.tenant2}, 'Test Tenant 2', 'test_key_tenant2', 'business', NOW(), NOW()),
       (${TEST_TENANT_IDS.tenant3}, 'Test Tenant 3', 'test_key_tenant3', 'business', NOW(), NOW())
-    ON CONFLICT (id) DO NOTHING
   `;
 
   // Create test users for each tenant (password_hash is required)
@@ -46,7 +49,6 @@ beforeAll(async () => {
       (gen_random_uuid(), ${TEST_TENANT_IDS.tenant1}, 'user1@tenant1.com', 'fake_hash_1', 'User 1', 'owner', NOW(), NOW()),
       (gen_random_uuid(), ${TEST_TENANT_IDS.tenant2}, 'user2@tenant2.com', 'fake_hash_2', 'User 2', 'owner', NOW(), NOW()),
       (gen_random_uuid(), ${TEST_TENANT_IDS.tenant3}, 'user3@tenant3.com', 'fake_hash_3', 'User 3', 'owner', NOW(), NOW())
-    ON CONFLICT (email) DO NOTHING
   `;
 
   // Re-enable FORCE RLS
