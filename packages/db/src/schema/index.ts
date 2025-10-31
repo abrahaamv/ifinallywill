@@ -363,6 +363,14 @@ export const costEvents = pgTable('cost_events', {
     duration?: number;
   }>(),
   timestamp: timestamp('timestamp').notNull().defaultNow(),
+  // Phase 10: Cache statistics (Anthropic prompt caching)
+  cacheWriteTokens: integer('cache_write_tokens').default(0),
+  cacheReadTokens: integer('cache_read_tokens').default(0),
+  cacheHitRate: decimal('cache_hit_rate', { precision: 5, scale: 4 }).default('0.0'),
+  // Phase 10: Enhanced cost tracking
+  rerankingCost: decimal('reranking_cost', { precision: 10, scale: 6 }).default('0.0'),
+  memoryCost: decimal('memory_cost', { precision: 10, scale: 6 }).default('0.0'),
+  clusteringCost: decimal('clustering_cost', { precision: 10, scale: 6 }).default('0.0'),
 });
 
 export const costEventsRelations = relations(costEvents, ({ one }) => ({
@@ -589,6 +597,10 @@ export const dataRequestsRelations = relations(dataRequests, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ==================== PHASE 10 AI ENHANCEMENTS ====================
+
+export * from './phase10';
 
 // ==================== INDEXES ====================
 // Indexes are defined via SQL migration files in packages/db/migrations/
