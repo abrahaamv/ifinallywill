@@ -105,7 +105,7 @@ Then open:
 >
 > **Browser Compatibility**: ✅ COMPLETE - Node.js polyfills (Buffer, process, perf_hooks), browser-safe exports
 >
-> See `docs/implementation/` for complete implementation details (Phases 1-8).
+> See `docs/adr/` for complete implementation details (Phases 1-8).
 
 ---
 
@@ -129,15 +129,88 @@ platform/
 │   ├── ai-core/            # AI service abstractions
 │   └── knowledge/          # Knowledge management system
 ├── livekit-agent/          # Python LiveKit agent (1000+ lines: multi-modal AI with cost optimization)
-├── infrastructure/
-│   └── docker/             # Docker compose configurations
-├── docs/                   # Comprehensive implementation documentation
+├── infrastructure/         # Production deployment infrastructure (Phase 9)
+│   ├── staging/            # Staging deployment scripts and configuration
+│   ├── production/         # Production deployment scripts and configuration
+│   └── docker/             # Docker compose for local development
+├── docs/
+│   ├── implementation/     # Development history (Phases 1-9)
+│   ├── operations/         # Operational runbooks and deployment guides
+│   ├── guides/             # User guides and tutorials
+│   └── reference/          # API specs and technical references
+├── .github/workflows/      # CI/CD pipelines (test, staging, production)
 ├── package.json            # Root workspace configuration
 ├── pnpm-workspace.yaml     # pnpm workspace definition
 ├── turbo.json              # Turborepo build orchestration
 ├── tsconfig.json           # TypeScript base configuration
 └── biome.json              # Biome linting and formatting
 ```
+
+---
+
+## 🚢 Deployment
+
+### Production Deployment (Phase 9 Complete)
+
+**Platform**: Google Cloud Platform (GCP)
+**Architecture**: Hybrid Docker (Cloud Run + GCE + Managed Services)
+**Cost**: $225-280/month (staging), $650-900/month (production with CUDs)
+
+#### Quick Deploy
+
+```bash
+# Staging deployment
+cd infrastructure/staging
+cp .env.example .env
+# Edit .env with your GCP credentials and API keys
+./deploy.sh
+
+# Production deployment
+cd infrastructure/production
+cp .env.example .env
+# Edit .env with production credentials
+./deploy.sh
+```
+
+#### Documentation
+
+- **Deployment Guides**: [`/infrastructure/README.md`](infrastructure/README.md)
+- **Staging Guide**: [`/docs/operations/deployment/staging.md`](docs/operations/deployment/staging.md)
+- **Production Guide**: [`/docs/operations/deployment/production.md`](docs/operations/deployment/production.md)
+- **LiveKit Self-Hosting**: [`/docs/operations/deployment/livekit-deployment.md`](docs/operations/deployment/livekit-deployment.md)
+- **Troubleshooting**: [`/docs/operations/troubleshooting.md`](docs/operations/troubleshooting.md)
+- **Cost Optimization**: [`/docs/operations/cost-optimization.md`](docs/operations/cost-optimization.md)
+
+#### Architecture Highlights
+
+```
+Stateless Services (Cloud Run):
+  - API Server (auto-scaling 0-10 instances)
+  - WebSocket Server (min 1 instance for persistent connections)
+  - Python Agent (auto-scaling 1-5 instances)
+
+Stateful Services (GCE + Docker):
+  - LiveKit Server (self-hosted, 95-97% cost savings)
+
+Managed Services:
+  - Cloud SQL PostgreSQL 16
+  - MemoryStore Redis 7.4
+  - Cloud Storage + CDN (frontend)
+```
+
+**Key Benefits**:
+- ✅ 95-97% cost savings on LiveKit ($58K-118K/year)
+- ✅ No egress costs for Gemini API (85% of AI requests)
+- ✅ One-command deployment automation
+- ✅ Canary deployments with automatic rollback
+- ✅ Complete CI/CD with GitHub Actions
+
+#### CI/CD Pipelines
+
+GitHub Actions workflows (`.github/workflows/`):
+- **test.yml** - Automated testing (runs on every PR)
+- **deploy-staging.yml** - Staging deployment (push to main)
+- **deploy-production.yml** - Production deployment (releases with canary strategy)
 
 ---
 
@@ -278,7 +351,7 @@ cp .env.example .env
 python agent.py
 ```
 
-**Implementation Details**: See `docs/implementation/phase-5-week-2-implementation.md` for complete setup guide
+**Implementation Details**: See `docs/phases/phase-5-week-2-implementation.md` for complete setup guide
 
 ---
 
@@ -293,9 +366,9 @@ Comprehensive documentation is available in the `docs/` directory:
 
 ### Implementation Guides
 - [Development Roadmap](docs/guides/roadmap.md) - 7-phase build order (6/7 complete)
-- [Phase 5 Week 1](docs/implementation/phase-5-week-1-implementation.md) - AI Chat API + RAG
-- [Phase 5 Week 2](docs/implementation/phase-5-week-2-implementation.md) - LiveKit + Python Agent
-- [Phase 6](docs/implementation/phase-6-implementation.md) - WebSocket Real-time Chat
+- [Phase 5 Week 1](docs/phases/phase-5-week-1-implementation.md) - AI Chat API + RAG
+- [Phase 5 Week 2](docs/phases/phase-5-week-2-implementation.md) - LiveKit + Python Agent
+- [Phase 6](docs/phases/phase-6-implementation.md) - WebSocket Real-time Chat
 - [Component Patterns](docs/guides/components.md) - React component architecture
 - [AI Integration](docs/guides/ai-integration.md) - AI provider integration
 - [Integration Guide](docs/guides/integration.md) - Component integration
@@ -312,7 +385,7 @@ Comprehensive documentation is available in the `docs/` directory:
 
 ### LiveKit Agent
 - [LiveKit Agent README](livekit-agent/README.md) - Production implementation (Phase 5 complete)
-- [Phase 5 Week 2 Implementation](docs/implementation/phase-5-week-2-implementation.md) - Complete setup guide
+- [Phase 5 Week 2 Implementation](docs/phases/phase-5-week-2-implementation.md) - Complete setup guide
 - [Reference Architecture](docs/reference/livekit-agent/docs/ARCHITECTURE.md) - Provider abstraction layer
 
 ---
@@ -389,18 +462,29 @@ pnpm preview
 - ✅ **Phase 7**: Widget SDK (NPM package, Shadow DOM, 52-86KB gzipped, Lighthouse 98/100)
 - ✅ **Phase 8**: Production Security (Auth.js, Argon2id, TOTP MFA, RLS, rate limiting, API keys)
 
-### MVP Complete - Production Readiness
+### MVP Complete - Production Readiness Assessment
 
-**Security Score**: 95/100 (OWASP: 100%, NIST: 95%, API Security: 90%)
-**Test Coverage**: 77/77 security tests passing
-**Compliance**: 92% across OWASP 2025, NIST SP 800-63B, RFC standards
+**Current Status**: ~75% Production Ready (verified 2025-10-27)
+**Security Implementation**: OWASP-compliant foundations (Auth.js, RLS, CSRF, Argon2id)
+**Test Coverage**: 13.4% (11/82 files) - Target: 80% (Week 2 of 4-week campaign complete)
+**Audit Status**: 2025-10-25 comprehensive audit - 9/19 findings resolved
 
-**Production Readiness**:
-1. ✅ PostgreSQL RLS policies applied (FORCE RLS enabled on all 14 tables)
+**Production Readiness Progress**:
+1. ✅ PostgreSQL RLS policies applied (FORCE RLS enabled on all 18 tables)
 2. ✅ Auth.js with MFA, account lockout, NIST-compliant sessions
 3. ✅ Password migration (automatic bcrypt → argon2id upgrade)
-4. ✅ CSRF protection (built into Auth.js)
-5. ⚠️ Security monitoring (SIEM integration recommended for enterprise deployments)
+4. ✅ CSRF protection (implemented across all 4 frontend apps)
+5. ✅ Version pinning enforced (0 violations, deterministic builds)
+6. ✅ AI Personalities database integration (production-breaking bug fixed)
+7. ⚠️ Test coverage in progress (2-3 weeks to 80% target)
+8. ⚠️ Error handling standardization (needs implementation)
+
+**Blocking Issues** (Before Production):
+- Test coverage to 80%+ (IN PROGRESS, ~3 weeks remaining)
+- Error handling middleware (2 days)
+- Transaction management verification (1 day)
+
+See `docs/audit/2025-10-25/PRODUCTION_READINESS_VERIFICATION.md` for complete audit results.
 
 ### Goals
 
@@ -432,9 +516,9 @@ Proprietary - All rights reserved
 ## 🆘 Support
 
 - **Documentation**: Complete guides in `docs/` directory (Phases 1-8 implementation docs)
-- **Phase 7**: Widget SDK implementation complete (see `docs/implementation/phase-7-implementation.md`)
-- **Phase 8**: Production Security complete (see `docs/implementation/phase-8-production-security.md`)
-- **Security Audit**: 95/100 score with 92% compliance (see `docs/implementation/phase-8-security-audit.md`)
+- **Phase 7**: Widget SDK implementation complete (see `docs/phases/phase-7-implementation.md`)
+- **Phase 8**: Production Security complete (see `docs/phases/phase-8-production-security.md`)
+- **Security Audit**: 95/100 score with 92% compliance (see `docs/phases/phase-8-security-audit.md`)
 - **Issues**: Document with reproduction steps and expected behavior
 
 ---

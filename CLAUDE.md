@@ -347,12 +347,12 @@ grep -r "[\^~]" package.json apps/*/package.json packages/*/package.json
 
 ### Automated Phase Completion Process
 
-1. **Create Phase Implementation Doc**: `docs/implementation/phase-N-implementation.md`
+1. **Create Phase Implementation Doc**: `docs/phases/phase-N-implementation.md`
    - Comprehensive documentation (10-25KB)
    - All achievements, testing results, known issues
    - Validation results and lessons learned
 
-2. **Create Phase Readiness Doc**: `docs/implementation/PHASE_(N+1)_READINESS.md`
+2. **Create Phase Readiness Doc**: `docs/adr/PHASE_(N+1)_READINESS.md`
    - **SUPER COMPLETE** implementation guide (15-30KB)
    - Week-by-week detailed objectives with checkboxes
    - Complete code templates and examples
@@ -364,7 +364,7 @@ grep -r "[\^~]" package.json apps/*/package.json packages/*/package.json
 3. **Update Project Documentation**:
    - `README.md`: Status, dates, quick start
    - `docs/guides/roadmap.md`: Phase achievements
-   - `docs/implementation/README.md`: Navigation
+   - `docs/adr/README.md`: Navigation
    - `docs/README.md`: Documentation index
 
 4. **Commit Strategy**:
@@ -372,7 +372,7 @@ grep -r "[\^~]" package.json apps/*/package.json packages/*/package.json
    - **DO NOT COMMIT**: PHASE_N_READINESS.md (working document)
    - Rationale: Readiness doc is replaced with phase-N+1-implementation.md when phase completes
 
-**Full Workflow Details**: See `docs/implementation/WORKFLOW.md`
+**Full Workflow Details**: See `docs/phases/WORKFLOW.md`
 
 ## Important Development Notes
 
