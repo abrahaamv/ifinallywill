@@ -5,6 +5,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@platform/ui';
 import { Widget } from './Widget';
+import { appUrls } from './config/urls';
 
 export function App() {
   return (
@@ -231,11 +232,11 @@ function App() {
         <div className="text-center text-sm text-muted-foreground">
           <p>
             Demo widget shown in bottom-right corner •{' '}
-            <a href="http://localhost:5174" className="text-primary hover:underline">
+            <a href={appUrls.dashboard} className="text-primary hover:underline">
               Dashboard
             </a>
             {' • '}
-            <a href="http://localhost:5173" className="text-primary hover:underline">
+            <a href={appUrls.landing} className="text-primary hover:underline">
               Home
             </a>
           </p>
@@ -245,7 +246,7 @@ function App() {
       {/* Demo Widget */}
       <Widget
         apiKey="demo-api-key"
-        apiUrl="http://localhost:3001/trpc"
+        apiUrl={appUrls.api}
         position="bottom-right"
         theme="auto"
         primaryColor="#6366f1"

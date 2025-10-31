@@ -16,8 +16,11 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('ChatWidget');
 
 interface Message {
   id: string;
@@ -70,7 +73,7 @@ export function ChatWidget() {
           });
           setSessionId(session.id);
         } catch (error) {
-          console.error('Failed to create session:', error);
+          logger.error('Failed to create session', { error });
         }
       };
 
@@ -134,7 +137,7 @@ export function ChatWidget() {
       // Refetch messages to ensure sync
       await refetchMessages();
     } catch (error) {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message', { error });
       setMessages((prev) => [
         ...prev,
         {

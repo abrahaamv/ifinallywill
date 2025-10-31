@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from '@platform/ui';
 import { Check } from 'lucide-react';
+import { appUrls } from '../config/urls';
 
 export function PricingPage() {
   return (
@@ -59,7 +60,7 @@ export function PricingPage() {
           </CardContent>
           <CardFooter>
             <Button className="w-full" variant="outline" asChild>
-              <a href="http://localhost:5174/login">Get Started</a>
+              <a href={appUrls.login}>Get Started</a>
             </Button>
           </CardFooter>
         </Card>
@@ -101,7 +102,7 @@ export function PricingPage() {
           </CardContent>
           <CardFooter>
             <Button className="w-full" asChild>
-              <a href="http://localhost:5174/login">Start Free Trial</a>
+              <a href={appUrls.login}>Start Free Trial</a>
             </Button>
           </CardFooter>
         </Card>

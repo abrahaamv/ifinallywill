@@ -23,8 +23,11 @@ import {
   Video,
   Zap,
 } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChatWidget } from '../components/ChatWidget';
+
+const logger = createModuleLogger('DashboardLayout');
 
 // Route path to title mapping
 const routeTitles: Record<string, string> = {
@@ -157,7 +160,7 @@ export function DashboardLayout() {
 
   const handleUserMenuClick = (action: string) => {
     if (action === 'settings') navigate('/settings');
-    if (action === 'logout') console.log('Logout');
+    if (action === 'logout') logger.info('User logout triggered');
     // Add other actions as needed
   };
 

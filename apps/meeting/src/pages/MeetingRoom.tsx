@@ -18,7 +18,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@livekit/components-styles';
 import { Button, Input } from '@platform/ui';
+import { createModuleLogger } from '@platform/shared';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('MeetingRoom');
 
 interface ChatMessage {
   sender: string;
@@ -88,7 +91,7 @@ export function MeetingRoom() {
         setLivekitUrl(result.livekitUrl);
         setIsLoading(false);
       } catch (err) {
-        console.error('Failed to join room:', err);
+        logger.error('Failed to join room', { error: err });
         setError(err instanceof Error ? err.message : 'Failed to join meeting room');
         setIsLoading(false);
       }
@@ -100,7 +103,7 @@ export function MeetingRoom() {
 
   // Handle connection errors
   const handleError = (error: Error) => {
-    console.error('LiveKit connection error:', error);
+    logger.error('LiveKit connection error', { error });
     setError('Connection failed. Please try again.');
   };
 
@@ -242,7 +245,7 @@ function ChatHandler({
 
       if (messageTopic !== 'agent.chat') {
         // Not an agent chat message, ignore
-        console.debug('Ignoring message with topic:', messageTopic);
+        logger.debug('Ignoring message with topic', { messageTopic });
         return;
       }
 
@@ -263,7 +266,7 @@ function ChatHandler({
               type: 'voice', // Agent messages are voice transcriptions
             },
           ]);
-          console.log('Received agent message:', data.content.substring(0, 50) + '...');
+          logger.info('Received agent message', { preview: data.content.substring(0, 50) });
         } else if (data.type === 'vision_insight') {
           setMessages((prev) => [
             ...prev,
@@ -275,7 +278,7 @@ function ChatHandler({
             },
           ]);
         } else {
-          console.warn('Unknown message type:', data.type);
+          logger.warn('Unknown message type', { type: data.type });
         }
       } catch (jsonError) {
         // Not JSON, treat as plain text (backward compatibility)
@@ -289,10 +292,10 @@ function ChatHandler({
             type: 'voice',
           },
         ]);
-        console.log('Received plain text message (fallback)');
+        logger.info('Received plain text message (fallback)');
       }
     } catch (error) {
-      console.error('Failed to process message:', error);
+      logger.error('Failed to process message', { error });
     }
   });
 
@@ -347,7 +350,7 @@ function ChatPanel({
 
       setIsSending(false);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      logger.error('Failed to send message', { error });
       setIsSending(false);
     }
   };

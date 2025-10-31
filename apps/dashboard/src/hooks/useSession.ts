@@ -10,7 +10,10 @@
  * - error: error message if session fetch failed
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { useEffect, useState } from 'react';
+
+const logger = createModuleLogger('useSession');
 
 /**
  * Auth.js User type (extended with platform fields)
@@ -95,7 +98,7 @@ export function useSession(): UseSessionReturn {
           setLoading(false);
         }
       } catch (err) {
-        console.error('[useSession] Error fetching session:', err);
+        logger.error('Error fetching session', { error: err });
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Failed to fetch session');
           setSession(null);

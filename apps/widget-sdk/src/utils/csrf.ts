@@ -4,6 +4,9 @@
  */
 
 import { CSRFService } from '@platform/auth/client';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('WidgetCSRF');
 
 /**
  * Singleton CSRF token manager for widget
@@ -42,7 +45,7 @@ class WidgetCSRFManager {
       this.token = token;
       this.tokenExpiry = expiresAt;
     } catch (error) {
-      console.error('Widget: Failed to fetch CSRF token:', error);
+      logger.error('Widget: Failed to fetch CSRF token', { error });
       throw new Error('CSRF token fetch failed');
     }
   }

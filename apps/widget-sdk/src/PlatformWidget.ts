@@ -8,8 +8,11 @@
 
 import { createElement } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
+import { createModuleLogger } from '@platform/shared';
 import { Widget } from './Widget';
 import type { WidgetConfig } from './types';
+
+const logger = createModuleLogger('PlatformWidget');
 
 export class PlatformWidget {
   private shadowRoot: ShadowRoot;
@@ -58,7 +61,7 @@ export class PlatformWidget {
       // Setup event listeners
       this.setupEventListeners();
     } catch (error) {
-      console.error('Platform Widget initialization failed:', error);
+      logger.error('Platform Widget initialization failed', { error });
       throw error;
     }
   }
@@ -81,7 +84,7 @@ export class PlatformWidget {
         this.shadowRoot.appendChild(styleElement);
       }
     } catch (error) {
-      console.error('Failed to inject styles:', error);
+      logger.error('Failed to inject styles', { error });
       // Create minimal fallback styles
       const fallbackStyles = document.createElement('style');
       fallbackStyles.textContent = this.getFallbackStyles();
@@ -148,7 +151,7 @@ export class PlatformWidget {
     this.root.render(
       createElement(Widget, {
         apiKey: this.config.apiKey,
-        apiUrl: this.config.apiUrl || 'http://localhost:3001/trpc',
+        apiUrl: this.config.apiUrl,
         position: this.config.position || 'bottom-right',
         theme: this.config.theme || 'auto',
         primaryColor: this.config.primaryColor || '#6366f1',

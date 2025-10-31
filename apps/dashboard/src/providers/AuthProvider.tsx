@@ -4,8 +4,11 @@
  * Provides user session data globally
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('AuthProvider');
 
 interface User {
   id: string;
@@ -81,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect to login page
       window.location.href = '/login';
     } catch (error) {
-      console.error('Sign out failed:', error);
+      logger.error('Sign out failed', { error });
       // Even if API call fails, redirect to login and clear local state
       setUser(null);
       window.location.href = '/login';

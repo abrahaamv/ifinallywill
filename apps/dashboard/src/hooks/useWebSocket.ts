@@ -5,7 +5,10 @@
  * message handling, typing indicators, and presence tracking.
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+const logger = createModuleLogger('useWebSocket');
 
 export enum MessageType {
   CHAT_MESSAGE = 'chat_message',
@@ -57,9 +60,24 @@ export interface UseWebSocketReturn {
 }
 
 export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
+  // Get WebSocket URL from environment variable (NO FALLBACK - fail-fast)
+  const getWebSocketUrl = (): string => {
+    const realtimeUrl = import.meta.env.VITE_REALTIME_URL;
+    if (!realtimeUrl) {
+      throw new Error(
+        'WebSocket configuration error: VITE_REALTIME_URL not configured.\n' +
+          'Please set VITE_REALTIME_URL in your .env.local file.\n' +
+          'See .env.example for configuration template.'
+      );
+    }
+    // Convert http:// to ws:// and https:// to wss://
+    const wsUrl = realtimeUrl.replace(/^http/, 'ws');
+    return `${wsUrl}/ws`;
+  };
+
   const {
     sessionId,
-    url = 'ws://localhost:3002/ws',
+    url = getWebSocketUrl(),
     reconnectInterval = 5000,
     heartbeatInterval = 30000,
   } = options;
@@ -84,7 +102,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
-        console.log('[WebSocket] Connected');
+        logger.info('WebSocket connected');
         setIsConnected(true);
         setIsReconnecting(false);
         setError(null);
@@ -109,17 +127,17 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
           const message: WSMessage = JSON.parse(event.data);
           handleMessage(message);
         } catch (err) {
-          console.error('[WebSocket] Failed to parse message:', err);
+          logger.error('Failed to parse WebSocket message', { error: err });
         }
       };
 
       ws.onerror = (event) => {
-        console.error('[WebSocket] Error:', event);
+        logger.error('WebSocket error', { event });
         setError('WebSocket connection error');
       };
 
       ws.onclose = () => {
-        console.log('[WebSocket] Disconnected');
+        logger.info('WebSocket disconnected');
         setIsConnected(false);
         stopHeartbeat();
 
@@ -134,7 +152,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
 
       wsRef.current = ws;
     } catch (err) {
-      console.error('[WebSocket] Connection failed:', err);
+      logger.error('WebSocket connection failed', { error: err });
       setError('Failed to connect to WebSocket server');
       setIsReconnecting(true);
       reconnectTimeoutRef.current = setTimeout(() => {
@@ -201,12 +219,12 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         break;
 
       case MessageType.ERROR:
-        console.error('[WebSocket] Server error:', message.payload);
+        logger.error('WebSocket server error', { payload: message.payload });
         setError(message.payload.error || 'Unknown server error');
         break;
 
       default:
-        console.warn('[WebSocket] Unknown message type:', message.type);
+        logger.warn('Unknown WebSocket message type', { type: message.type });
     }
   }, []);
 

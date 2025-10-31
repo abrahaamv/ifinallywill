@@ -29,8 +29,11 @@ import {
   Textarea,
 } from '@platform/ui';
 import { AlertCircle, Bot, Brain, Edit, Plus, Star, Trash2, Users } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('PersonalitiesPage');
 
 interface Personality {
   id: string;
@@ -102,7 +105,7 @@ export function PersonalitiesPage() {
       });
       await refetchPersonalities();
     } catch (error) {
-      console.error('Failed to create personality:', error);
+      logger.error('Failed to create personality', { error });
     }
   };
 
@@ -118,7 +121,7 @@ export function PersonalitiesPage() {
       setSelectedPersonality(null);
       await refetchPersonalities();
     } catch (error) {
-      console.error('Failed to update personality:', error);
+      logger.error('Failed to update personality', { error });
     }
   };
 
@@ -130,7 +133,7 @@ export function PersonalitiesPage() {
       await deletePersonalityMutation.mutateAsync({ id });
       await refetchPersonalities();
     } catch (error) {
-      console.error('Failed to delete personality:', error);
+      logger.error('Failed to delete personality', { error });
     }
   };
 
@@ -139,7 +142,7 @@ export function PersonalitiesPage() {
       await setDefaultMutation.mutateAsync({ id });
       await refetchPersonalities();
     } catch (error) {
-      console.error('Failed to set default personality:', error);
+      logger.error('Failed to set default personality', { error });
     }
   };
 

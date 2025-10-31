@@ -6,7 +6,10 @@
 
 import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent } from '@platform/ui';
 import { AlertCircle, AlertTriangle, Home, RefreshCw } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+
+const logger = createModuleLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -45,7 +48,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error details to error reporting service
-    console.error('Error Boundary caught an error:', error, errorInfo);
+    logger.error('Error Boundary caught an error', { error, errorInfo });
 
     // Call optional error handler
     if (this.props.onError) {
@@ -61,7 +64,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // In production, send to error tracking service (e.g., Sentry)
     if (import.meta.env.PROD) {
       // Example: Sentry.captureException(error, { extra: errorInfo });
-      console.warn('Error details:', {
+      logger.warn('Error details', {
         message: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,

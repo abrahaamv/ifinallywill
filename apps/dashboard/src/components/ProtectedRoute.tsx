@@ -13,8 +13,11 @@
  * ```
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { useEffect } from 'react';
 import { useSession } from '../hooks/useSession';
+
+const logger = createModuleLogger('ProtectedRoute');
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -41,7 +44,7 @@ export function ProtectedRoute({
   useEffect(() => {
     // If not loading and no session, redirect to login
     if (!loading && !session) {
-      console.log('[ProtectedRoute] No session, redirecting to login');
+      logger.info('No session, redirecting to login');
       window.location.href = redirectTo;
     }
   }, [loading, session, redirectTo]);

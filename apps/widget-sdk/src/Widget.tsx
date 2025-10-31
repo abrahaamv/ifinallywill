@@ -2,11 +2,18 @@
  * AI Assistant Widget
  * Embeddable chat widget with Shadow DOM isolation
  * Supports customizable theming and position
+ *
+ * IMPORTANT: apiUrl must be explicitly provided by the customer.
+ * This should point to your deployed tRPC API endpoint.
+ * Example: https://api.yourdomain.com/trpc
  */
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@platform/ui';
+import { createModuleLogger } from '@platform/shared';
 import { useEffect, useRef, useState } from 'react';
 import { createWidgetTRPCClient } from './utils/trpc';
+
+const logger = createModuleLogger('Widget');
 
 interface Message {
   id: string;
@@ -16,19 +23,27 @@ interface Message {
 }
 
 interface WidgetProps {
+  /** API key for authentication (required) */
   apiKey: string;
-  apiUrl?: string;
+  /** Backend API URL - must be explicitly provided (required) */
+  apiUrl: string;
+  /** Widget position on the page */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  /** Color theme */
   theme?: 'light' | 'dark' | 'auto';
+  /** Primary color for branding */
   primaryColor?: string;
+  /** Widget title */
   title?: string;
+  /** Input placeholder text */
   placeholder?: string;
+  /** Initial greeting message */
   greeting?: string;
 }
 
 export function Widget({
   apiKey,
-  apiUrl = 'http://localhost:3001/trpc',
+  apiUrl,
   position = 'bottom-right',
   theme = 'auto',
   primaryColor = '#6366f1',
@@ -56,7 +71,7 @@ export function Widget({
         });
         setSessionId(session.id);
       } catch (err) {
-        console.error('Failed to create session:', err);
+        logger.error('Failed to create session', { error: err });
         setError('Failed to initialize chat. Please check your API key.');
       }
     };
@@ -131,7 +146,7 @@ export function Widget({
         setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (err) {
-      console.error('Failed to send message:', err);
+      logger.error('Failed to send message', { error: err });
       setError('Failed to send message. Please try again.');
 
       // Add error message to chat

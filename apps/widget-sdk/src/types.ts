@@ -10,10 +10,11 @@ export interface WidgetConfig {
   apiKey: string;
 
   /**
-   * Backend API URL for chat
-   * @default 'http://localhost:3001/trpc'
+   * Backend API URL for chat (required)
+   * Must point to your deployed tRPC API endpoint
+   * @example 'https://api.yourdomain.com/trpc'
    */
-  apiUrl?: string;
+  apiUrl: string;
 
   /**
    * Widget position on screen

@@ -188,7 +188,7 @@ Set `VITE_API_URL` and `VITE_WS_URL` to production endpoints before building.
 
 ## Documentation
 
-- [Dashboard Implementation](../../docs/implementation/phase-4-frontend-development.md)
+- [Dashboard Implementation](../../docs/phases/phase-4-frontend-development.md)
 - [tRPC Integration](../../docs/guides/integration.md)
 - [Component Patterns](../../docs/guides/components.md)
 - [AI Chat Integration](../../docs/guides/ai-integration.md)

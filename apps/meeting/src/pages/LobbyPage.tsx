@@ -16,6 +16,7 @@ import {
 } from '@platform/ui';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { appUrls } from '../config/urls';
 
 export function LobbyPage() {
   const navigate = useNavigate();
@@ -130,11 +131,11 @@ export function LobbyPage() {
         <div className="text-center text-sm text-muted-foreground">
           <p>
             Powered by LiveKit WebRTC •{' '}
-            <a href="http://localhost:5174" className="text-primary hover:underline">
+            <a href={appUrls.dashboard} className="text-primary hover:underline">
               Dashboard
             </a>
             {' • '}
-            <a href="http://localhost:5173" className="text-primary hover:underline">
+            <a href={appUrls.landing} className="text-primary hover:underline">
               Home
             </a>
           </p>

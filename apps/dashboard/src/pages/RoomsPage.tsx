@@ -23,8 +23,11 @@ import {
   Skeleton,
 } from '@platform/ui';
 import { Activity, AlertCircle, Clock, Copy, Info, Plus, Trash2, Users, Video } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('RoomsPage');
 
 interface RoomDetails {
   roomName: string;
@@ -64,7 +67,7 @@ export function RoomsPage() {
       setRoomName('');
       await refetchRooms();
     } catch (error) {
-      console.error('Failed to create room:', error);
+      logger.error('Failed to create room', { error });
     }
   };
 
@@ -78,7 +81,7 @@ export function RoomsPage() {
       await refetchRooms();
       setIsDetailsOpen(false);
     } catch (error) {
-      console.error('Failed to delete room:', error);
+      logger.error('Failed to delete room', { error });
     }
   };
 
@@ -98,7 +101,7 @@ export function RoomsPage() {
       setCopiedRoomId(roomName);
       setTimeout(() => setCopiedRoomId(null), 2000);
     } catch (error) {
-      console.error('Failed to copy link:', error);
+      logger.error('Failed to copy link', { error });
     }
   };
 

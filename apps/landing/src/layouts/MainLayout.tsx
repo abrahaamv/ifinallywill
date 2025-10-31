@@ -7,6 +7,7 @@ import { Button } from '@platform/ui';
 import { Menu, X, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { appUrls } from '../config/urls';
 
 export function MainLayout() {
   const location = useLocation();
@@ -53,10 +54,10 @@ export function MainLayout() {
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" asChild>
-              <a href="http://localhost:5174/login">Sign In</a>
+              <a href={appUrls.login}>Sign In</a>
             </Button>
             <Button asChild>
-              <a href="http://localhost:5174/login">Get Started</a>
+              <a href={appUrls.login}>Get Started</a>
             </Button>
           </div>
 
@@ -89,10 +90,10 @@ export function MainLayout() {
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <Button variant="ghost" asChild className="w-full">
-                  <a href="http://localhost:5174/login">Sign In</a>
+                  <a href={appUrls.login}>Sign In</a>
                 </Button>
                 <Button asChild className="w-full">
-                  <a href="http://localhost:5174/login">Get Started</a>
+                  <a href={appUrls.login}>Get Started</a>
                 </Button>
               </div>
             </nav>
@@ -132,12 +133,12 @@ export function MainLayout() {
                   </Link>
                 </li>
                 <li>
-                  <a href="http://localhost:5174" className="hover:text-foreground">
+                  <a href={appUrls.dashboard} className="hover:text-foreground">
                     Dashboard
                   </a>
                 </li>
                 <li>
-                  <a href="http://localhost:5175" className="hover:text-foreground">
+                  <a href={appUrls.meeting} className="hover:text-foreground">
                     Meeting Rooms
                   </a>
                 </li>

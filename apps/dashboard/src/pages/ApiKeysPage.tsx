@@ -29,8 +29,11 @@ import {
   TableRow,
 } from '@platform/ui';
 import { CheckCircle, Copy, Eye, EyeOff, Key, Plus, Shield, TrendingUp } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('ApiKeysPage');
 
 interface ApiKey {
   id: string;
@@ -81,7 +84,7 @@ export function ApiKeysPage() {
       setNewKeyName('');
       await refetchKeys();
     } catch (error) {
-      console.error('Failed to create API key:', error);
+      logger.error('Failed to create API key', { error });
     }
   };
 
@@ -98,7 +101,7 @@ export function ApiKeysPage() {
         setTimeout(() => setCopiedKeyId(null), 2000);
       }
     } catch (error) {
-      console.error('Failed to copy:', error);
+      logger.error('Failed to copy', { error });
     }
   };
 
@@ -115,7 +118,7 @@ export function ApiKeysPage() {
       await revokeKeyMutation.mutateAsync({ keyId });
       await refetchKeys();
     } catch (error) {
-      console.error('Failed to revoke API key:', error);
+      logger.error('Failed to revoke API key', { error });
     }
   };
 

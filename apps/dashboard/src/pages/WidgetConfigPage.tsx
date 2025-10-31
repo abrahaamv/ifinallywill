@@ -40,8 +40,11 @@ import {
   Smartphone,
   Zap,
 } from 'lucide-react';
+import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('WidgetConfigPage');
 
 export function WidgetConfigPage() {
   const [copiedScript, setCopiedScript] = useState(false);
@@ -92,7 +95,7 @@ export function WidgetConfigPage() {
       setCopiedScript(true);
       setTimeout(() => setCopiedScript(false), 2000);
     } catch (error) {
-      console.error('Failed to copy script:', error);
+      logger.error('Failed to copy script', { error });
     }
   };
 

@@ -10,7 +10,10 @@
  */
 
 import { Button } from '@platform/ui';
+import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
+
+const logger = createModuleLogger('LoginPage');
 
 export function LoginPage() {
   const [formData, setFormData] = useState({
@@ -64,7 +67,7 @@ export function LoginPage() {
 
       const { csrfToken } = await csrfResponse.json();
 
-      console.log('[LOGIN] CSRF token fetched:', csrfToken);
+      logger.info('CSRF token fetched', { csrfToken });
 
       // Step 2: Submit credentials to Auth.js credentials provider
       const loginResponse = await fetch('/api/auth/callback/credentials', {
@@ -83,7 +86,7 @@ export function LoginPage() {
         credentials: 'include', // CRITICAL: Include cookies for session
       });
 
-      console.log('[LOGIN] Login response status:', loginResponse.status);
+      logger.info('Login response status', { status: loginResponse.status });
 
       // Auth.js credentials provider returns different status codes:
       // - 200: Success (with JSON response)
@@ -115,14 +118,14 @@ export function LoginPage() {
       const redirectPath = sessionStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         sessionStorage.removeItem('redirectAfterLogin');
-        console.log('[LOGIN] Login successful, redirecting to:', redirectPath);
+        logger.info('Login successful, redirecting to stored path', { redirectPath });
         window.location.href = redirectPath;
       } else {
-        console.log('[LOGIN] Login successful, redirecting to dashboard');
+        logger.info('Login successful, redirecting to dashboard');
         window.location.href = '/dashboard';
       }
     } catch (error) {
-      console.error('[LOGIN] Login error:', error);
+      logger.error('Login error', { error });
       setErrors({
         submit: error instanceof Error ? error.message : 'Login failed. Please try again.',
       });

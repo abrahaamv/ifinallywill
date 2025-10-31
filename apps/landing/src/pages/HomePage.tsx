@@ -5,6 +5,7 @@
 
 import { Badge, Button, Card, CardDescription, CardHeader, CardTitle } from '@platform/ui';
 import { Database, Eye, MessageSquare, Quote, Shield, Star, TrendingDown } from 'lucide-react';
+import { appUrls } from '../config/urls';
 
 export function HomePage() {
   return (
@@ -31,10 +32,10 @@ export function HomePage() {
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button size="lg" asChild>
-                <a href="http://localhost:5174/login">Get Started Free</a>
+                <a href={appUrls.login}>Get Started Free</a>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <a href="http://localhost:5175">Try Live Demo</a>
+                <a href={appUrls.meeting}>Try Live Demo</a>
               </Button>
             </div>
 
@@ -246,7 +247,7 @@ export function HomePage() {
           </p>
           <div className="flex flex-col gap-4 sm:flex-row">
             <Button size="lg" asChild>
-              <a href="http://localhost:5174/login">Start Free Trial</a>
+              <a href={appUrls.login}>Start Free Trial</a>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <a href="/contact">Contact Sales</a>

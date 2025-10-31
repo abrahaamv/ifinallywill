@@ -11,10 +11,12 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 /**
  * Create tRPC client for widget
  *
- * @param apiKey - Customer API key for authentication
- * @param apiUrl - Backend API URL (default: http://localhost:3001/trpc)
+ * @param apiKey - Customer API key for authentication (required)
+ * @param apiUrl - Backend API URL - must be explicitly provided (required)
+ * @example
+ * const client = createWidgetTRPCClient('your-api-key', 'https://api.yourdomain.com/trpc');
  */
-export function createWidgetTRPCClient(apiKey: string, apiUrl = 'http://localhost:3001/trpc') {
+export function createWidgetTRPCClient(apiKey: string, apiUrl: string) {
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({

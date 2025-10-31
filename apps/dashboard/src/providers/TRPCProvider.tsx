@@ -6,11 +6,14 @@
  */
 
 import { CSRFService } from '@platform/auth/client';
+import { createModuleLogger } from '@platform/shared';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client';
 import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
+
+const logger = createModuleLogger('TRPCProvider');
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -27,7 +30,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         csrfTokenRef.current = token;
         setIsReady(true);
       } catch (error) {
-        console.error('Failed to fetch CSRF token:', error);
+        logger.error('Failed to fetch CSRF token', { error });
         setIsReady(true); // Continue anyway
       }
     };
@@ -41,7 +44,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           const { token } = await CSRFService.getToken();
           csrfTokenRef.current = token;
         } catch (error) {
-          console.error('Failed to refresh CSRF token:', error);
+          logger.error('Failed to refresh CSRF token', { error });
         }
       },
       30 * 60 * 1000
@@ -96,7 +99,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
             // Handle 401 Unauthorized - session expired or invalid
             if (response.status === 401) {
-              console.warn('[TRPCProvider] 401 Unauthorized - Session expired');
+              logger.warn('401 Unauthorized - Session expired');
 
               // Check if we're not already on login page
               if (!window.location.pathname.startsWith('/login')) {
