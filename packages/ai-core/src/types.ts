@@ -18,6 +18,8 @@ export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
   name?: string;
+  /** Phase 10: Mark message for prompt caching (Anthropic) */
+  cache?: boolean;
 }
 
 export interface AICompletionRequest {
@@ -28,6 +30,8 @@ export interface AICompletionRequest {
   userId?: string;
   tenantId?: string;
   sessionId?: string;
+  /** Phase 10: Enable prompt caching (87% cost reduction) */
+  enableCaching?: boolean;
 }
 
 export interface AIUsage {
@@ -35,6 +39,10 @@ export interface AIUsage {
   outputTokens: number;
   totalTokens: number;
   cost: number;
+  /** Phase 10: Prompt caching statistics */
+  cacheWriteTokens?: number;
+  cacheReadTokens?: number;
+  cacheHitRate?: number;
 }
 
 export interface AICompletionResponse {

@@ -25,17 +25,37 @@ export class AnthropicProvider implements AIProviderInterface {
 
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const model = request.model || this.defaultModel;
+    const enableCaching = request.enableCaching ?? false;
 
     // Separate system message from conversation
     const systemMessage = request.messages.find((m) => m.role === 'system');
     const conversationMessages = request.messages.filter((m) => m.role !== 'system');
 
     try {
+      // Phase 10: Prompt caching with cache_control blocks
+      // System message caching (most common use case - RAG context, instructions)
+      let systemConfig: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> | undefined;
+
+      if (systemMessage) {
+        if (enableCaching && systemMessage.cache) {
+          // Use cache_control for system message
+          systemConfig = [
+            {
+              type: 'text',
+              text: systemMessage.content,
+              cache_control: { type: 'ephemeral' },
+            },
+          ];
+        } else {
+          systemConfig = systemMessage.content;
+        }
+      }
+
       const completion = await this.client.messages.create({
         model: model as string,
         max_tokens: request.maxTokens ?? 4096,
         temperature: request.temperature ?? 0.7,
-        system: systemMessage?.content,
+        system: systemConfig,
         messages: conversationMessages.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
@@ -49,6 +69,15 @@ export class AnthropicProvider implements AIProviderInterface {
       if (content.type !== 'text') {
         throw new Error('Unexpected response type from Anthropic');
       }
+
+      // Phase 10: Track cache statistics
+      const cacheWriteTokens = (completion.usage as any).cache_creation_input_tokens || 0;
+      const cacheReadTokens = (completion.usage as any).cache_read_input_tokens || 0;
+      const totalInputTokens = completion.usage.input_tokens + cacheWriteTokens;
+
+      // Calculate cache hit rate: cached tokens / total input tokens
+      const cacheHitRate =
+        totalInputTokens > 0 ? cacheReadTokens / totalInputTokens : 0;
 
       const cost = calculateCost(
         model,
@@ -65,6 +94,9 @@ export class AnthropicProvider implements AIProviderInterface {
           outputTokens: completion.usage.output_tokens,
           totalTokens: completion.usage.input_tokens + completion.usage.output_tokens,
           cost,
+          cacheWriteTokens,
+          cacheReadTokens,
+          cacheHitRate,
         },
         finishReason:
           completion.stop_reason === 'end_turn'
@@ -85,15 +117,35 @@ export class AnthropicProvider implements AIProviderInterface {
     request: AICompletionRequest
   ): AsyncGenerator<string, AICompletionResponse> {
     const model = request.model || this.defaultModel;
+    const enableCaching = request.enableCaching ?? false;
 
     const systemMessage = request.messages.find((m) => m.role === 'system');
     const conversationMessages = request.messages.filter((m) => m.role !== 'system');
+
+    // Phase 10: Prompt caching with cache_control blocks
+    // Note: Cache statistics are not available in streaming responses
+    let systemConfig: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> | undefined;
+
+    if (systemMessage) {
+      if (enableCaching && systemMessage.cache) {
+        // Use cache_control for system message
+        systemConfig = [
+          {
+            type: 'text',
+            text: systemMessage.content,
+            cache_control: { type: 'ephemeral' },
+          },
+        ];
+      } else {
+        systemConfig = systemMessage.content;
+      }
+    }
 
     const stream = await this.client.messages.stream({
       model: model as string,
       max_tokens: request.maxTokens ?? 4096,
       temperature: request.temperature ?? 0.7,
-      system: systemMessage?.content,
+      system: systemConfig,
       messages: conversationMessages.map((msg) => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
