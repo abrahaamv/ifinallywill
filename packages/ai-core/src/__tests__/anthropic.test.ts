@@ -3,7 +3,7 @@
  * Validates Claude AI integration and error handling
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnthropicProvider } from '../providers/anthropic';
 import type { AICompletionRequest } from '../types';
 

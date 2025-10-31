@@ -3,8 +3,8 @@
  * Validates Auth.js integration with Fastify
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authPlugin, getSession } from '../plugins/auth';
 
 // Mock Auth.js

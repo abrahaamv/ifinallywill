@@ -3,6 +3,7 @@
  * Bottom-right chatbot with three-tier AI routing and RAG integration
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { Badge, Button, Card, CardContent, Input } from '@platform/ui';
 import {
   Bot,
@@ -16,7 +17,6 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
 import { useEffect, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 

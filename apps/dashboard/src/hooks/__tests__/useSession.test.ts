@@ -4,8 +4,8 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useSession, type Session } from '../useSession';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Session, useSession } from '../useSession';
 
 // Mock logger
 vi.mock('@platform/shared', () => ({

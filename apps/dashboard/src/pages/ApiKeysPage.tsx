@@ -3,6 +3,7 @@
  * Publishable and secret keys with rate limiting and security best practices
  */
 
+import { createModuleLogger } from '@platform/shared';
 import {
   Alert,
   AlertDescription,
@@ -29,7 +30,6 @@ import {
   TableRow,
 } from '@platform/ui';
 import { CheckCircle, Copy, Eye, EyeOff, Key, Plus, Shield, TrendingUp } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 

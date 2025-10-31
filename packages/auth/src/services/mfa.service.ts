@@ -24,10 +24,10 @@
  */
 
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
+import { createModuleLogger } from '@platform/shared';
 import * as bcrypt from 'bcryptjs';
 import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';
-import { createModuleLogger } from '@platform/shared';
 
 const logger = createModuleLogger('MFAService');
 

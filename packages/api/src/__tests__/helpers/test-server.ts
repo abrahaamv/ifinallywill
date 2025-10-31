@@ -26,13 +26,13 @@
  * ```
  */
 
+import { randomBytes } from 'node:crypto';
 import cors from '@fastify/cors';
 import { appRouter, createContext } from '@platform/api-contract';
 import { createModuleLogger } from '@platform/shared';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { rateLimitPlugin } from '../../plugins/rate-limit';
-import { randomBytes } from 'node:crypto';
 
 const logger = createModuleLogger('test-server');
 

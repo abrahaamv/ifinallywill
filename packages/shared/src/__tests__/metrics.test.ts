@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { metrics, MetricNames, measureAsync, measure } from '../monitoring/metrics';
+import { MetricNames, measure, measureAsync, metrics } from '../monitoring/metrics';
 
 describe('Metrics Module', () => {
   beforeEach(() => {
@@ -431,17 +431,21 @@ describe('Metrics Module', () => {
   describe('Integration Scenarios', () => {
     it('should track API request metrics', () => {
       // Simulate API request tracking
-      metrics.increment(MetricNames.REQUEST_TOTAL, { method: 'GET', path: '/api/users', status: '200' });
+      metrics.increment(MetricNames.REQUEST_TOTAL, {
+        method: 'GET',
+        path: '/api/users',
+        status: '200',
+      });
       metrics.record(MetricNames.REQUEST_DURATION, 45, { method: 'GET', path: '/api/users' });
 
       const requestMetric = metrics.get(MetricNames.REQUEST_TOTAL, {
         method: 'GET',
         path: '/api/users',
-        status: '200'
+        status: '200',
       });
       const durationMetric = metrics.get(MetricNames.REQUEST_DURATION, {
         method: 'GET',
-        path: '/api/users'
+        path: '/api/users',
       });
 
       expect((requestMetric as any)?.value).toBe(1);
@@ -468,11 +472,11 @@ describe('Metrics Module', () => {
 
       const tokensMetric = metrics.get(MetricNames.AI_TOKENS_USED, {
         model: 'gpt-4',
-        tenant: 'acme'
+        tenant: 'acme',
       });
       const costMetric = metrics.get(MetricNames.AI_COST_USD, {
         model: 'gpt-4',
-        tenant: 'acme'
+        tenant: 'acme',
       });
 
       expect((tokensMetric as any)?.value).toBe(1000);
@@ -485,11 +489,11 @@ describe('Metrics Module', () => {
 
       const validationErrors = metrics.get(MetricNames.ERROR_TOTAL, {
         type: 'validation',
-        severity: 'low'
+        severity: 'low',
       });
       const databaseErrors = metrics.get(MetricNames.ERROR_TOTAL, {
         type: 'database',
-        severity: 'high'
+        severity: 'high',
       });
 
       expect((validationErrors as any)?.value).toBe(1);

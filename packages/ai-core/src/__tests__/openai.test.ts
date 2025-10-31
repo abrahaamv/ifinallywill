@@ -3,7 +3,7 @@
  * Validates GPT-4o integration and cost optimization routing
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAIProvider } from '../providers/openai';
 import type { AICompletionRequest } from '../types';
 

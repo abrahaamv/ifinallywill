@@ -18,8 +18,8 @@
  */
 
 import { TRPCError } from '@trpc/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initTRPC } from '@trpc/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Context } from '../src/context';
 import { aiPersonalitiesRouter } from '../src/routers/ai-personalities';
 
@@ -122,7 +122,8 @@ const mockPersonality = {
   id: mockPersonalityId,
   tenantId: mockTenantId,
   name: 'Professional Assistant',
-  systemPrompt: 'You are a professional AI assistant that provides helpful and accurate information.',
+  systemPrompt:
+    'You are a professional AI assistant that provides helpful and accurate information.',
   temperature: '0.7',
   maxTokens: 1000,
   isDefault: false,

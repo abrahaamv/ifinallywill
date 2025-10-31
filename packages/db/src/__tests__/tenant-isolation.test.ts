@@ -120,7 +120,9 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
       // Should only see 2 messages from Tenant A
       expect(messagesA.length).toBe(2);
       // Verify isolation via session IDs (messages uses JOIN-based RLS, no tenant_id column)
-      expect(messagesA.every((m) => [SESSION_A1_ID, SESSION_A2_ID].includes(m.sessionId))).toBe(true);
+      expect(messagesA.every((m) => [SESSION_A1_ID, SESSION_A2_ID].includes(m.sessionId))).toBe(
+        true
+      );
 
       // Query as Tenant B
       const messagesB = await TenantContext.withTenant(TENANT_B_ID, async (tx) => {
@@ -230,10 +232,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
       // Verify message was NOT updated (RLS prevented it)
       // Read as Tenant B (owner) to verify content unchanged
       const message = await TenantContext.withTenant(TENANT_B_ID, async (tx) => {
-        const result = await tx
-          .select()
-          .from(messages)
-          .where(eq(messages.id, insertedMessage!.id));
+        const result = await tx.select().from(messages).where(eq(messages.id, insertedMessage!.id));
         return result[0];
       });
 
@@ -269,10 +268,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
 
       // Verify message was updated (read as Tenant A)
       const message = await TenantContext.withTenant(TENANT_A_ID, async (tx) => {
-        const result = await tx
-          .select()
-          .from(messages)
-          .where(eq(messages.id, insertedMessage!.id));
+        const result = await tx.select().from(messages).where(eq(messages.id, insertedMessage!.id));
         return result[0];
       });
 
@@ -308,10 +304,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
       // Verify message still exists (RLS prevented deletion)
       // Read as Tenant B (owner) to verify message still exists
       const message = await TenantContext.withTenant(TENANT_B_ID, async (tx) => {
-        const result = await tx
-          .select()
-          .from(messages)
-          .where(eq(messages.id, insertedMessage!.id));
+        const result = await tx.select().from(messages).where(eq(messages.id, insertedMessage!.id));
         return result[0];
       });
 
@@ -344,10 +337,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
 
       // Verify message was deleted (read as Tenant A)
       const message = await TenantContext.withTenant(TENANT_A_ID, async (tx) => {
-        const result = await tx
-          .select()
-          .from(messages)
-          .where(eq(messages.id, insertedMessage!.id));
+        const result = await tx.select().from(messages).where(eq(messages.id, insertedMessage!.id));
         return result[0];
       });
 

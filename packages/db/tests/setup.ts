@@ -6,10 +6,10 @@
 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createDatabaseLogger } from '@platform/shared';
 import dotenv from 'dotenv';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
 import { sql } from '../src/client';
-import { createDatabaseLogger } from '@platform/shared';
 
 const logger = createDatabaseLogger();
 

@@ -197,10 +197,7 @@ export async function wrapError<T>(
  * assertExists(user[0], 'User not found');
  * ```
  */
-export function assertExists<T>(
-  value: T | null | undefined,
-  message: string
-): asserts value is T {
+export function assertExists<T>(value: T | null | undefined, message: string): asserts value is T {
   if (value === null || value === undefined) {
     throw notFound({ message });
   }

@@ -7,7 +7,7 @@
 import { Auth } from '@auth/core';
 import { authConfig } from '@platform/auth';
 import { db } from '@platform/db';
-import * as schema from '@platform/db/src/schema';
+import type * as schema from '@platform/db/src/schema';
 import { createModuleLogger } from '@platform/shared';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyReply, FastifyRequest } from 'fastify';

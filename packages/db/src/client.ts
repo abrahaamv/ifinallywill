@@ -64,11 +64,9 @@ export const db = (isBrowser ? null : drizzle(client!, { schema })) as PostgresJ
 // ⚠️ CRITICAL: Use ONLY for registration and system tasks
 // Never use for user-facing queries - catastrophic data leakage risk
 // Type cast needed: Avoid null checks throughout codebase for server-only exports
-export const serviceDb = (isBrowser
-  ? null
-  : serviceClient
-    ? drizzle(serviceClient, { schema })
-    : null) as PostgresJsDatabase<typeof schema>;
+export const serviceDb = (
+  isBrowser ? null : serviceClient ? drizzle(serviceClient, { schema }) : null
+) as PostgresJsDatabase<typeof schema>;
 
 // Tenant-scoped database context
 // Note: This is a helper for application-level tenant filtering

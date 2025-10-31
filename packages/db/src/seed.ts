@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
-import { sql } from 'drizzle-orm';
 import { createDatabaseLogger } from '@platform/shared';
+import { sql } from 'drizzle-orm';
 import { db } from './client';
 import * as schema from './schema/index';
 
@@ -146,7 +146,10 @@ export async function seed() {
       throw new Error('Failed to create team admin user');
     }
 
-    logger.info('✅ Created team admin user', { email: teamAdmin.email, note: 'password: TeamAdmin@123!' });
+    logger.info('✅ Created team admin user', {
+      email: teamAdmin.email,
+      note: 'password: TeamAdmin@123!',
+    });
 
     const user = admin; // Use admin for subsequent operations
 

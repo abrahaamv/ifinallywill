@@ -78,16 +78,19 @@ export const widgetsRouter = router({
   list: protectedProcedure.input(listWidgetsSchema).query(async ({ ctx, input }) => {
     try {
       // Build query with filters
-      let query = ctx.db.select({
-        id: widgets.id,
-        tenantId: widgets.tenantId,
-        name: widgets.name,
-        domainWhitelist: widgets.domainWhitelist,
-        settings: widgets.settings,
-        isActive: widgets.isActive,
-        createdAt: widgets.createdAt,
-        updatedAt: widgets.updatedAt
-      }).from(widgets).$dynamic();
+      let query = ctx.db
+        .select({
+          id: widgets.id,
+          tenantId: widgets.tenantId,
+          name: widgets.name,
+          domainWhitelist: widgets.domainWhitelist,
+          settings: widgets.settings,
+          isActive: widgets.isActive,
+          createdAt: widgets.createdAt,
+          updatedAt: widgets.updatedAt,
+        })
+        .from(widgets)
+        .$dynamic();
 
       // RLS handles tenant filtering automatically
       // No need for .where(eq(widgets.tenantId, ctx.tenantId))
@@ -134,16 +137,20 @@ export const widgetsRouter = router({
    */
   get: protectedProcedure.input(getWidgetSchema).query(async ({ ctx, input }) => {
     try {
-      const [widget] = await ctx.db.select({
-        id: widgets.id,
-        tenantId: widgets.tenantId,
-        name: widgets.name,
-        domainWhitelist: widgets.domainWhitelist,
-        settings: widgets.settings,
-        isActive: widgets.isActive,
-        createdAt: widgets.createdAt,
-        updatedAt: widgets.updatedAt
-      }).from(widgets).where(eq(widgets.id, input.id)).limit(1);
+      const [widget] = await ctx.db
+        .select({
+          id: widgets.id,
+          tenantId: widgets.tenantId,
+          name: widgets.name,
+          domainWhitelist: widgets.domainWhitelist,
+          settings: widgets.settings,
+          isActive: widgets.isActive,
+          createdAt: widgets.createdAt,
+          updatedAt: widgets.updatedAt,
+        })
+        .from(widgets)
+        .where(eq(widgets.id, input.id))
+        .limit(1);
 
       if (!widget) {
         throw notFound({

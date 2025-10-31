@@ -7,12 +7,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  logger,
   createChildLogger,
+  createDatabaseLogger,
   createModuleLogger,
   createRequestLogger,
-  createDatabaseLogger,
   logSafe,
+  logger,
 } from '../index';
 
 describe('Logger Module', () => {

@@ -5,12 +5,19 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     alias: {
-      '@platform/auth': '/home/abrahaam/Documents/GitHub/platform/packages/api/src/__tests__/mocks/auth.mock.ts',
+      '@platform/auth':
+        '/home/abrahaam/Documents/GitHub/platform/packages/api/src/__tests__/mocks/auth.mock.ts',
     },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.config.*', '**/tests/**', '**/__tests__/**'],
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/*.config.*',
+        '**/tests/**',
+        '**/__tests__/**',
+      ],
       thresholds: {
         lines: 80,
         functions: 80,

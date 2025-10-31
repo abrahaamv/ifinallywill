@@ -3,7 +3,7 @@
  * Validates Gemini AI integration and vision optimization
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GoogleProvider } from '../providers/google';
 import type { AICompletionRequest } from '../types';
 

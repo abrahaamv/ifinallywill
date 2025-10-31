@@ -52,9 +52,7 @@ describe('Complexity Analysis', () => {
     });
 
     it('should consider message length in complexity', () => {
-      const shortMessage: Message[] = [
-        { role: 'user', content: 'What is TypeScript?' },
-      ];
+      const shortMessage: Message[] = [{ role: 'user', content: 'What is TypeScript?' }];
 
       const longMessage: Message[] = [
         {
@@ -73,10 +71,14 @@ describe('Complexity Analysis', () => {
     it('should consider conversation depth', () => {
       const singleTurn: Message[] = [{ role: 'user', content: 'Hello' }];
 
-      const multiTurn: Message[] = Array.from({ length: 20 }, (_, i) => ({
-        role: i % 2 === 0 ? 'user' : 'assistant',
-        content: `Message ${i}`,
-      } as Message));
+      const multiTurn: Message[] = Array.from(
+        { length: 20 },
+        (_, i) =>
+          ({
+            role: i % 2 === 0 ? 'user' : 'assistant',
+            content: `Message ${i}`,
+          }) as Message
+      );
 
       const singleAnalysis = analyzeComplexity(singleTurn);
       const multiAnalysis = analyzeComplexity(multiTurn);
@@ -105,9 +107,7 @@ describe('Complexity Analysis', () => {
       ];
 
       for (const keyword of reasoningKeywords) {
-        const messages: Message[] = [
-          { role: 'user', content: `Can you ${keyword} this problem?` },
-        ];
+        const messages: Message[] = [{ role: 'user', content: `Can you ${keyword} this problem?` }];
 
         const analysis = analyzeComplexity(messages);
 
@@ -135,9 +135,7 @@ describe('Complexity Analysis', () => {
       ];
 
       for (const keyword of creativityKeywords) {
-        const messages: Message[] = [
-          { role: 'user', content: `Please ${keyword} a solution` },
-        ];
+        const messages: Message[] = [{ role: 'user', content: `Please ${keyword} a solution` }];
 
         const analysis = analyzeComplexity(messages);
 
@@ -253,26 +251,20 @@ describe('Complexity Analysis', () => {
       ];
 
       for (const keyword of visionKeywords) {
-        const messages: Message[] = [
-          { role: 'user', content: `Can you analyze this ${keyword}?` },
-        ];
+        const messages: Message[] = [{ role: 'user', content: `Can you analyze this ${keyword}?` }];
 
         expect(requiresVisionModel(messages)).toBe(true);
       }
     });
 
     it('should return false for text-only queries', () => {
-      const messages: Message[] = [
-        { role: 'user', content: 'What is the capital of France?' },
-      ];
+      const messages: Message[] = [{ role: 'user', content: 'What is the capital of France?' }];
 
       expect(requiresVisionModel(messages)).toBe(false);
     });
 
     it('should be case-insensitive', () => {
-      const messages: Message[] = [
-        { role: 'user', content: 'What do you SEE in this IMAGE?' },
-      ];
+      const messages: Message[] = [{ role: 'user', content: 'What do you SEE in this IMAGE?' }];
 
       expect(requiresVisionModel(messages)).toBe(true);
     });

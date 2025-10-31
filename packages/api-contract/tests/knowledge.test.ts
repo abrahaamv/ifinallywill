@@ -13,9 +13,9 @@
  * Coverage Target: ~80% of 634-line knowledge.ts router
  */
 
-import { TRPCError } from '@trpc/server';
 import { serviceDb } from '@platform/db';
 import type { KnowledgeChunk as DbChunk, KnowledgeDocument as DbDocument } from '@platform/db';
+import { TRPCError } from '@trpc/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { knowledgeRouter } from '../src/routers/knowledge';
 

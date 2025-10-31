@@ -3,10 +3,10 @@
  * Tests error catching, fallback UI rendering, and recovery mechanisms
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ErrorBoundary, withErrorBoundary } from '../ErrorBoundary';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ErrorInfo } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ErrorBoundary, withErrorBoundary } from '../ErrorBoundary';
 
 // Mock logger
 vi.mock('@platform/shared', () => ({
@@ -161,9 +161,8 @@ describe('ErrorBoundary', () => {
 
   describe('HOC withErrorBoundary', () => {
     it('wraps component with error boundary', () => {
-      const TestComponent = ({ shouldThrow = false }: { shouldThrow?: boolean }) => (
-        shouldThrow ? <ThrowError shouldThrow={true} /> : <div>Wrapped content</div>
-      );
+      const TestComponent = ({ shouldThrow = false }: { shouldThrow?: boolean }) =>
+        shouldThrow ? <ThrowError shouldThrow={true} /> : <div>Wrapped content</div>;
 
       const WrappedComponent = withErrorBoundary(TestComponent, { level: 'component' });
 

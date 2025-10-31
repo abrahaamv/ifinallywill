@@ -4,9 +4,9 @@
  * Production-ready error handling with logging and user-friendly messaging
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { Alert, AlertDescription, AlertTitle, Button, Card, CardContent } from '@platform/ui';
 import { AlertCircle, AlertTriangle, Home, RefreshCw } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 const logger = createModuleLogger('ErrorBoundary');

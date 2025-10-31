@@ -89,7 +89,7 @@ export const authRouter = router({
         mfaSecret: users.mfaSecret,
         mfaBackupCodes: users.mfaBackupCodes,
         failedLoginAttempts: users.failedLoginAttempts,
-        lockedUntil: users.lockedUntil
+        lockedUntil: users.lockedUntil,
       })
       .from(users)
       .where(eq(users.email, input.email))
@@ -371,7 +371,7 @@ export const authRouter = router({
       .select({
         identifier: verificationTokens.identifier,
         token: verificationTokens.token,
-        expires: verificationTokens.expires
+        expires: verificationTokens.expires,
       })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
@@ -399,7 +399,7 @@ export const authRouter = router({
         id: users.id,
         tenantId: users.tenantId,
         email: users.email,
-        emailVerified: users.emailVerified
+        emailVerified: users.emailVerified,
       })
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))
@@ -448,7 +448,7 @@ export const authRouter = router({
         .select({
           id: users.id,
           email: users.email,
-          emailVerified: users.emailVerified
+          emailVerified: users.emailVerified,
         })
         .from(users)
         .where(eq(users.email, input.email))
@@ -515,7 +515,7 @@ export const authRouter = router({
       const [user] = await serviceDb
         .select({
           id: users.id,
-          email: users.email
+          email: users.email,
         })
         .from(users)
         .where(eq(users.email, input.email))
@@ -573,7 +573,7 @@ export const authRouter = router({
       .select({
         identifier: verificationTokens.identifier,
         token: verificationTokens.token,
-        expires: verificationTokens.expires
+        expires: verificationTokens.expires,
       })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
@@ -602,7 +602,7 @@ export const authRouter = router({
         tenantId: users.tenantId,
         email: users.email,
         passwordHash: users.passwordHash,
-        passwordAlgorithm: users.passwordAlgorithm
+        passwordAlgorithm: users.passwordAlgorithm,
       })
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))

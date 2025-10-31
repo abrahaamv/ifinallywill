@@ -1,10 +1,10 @@
+import { createModuleLogger } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 /**
  * LiveKit Service (Phase 5 - Week 2)
  * Room management and access token generation
  */
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
-import { createModuleLogger } from '@platform/shared';
 
 const logger = createModuleLogger('livekit');
 /**

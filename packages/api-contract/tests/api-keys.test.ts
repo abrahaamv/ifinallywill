@@ -154,8 +154,8 @@ describe('API Keys Router', () => {
       keyHash: 'hashed_key_value',
       keyPrefix: type === 'publishable' ? 'pk_live_test' : 'sk_live_test',
     }));
-    vi.mocked(ApiKeyService.isValidFormat).mockImplementation((key: string) =>
-      key.startsWith('pk_') || key.startsWith('sk_')
+    vi.mocked(ApiKeyService.isValidFormat).mockImplementation(
+      (key: string) => key.startsWith('pk_') || key.startsWith('sk_')
     );
     vi.mocked(ApiKeyService.hashApiKey).mockImplementation((key: string) => `hash_${key}`);
   });
@@ -356,9 +356,7 @@ describe('API Keys Router', () => {
     it('should reject listing when user has no tenant', async () => {
       const { caller } = createCaller('member', false);
 
-      await expect(caller.list()).rejects.toThrow(
-        'Authentication required - please sign in'
-      );
+      await expect(caller.list()).rejects.toThrow('Authentication required - please sign in');
     });
   });
 

@@ -67,7 +67,7 @@ export async function setTenantContext(tenantId: string): Promise<void> {
  * Uses RESET to clear the setting entirely from the session
  */
 export async function clearTenantContext(): Promise<void> {
-  await sql.unsafe("RESET app.current_tenant_id");
+  await sql.unsafe('RESET app.current_tenant_id');
 }
 
 /**

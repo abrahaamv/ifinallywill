@@ -114,9 +114,7 @@ describe('AIRouter', () => {
   describe('Provider Selection', () => {
     it('should route simple queries to gpt-4o-mini', async () => {
       const router = new AIRouter(config);
-      const messages: Message[] = [
-        { role: 'user', content: 'What is 2+2?' },
-      ];
+      const messages: Message[] = [{ role: 'user', content: 'What is 2+2?' }];
 
       const decision = router.getRoutingDecision(messages);
 

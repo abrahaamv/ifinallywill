@@ -3,6 +3,7 @@
  * Provides consistent sidebar, header, and navigation
  */
 
+import { createModuleLogger } from '@platform/shared';
 import {
   AppHeader,
   AppShell,
@@ -23,7 +24,6 @@ import {
   Video,
   Zap,
 } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChatWidget } from '../components/ChatWidget';
 

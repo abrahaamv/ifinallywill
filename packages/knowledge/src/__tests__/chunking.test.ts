@@ -6,10 +6,10 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  type ChunkOptions,
   chunkDocument,
   estimateTokens,
   validateChunkOptions,
-  type ChunkOptions,
 } from '../chunking';
 
 describe('chunkDocument()', () => {

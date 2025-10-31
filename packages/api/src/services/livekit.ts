@@ -8,8 +8,8 @@
  * - Error handling and logging
  */
 
-import { AccessToken, type Room, RoomServiceClient } from 'livekit-server-sdk';
 import { createModuleLogger } from '@platform/shared';
+import { AccessToken, type Room, RoomServiceClient } from 'livekit-server-sdk';
 
 const logger = createModuleLogger('livekit-service');
 

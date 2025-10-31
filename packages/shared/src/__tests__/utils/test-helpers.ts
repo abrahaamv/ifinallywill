@@ -62,10 +62,7 @@ export const suppressConsole = () => {
  * Create a mock environment variable set
  * Useful for testing environment-dependent behavior
  */
-export const withEnv = <T>(
-  env: Record<string, string>,
-  fn: () => T
-): T => {
+export const withEnv = <T>(env: Record<string, string>, fn: () => T): T => {
   const originalEnv = { ...process.env };
   Object.assign(process.env, env);
   try {

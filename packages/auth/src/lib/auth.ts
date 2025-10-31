@@ -7,10 +7,10 @@
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import {
-  serviceDb,
-  users,
   accounts,
+  serviceDb,
   authSessions as sessions,
+  users,
   verificationTokens,
 } from '@platform/db';
 import { createModuleLogger } from '@platform/shared';

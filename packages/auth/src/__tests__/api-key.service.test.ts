@@ -3,7 +3,7 @@
  * Validates API key generation, validation, and security
  */
 
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ApiKeyService } from '../services/api-key.service';
 import type { ApiKeyType } from '../services/api-key.service';
 
@@ -193,9 +193,7 @@ describe('ApiKeyService', () => {
 
   describe('Security properties', () => {
     it('should generate cryptographically random keys', () => {
-      const keys = Array.from({ length: 10 }, () =>
-        ApiKeyService.generateApiKey('publishable')
-      );
+      const keys = Array.from({ length: 10 }, () => ApiKeyService.generateApiKey('publishable'));
 
       // Check that all keys are unique (no collisions in small sample)
       const uniqueKeys = new Set(keys.map((k) => k.apiKey));

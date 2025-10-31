@@ -67,7 +67,9 @@ function createRedactor() {
         redacted[key] = createRedactor()(value as Record<string, unknown>);
       } else if (Array.isArray(value)) {
         redacted[key] = value.map((item) =>
-          item && typeof item === 'object' ? createRedactor()(item as Record<string, unknown>) : item
+          item && typeof item === 'object'
+            ? createRedactor()(item as Record<string, unknown>)
+            : item
         );
       }
     }

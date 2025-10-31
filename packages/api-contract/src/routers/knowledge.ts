@@ -430,7 +430,8 @@ export const knowledgeRouter = router({
         // Initialize Voyage AI provider
         if (!process.env.VOYAGE_API_KEY) {
           throw internalError({
-            message: 'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.',
+            message:
+              'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.',
           });
         }
 

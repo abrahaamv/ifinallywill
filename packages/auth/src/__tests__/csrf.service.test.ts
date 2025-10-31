@@ -3,7 +3,7 @@
  * Validates CSRF token fetching and validation
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CSRFService } from '../services/csrf.service';
 
 // Mock fetch globally
@@ -93,9 +93,7 @@ describe('CSRFService', () => {
       expect(CSRFService.validateTokenFormat('AbCdEf1234567890_-AbCdEf1234567890_-')).toBe(true);
 
       // Long token (64 chars)
-      expect(
-        CSRFService.validateTokenFormat('a'.repeat(64))
-      ).toBe(true);
+      expect(CSRFService.validateTokenFormat('a'.repeat(64))).toBe(true);
     });
 
     it('should reject tokens that are too short', () => {

@@ -3,14 +3,14 @@
  * Validates Redis-based distributed rate limiting
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  rateLimitPlugin,
+  applyRateLimit,
+  getApiRateLimit,
   getAuthRateLimit,
   getChatRateLimit,
-  getApiRateLimit,
-  applyRateLimit,
+  rateLimitPlugin,
 } from '../plugins/rate-limit';
 
 // Mock ioredis

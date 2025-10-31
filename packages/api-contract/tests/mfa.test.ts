@@ -61,9 +61,7 @@ vi.mock('@platform/auth', () => ({
       valid: code === '123456',
       usedBackupCode: false,
     })),
-    hashBackupCodes: vi.fn(async (codes: string[]) =>
-      codes.map(code => `hashed_${code}`)
-    ),
+    hashBackupCodes: vi.fn(async (codes: string[]) => codes.map((code) => `hashed_${code}`)),
   },
   passwordService: {
     verifyAndUpgrade: vi.fn(async (password: string, hash: string, algorithm: string) => ({
@@ -158,24 +156,30 @@ describe('MFA Router', () => {
     vi.clearAllMocks();
 
     // Restore MFAService mock implementations after clearAllMocks
-    vi.mocked(MFAService.generateSetup).mockImplementation(async (email: string, issuer: string) => ({
-      secret: 'encrypted_test_secret',
-      qrCodeDataUrl: 'data:image/png;base64,test_qr_code',
-      backupCodes: ['BACKUP1', 'BACKUP2', 'BACKUP3'],
-    }));
-    vi.mocked(MFAService.verifyCode).mockImplementation(async (code: string, secret: string, backupCodes: string[]) => ({
-      valid: code === '123456',
-      usedBackupCode: false,
-    }));
+    vi.mocked(MFAService.generateSetup).mockImplementation(
+      async (email: string, issuer: string) => ({
+        secret: 'encrypted_test_secret',
+        qrCodeDataUrl: 'data:image/png;base64,test_qr_code',
+        backupCodes: ['BACKUP1', 'BACKUP2', 'BACKUP3'],
+      })
+    );
+    vi.mocked(MFAService.verifyCode).mockImplementation(
+      async (code: string, secret: string, backupCodes: string[]) => ({
+        valid: code === '123456',
+        usedBackupCode: false,
+      })
+    );
     vi.mocked(MFAService.hashBackupCodes).mockImplementation(async (codes: string[]) =>
-      codes.map(code => `hashed_${code}`)
+      codes.map((code) => `hashed_${code}`)
     );
 
     // Restore passwordService mock implementation
-    vi.mocked(passwordService.verifyAndUpgrade).mockImplementation(async (password: string, hash: string, algorithm: string) => ({
-      valid: password === 'correct_password',
-      needsUpgrade: false,
-    }));
+    vi.mocked(passwordService.verifyAndUpgrade).mockImplementation(
+      async (password: string, hash: string, algorithm: string) => ({
+        valid: password === 'correct_password',
+        needsUpgrade: false,
+      })
+    );
   });
 
   /**
@@ -217,7 +221,9 @@ describe('MFA Router', () => {
         }),
       } as any);
 
-      await expect(caller.setup()).rejects.toThrow('MFA is already enabled. Disable first to re-setup.');
+      await expect(caller.setup()).rejects.toThrow(
+        'MFA is already enabled. Disable first to re-setup.'
+      );
     });
 
     it('should handle missing user during setup', async () => {
@@ -461,11 +467,11 @@ describe('MFA Router', () => {
         usedBackupCode: false,
       });
 
-      expect(MFAService.verifyCode).toHaveBeenCalledWith(
-        '123456',
-        'encrypted_test_secret',
-        ['hashed_BACKUP1', 'hashed_BACKUP2', 'hashed_BACKUP3']
-      );
+      expect(MFAService.verifyCode).toHaveBeenCalledWith('123456', 'encrypted_test_secret', [
+        'hashed_BACKUP1',
+        'hashed_BACKUP2',
+        'hashed_BACKUP3',
+      ]);
     });
 
     it('should verify valid backup code', async () => {

@@ -36,8 +36,8 @@
  * ```
  */
 
-import { useCallback, useEffect, useState } from 'react';
 import { createModuleLogger } from '@platform/shared';
+import { useCallback, useEffect, useState } from 'react';
 import { CSRFService, type CSRFToken } from '../services/csrf.service';
 
 const logger = createModuleLogger('useCSRF');

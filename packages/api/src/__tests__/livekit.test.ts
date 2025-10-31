@@ -3,7 +3,7 @@
  * Validates room management and token generation
  */
 
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LiveKitService, createLiveKitService, getLiveKitService } from '../services/livekit';
 import type { CreateRoomOptions, TokenOptions } from '../services/livekit';
 

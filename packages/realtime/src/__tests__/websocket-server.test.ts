@@ -4,7 +4,7 @@
  * Tests WebSocket connections, message handling, Redis pub/sub, and authentication.
  */
 
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MessageType, RealtimeServer } from '../websocket-server';
 import type { WSMessage } from '../websocket-server';
 
@@ -293,7 +293,10 @@ describe('RealtimeServer', () => {
       );
 
       expect(mockInsert).toHaveBeenCalled();
-      expect((server as any).redis.publish).toHaveBeenCalledWith('chat:broadcast', expect.any(String));
+      expect((server as any).redis.publish).toHaveBeenCalledWith(
+        'chat:broadcast',
+        expect.any(String)
+      );
     });
 
     it('should handle USER_TYPING', async () => {
@@ -626,7 +629,10 @@ describe('RealtimeServer', () => {
 
       expect((server as any).clients.has(clientId)).toBe(false);
       expect((server as any).typingUsers.get('session-1')?.has('user-123')).toBe(false);
-      expect((server as any).redis.publish).toHaveBeenCalledWith('chat:presence', expect.any(String));
+      expect((server as any).redis.publish).toHaveBeenCalledWith(
+        'chat:presence',
+        expect.any(String)
+      );
     });
   });
 

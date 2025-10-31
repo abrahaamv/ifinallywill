@@ -9,8 +9,8 @@
  * 4. Support MFA (TOTP) when enabled
  */
 
-import { Button } from '@platform/ui';
 import { createModuleLogger } from '@platform/shared';
+import { Button } from '@platform/ui';
 import { useState } from 'react';
 
 const logger = createModuleLogger('LoginPage');

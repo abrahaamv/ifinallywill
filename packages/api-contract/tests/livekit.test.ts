@@ -250,9 +250,7 @@ describe('LiveKit Router', () => {
     it('should handle room creation failures', async () => {
       const { caller } = createCaller(true);
 
-      vi.mocked(mockRoomServiceClient.createRoom).mockRejectedValue(
-        new Error('Network timeout')
-      );
+      vi.mocked(mockRoomServiceClient.createRoom).mockRejectedValue(new Error('Network timeout'));
 
       await expect(
         caller.createRoom({
@@ -530,9 +528,7 @@ describe('LiveKit Router', () => {
     it('should handle listRooms API failures', async () => {
       const { caller } = createCaller(true);
 
-      vi.mocked(mockRoomServiceClient.listRooms).mockRejectedValue(
-        new Error('API request failed')
-      );
+      vi.mocked(mockRoomServiceClient.listRooms).mockRejectedValue(new Error('API request failed'));
 
       await expect(caller.listRooms()).rejects.toThrow('Failed to list rooms');
     });
@@ -595,9 +591,7 @@ describe('LiveKit Router', () => {
     it('should handle deletion failures', async () => {
       const { caller } = createCaller(true);
 
-      vi.mocked(mockRoomServiceClient.deleteRoom).mockRejectedValue(
-        new Error('Room not found')
-      );
+      vi.mocked(mockRoomServiceClient.deleteRoom).mockRejectedValue(new Error('Room not found'));
 
       await expect(
         caller.deleteRoom({
