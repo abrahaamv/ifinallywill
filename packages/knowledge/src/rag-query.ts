@@ -8,6 +8,7 @@ import { createModuleLogger } from '@platform/shared';
 import { sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { createVoyageProvider } from './embeddings';
+import { cohereReranker, isCohereRerankingEnabled } from './reranker';
 import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
 
 const logger = createModuleLogger('RAGQuery');
@@ -107,7 +108,7 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
     // and use pure semantic scores to avoid penalizing good semantic matches
     const shouldUseReranking = useReranking && keywordResults.length > 0;
 
-    const mergedResults = shouldUseReranking
+    let mergedResults = shouldUseReranking
       ? mergeAndRerank(semanticResults, keywordResults, hybridWeights)
       : semanticResults.map((r) => ({
           chunk: {
@@ -126,6 +127,18 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
                 ? ('medium' as const)
                 : ('low' as const),
         }));
+
+    // Phase 10: Cohere reranking (20-40% accuracy improvement)
+    // Apply after initial merging if Cohere API key is configured
+    if (isCohereRerankingEnabled() && mergedResults.length > 0) {
+      try {
+        logger.info('Applying Cohere reranking', { resultCount: mergedResults.length });
+        mergedResults = await cohereReranker.rerankSearchResults(query, mergedResults, topK * 2);
+      } catch (error) {
+        logger.warn('Cohere reranking failed, using base scores', { error });
+        // Continue with base scores if Cohere fails
+      }
+    }
 
     // Step 5: Filter by minimum score and limit to topK
     const filteredResults = mergedResults.filter((r) => r.score >= minScore).slice(0, topK);

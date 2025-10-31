@@ -35,3 +35,12 @@ export {
   VoyageEmbeddingProvider,
   createVoyageProvider,
 } from './embeddings';
+
+// Cohere reranking (Phase 10)
+export type { RerankOptions, RerankResult } from './reranker';
+
+export {
+  cohereReranker,
+  isCohereRerankingEnabled,
+  estimateCohereRerankingCost,
+} from './reranker';
