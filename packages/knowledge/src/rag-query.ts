@@ -4,10 +4,13 @@
  */
 
 import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
 import { sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { createVoyageProvider } from './embeddings';
 import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
+
+const logger = createModuleLogger('RAGQuery');
 
 /**
  * Result shape from semantic search SQL query
@@ -142,7 +145,7 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
       processingTimeMs,
     };
   } catch (error) {
-    console.error('RAG query failed:', error);
+    logger.error('RAG query failed', { error });
     throw new Error(
       `Failed to execute RAG query: ${error instanceof Error ? error.message : 'Unknown error'}`
     );

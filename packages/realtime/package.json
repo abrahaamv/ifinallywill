@@ -6,15 +6,18 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env src/index.ts",
+    "dev": "tsx watch --env-file=../../.env.local src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
     "@platform/auth": "workspace:*",
     "@platform/db": "workspace:*",
+    "@platform/shared": "workspace:*",
     "cookie": "0.7.2",
     "drizzle-orm": "0.44.6",
     "ioredis": "5.8.0",
@@ -25,7 +28,9 @@
     "@types/cookie": "0.6.0",
     "@types/node": "22.10.5",
     "@types/ws": "8.5.13",
+    "@vitest/coverage-v8": "2.1.8",
     "tsx": "4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   }
 }

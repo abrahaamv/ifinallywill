@@ -14,8 +14,9 @@
  */
 
 import { messages, sessions } from '@platform/db';
+import { badRequest, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
-import { count, desc, eq } from 'drizzle-orm';
+import { count, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { ownerProcedure, protectedProcedure, router } from '../trpc';
 
@@ -125,8 +126,7 @@ export const sessionsRouter = router({
       // Filter by ended status
       if (!input.includeEnded) {
         // Only return active sessions (endedAt is null)
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM requires explicit null comparison
-        query = query.where(eq(sessions.endedAt, null as any));
+        query = query.where(isNull(sessions.endedAt));
       }
 
       // Order by most recent first
@@ -141,8 +141,7 @@ export const sessionsRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM dynamic query result type
-        sessions: results.map((session: any) => ({
+        sessions: results.map((session) => ({
           id: session.id,
           widgetId: session.widgetId,
           meetingId: session.meetingId,
@@ -156,11 +155,10 @@ export const sessionsRouter = router({
         hasMore: input.offset + results.length < totalCount,
       };
     } catch (error) {
-      console.error('Failed to list sessions:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve sessions',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -179,8 +177,7 @@ export const sessionsRouter = router({
         .limit(1);
 
       if (!session) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
@@ -198,11 +195,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to get session:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve session',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -229,8 +225,7 @@ export const sessionsRouter = router({
         .returning();
 
       if (!newSession) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create session',
         });
       }
@@ -247,11 +242,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to create session:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to create session',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -272,15 +266,13 @@ export const sessionsRouter = router({
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
 
       if (existing.endedAt) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Session already ended',
         });
       }
@@ -295,8 +287,7 @@ export const sessionsRouter = router({
         .returning();
 
       if (!ended) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to end session',
         });
       }
@@ -308,11 +299,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to end session:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to end session',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -333,8 +323,7 @@ export const sessionsRouter = router({
         .returning({ id: sessions.id });
 
       if (!deleted) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
@@ -346,11 +335,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to delete session:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to delete session',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -373,8 +361,7 @@ export const sessionsRouter = router({
         .limit(1);
 
       if (!session) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
@@ -397,8 +384,7 @@ export const sessionsRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
-        // biome-ignore lint/suspicious/noExplicitAny: Drizzle ORM dynamic query result type
-        messages: results.map((message: any) => ({
+        messages: results.map((message) => ({
           id: message.id,
           sessionId: message.sessionId,
           role: message.role,
@@ -413,11 +399,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to list messages:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve messages',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -438,15 +423,13 @@ export const sessionsRouter = router({
         .limit(1);
 
       if (!session) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
 
       if (session.endedAt) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Cannot send message to ended session',
         });
       }
@@ -464,8 +447,7 @@ export const sessionsRouter = router({
         .returning();
 
       if (!userMessage) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to send message',
         });
       }
@@ -598,11 +580,10 @@ export const sessionsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to send message:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to send message',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),

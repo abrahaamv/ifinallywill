@@ -31,7 +31,7 @@
 import { ApiKeyService } from '@platform/auth';
 import { db, eq } from '@platform/db';
 import { apiKeys } from '@platform/db';
-import { TRPCError } from '@trpc/server';
+import { badRequest, forbidden, notFound, unauthorized } from '@platform/shared';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 
@@ -92,8 +92,7 @@ export const apiKeysRouter = router({
       const tenantId = ctx.session.user.tenantId;
 
       if (!tenantId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
+        throw unauthorized({
           message: 'User must belong to a tenant to create API keys',
         });
       }
@@ -142,8 +141,7 @@ export const apiKeysRouter = router({
     const tenantId = ctx.session.user.tenantId;
 
     if (!tenantId) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
+      throw unauthorized({
         message: 'User must belong to a tenant to list API keys',
       });
     }
@@ -190,8 +188,7 @@ export const apiKeysRouter = router({
       const [key] = await db.select().from(apiKeys).where(eq(apiKeys.id, input.keyId)).limit(1);
 
       if (!key) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'API key not found',
         });
       }
@@ -199,15 +196,13 @@ export const apiKeysRouter = router({
       const tenantId = ctx.session.user.tenantId;
 
       if (!tenantId || key.tenantId !== tenantId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
+        throw forbidden({
           message: 'You do not have permission to revoke this API key',
         });
       }
 
       if (key.revokedAt) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'API key is already revoked',
         });
       }
@@ -317,8 +312,7 @@ export const apiKeysRouter = router({
       const [key] = await db.select().from(apiKeys).where(eq(apiKeys.id, input.keyId)).limit(1);
 
       if (!key) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'API key not found',
         });
       }
@@ -326,8 +320,7 @@ export const apiKeysRouter = router({
       const tenantId = ctx.session.user.tenantId;
 
       if (!tenantId || key.tenantId !== tenantId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
+        throw forbidden({
           message: 'You do not have permission to view this API key',
         });
       }

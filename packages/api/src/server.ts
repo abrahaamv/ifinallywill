@@ -15,10 +15,13 @@
 import cors from '@fastify/cors';
 import { appRouter, createContext } from '@platform/api-contract';
 import { RealtimeServer } from '@platform/realtime';
+import { createModuleLogger } from '@platform/shared';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import Fastify from 'fastify';
 import { authPlugin } from './plugins/auth';
 import { rateLimitPlugin } from './plugins/rate-limit';
+
+const logger = createModuleLogger('api-server');
 
 const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 3001;
 const WS_PORT = process.env.WS_PORT ? Number.parseInt(process.env.WS_PORT) : 3002;
@@ -61,22 +64,30 @@ async function main() {
   // Register CORS with production security
   await fastify.register(cors, {
     origin: (origin, callback) => {
-      // Allowed origins (production + development)
+      // Get allowed origins from environment variables (NO FALLBACKS - fail-fast)
+      const getAllowedOrigins = (): string[] => {
+        const origins = [
+          process.env.APP_URL,
+          process.env.DASHBOARD_URL,
+          process.env.MEET_URL,
+          process.env.WIDGET_URL,
+        ].filter(Boolean) as string[];
+
+        if (origins.length === 0) {
+          throw new Error(
+            'CORS configuration error: No allowed origins configured.\n' +
+              'Please set APP_URL, DASHBOARD_URL, MEET_URL, and WIDGET_URL environment variables.\n' +
+              'See .env.example for configuration template.'
+          );
+        }
+
+        return origins;
+      };
+
       const allowed: Array<string | RegExp> = [
-        process.env.MAIN_APP_URL || 'https://platform.com',
-        process.env.DASHBOARD_URL || 'https://dashboard.platform.com',
-        process.env.MEETING_URL || 'https://meet.platform.com',
-        // Subdomain wildcard regex (e.g., *.platform.com)
-        /^https:\/\/.*\.platform\.com$/,
-        // Development origins
-        ...(process.env.NODE_ENV === 'development'
-          ? [
-              'http://localhost:5173',
-              'http://localhost:5174',
-              'http://localhost:5175',
-              'http://localhost:5176',
-            ]
-          : []),
+        ...getAllowedOrigins(),
+        // Subdomain wildcard regex (e.g., *.platform.com for production)
+        ...(process.env.NODE_ENV === 'production' ? [/^https:\/\/.*\.platform\.com$/] : []),
       ];
 
       // Check if origin is allowed
@@ -182,6 +193,6 @@ async function main() {
 
 // Start server
 main().catch((error: unknown) => {
-  console.error('Fatal error starting servers:', error);
+  logger.error('Fatal error starting servers', { error });
   process.exit(1);
 });

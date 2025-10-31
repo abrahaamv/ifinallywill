@@ -3,7 +3,7 @@
  * Room management and access token generation endpoints
  */
 
-import { TRPCError } from '@trpc/server';
+import { internalError } from '@platform/shared';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import { z } from 'zod';
 import { protectedProcedure, publicProcedure, router } from '../trpc';
@@ -49,8 +49,7 @@ export const livekitRouter = router({
    */
   createRoom: protectedProcedure.input(createRoomSchema).mutation(async ({ ctx, input }) => {
     if (!roomClient) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message:
           'LiveKit not configured. Please set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET environment variables.',
       });
@@ -76,12 +75,11 @@ export const livekitRouter = router({
         createdAt: Number(room.creationTime), // Convert BigInt to number for JSON serialization
       };
     } catch (error) {
-      console.error('Failed to create LiveKit room:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to create room',
         // Don't pass error object directly - it may contain BigInt values
         cause: error instanceof Error ? { message: error.message } : undefined,
+        logLevel: 'error',
       });
     }
   }),
@@ -92,8 +90,7 @@ export const livekitRouter = router({
    */
   joinRoom: publicProcedure.input(joinRoomSchema).mutation(async ({ input }) => {
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message:
           'LiveKit not configured. Please set LIVEKIT_API_KEY and LIVEKIT_API_SECRET environment variables.',
       });
@@ -129,12 +126,11 @@ export const livekitRouter = router({
         livekitUrl: LIVEKIT_URL || '',
       };
     } catch (error) {
-      console.error('Failed to generate access token:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to join room',
         // Don't pass error object directly - it may contain BigInt values
         cause: error instanceof Error ? { message: error.message } : undefined,
+        logLevel: 'error',
       });
     }
   }),
@@ -144,8 +140,7 @@ export const livekitRouter = router({
    */
   listRooms: protectedProcedure.query(async ({ ctx }) => {
     if (!roomClient) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'LiveKit not configured',
       });
     }
@@ -167,12 +162,11 @@ export const livekitRouter = router({
         })),
       };
     } catch (error) {
-      console.error('Failed to list rooms:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to list rooms',
         // Don't pass error object directly - it may contain BigInt values
         cause: error instanceof Error ? { message: error.message } : undefined,
+        logLevel: 'error',
       });
     }
   }),
@@ -182,8 +176,7 @@ export const livekitRouter = router({
    */
   deleteRoom: protectedProcedure.input(deleteRoomSchema).mutation(async ({ ctx, input }) => {
     if (!roomClient) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'LiveKit not configured',
       });
     }
@@ -196,12 +189,11 @@ export const livekitRouter = router({
 
       return { success: true };
     } catch (error) {
-      console.error('Failed to delete room:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to delete room',
         // Don't pass error object directly - it may contain BigInt values
         cause: error instanceof Error ? { message: error.message } : undefined,
+        logLevel: 'error',
       });
     }
   }),

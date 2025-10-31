@@ -7,9 +7,12 @@
 import { Auth } from '@auth/core';
 import { authConfig } from '@platform/auth';
 import { db } from '@platform/db';
-import type * as schema from '@platform/db';
+import * as schema from '@platform/db/src/schema';
+import { createModuleLogger } from '@platform/shared';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+const logger = createModuleLogger('trpc-context');
 
 /**
  * Auth.js User type
@@ -48,7 +51,7 @@ export interface Context {
   tenantId: string;
   userId: string;
   role: 'owner' | 'admin' | 'member';
-  db: NodePgDatabase<typeof schema>;
+  db: PostgresJsDatabase<typeof schema>;
 }
 
 /**
@@ -82,7 +85,7 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
   } catch (error) {
     // Only log errors that aren't simply unauthenticated requests
     if (error instanceof Error && !error.message.includes('null')) {
-      console.error('[Context] Failed to get session:', error);
+      logger.error('Failed to get session', { error });
     }
     return null;
   }

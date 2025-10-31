@@ -13,6 +13,7 @@
  */
 
 import { sql } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
 import type { Session } from 'next-auth';
 import { auth } from './auth';
 import {
@@ -21,6 +22,8 @@ import {
   extractTenantFromSession,
   isValidTenantId,
 } from './tenant-context';
+
+const logger = createModuleLogger('auth-middleware');
 
 /**
  * Auth context attached to each request
@@ -90,7 +93,7 @@ export async function authMiddleware(_req: Request): Promise<AuthContext> {
   try {
     await sql.unsafe(`SELECT set_config('app.current_tenant_id', '${tenantId}', true)`);
   } catch (error) {
-    console.error('Failed to set tenant context:', error);
+    logger.error('Failed to set tenant context', { error });
     throw new AuthError('Failed to initialize request context', 'INVALID_TENANT', 500);
   }
 
@@ -166,6 +169,6 @@ export async function logoutCleanup(): Promise<void> {
   try {
     await sql.unsafe('RESET app.current_tenant_id');
   } catch (error) {
-    console.error('Failed to cleanup tenant context:', error);
+    logger.error('Failed to cleanup tenant context', { error });
   }
 }

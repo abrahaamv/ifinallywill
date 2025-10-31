@@ -20,6 +20,10 @@
  * @see https://authjs.dev/concepts/security#csrf-protection
  */
 
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('CSRFService');
+
 export interface CSRFToken {
   token: string;
   expiresAt: number;
@@ -63,7 +67,7 @@ export class CSRFService {
         expiresAt: Date.now() + 3600000, // 1 hour expiry (typical session duration)
       };
     } catch (error) {
-      console.error('Failed to fetch CSRF token:', error);
+      logger.error('Failed to fetch CSRF token', { error });
       throw new Error('CSRF token fetch failed');
     }
   }

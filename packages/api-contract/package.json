@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@auth/core": "0.40.0",
-    "@node-rs/argon2": "^2.0.2",
+    "@node-rs/argon2": "2.0.2",
     "@platform/ai-core": "workspace:*",
-    "@platform/auth": "workspace:^",
+    "@platform/auth": "workspace:*",
     "@platform/db": "workspace:*",
     "@platform/knowledge": "workspace:*",
     "@platform/shared": "workspace:*",

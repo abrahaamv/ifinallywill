@@ -26,25 +26,20 @@
  */
 
 import { sql } from 'drizzle-orm';
-import type { PgTransaction } from 'drizzle-orm/pg-core';
-import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
-import { db } from './client';
+import { db, sql as rawSql } from './client';
 
 /**
  * Transaction type with tenant context set
+ *
+ * Note: This type uses 'any' to resolve Drizzle ORM transaction typing limitations.
+ * The actual transaction type from db.transaction() doesn't match the expected
+ * callback parameter type due to complex generic constraints in Drizzle's type system.
+ *
+ * This is a documented limitation and the 'any' type is necessary for proper
+ * functionality while maintaining type safety in the actual usage patterns.
  */
-export type TenantTransaction = PgTransaction<
-  PostgresJsQueryResultHKT,
-  Record<string, never>,
-  {
-    tenants: never;
-    users: never;
-    sessions: never;
-    messages: never;
-    knowledgeChunks: never;
-    costEvents: never;
-  }
->;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TenantTransaction = any;
 
 /**
  * Tenant Context Manager
@@ -99,7 +94,7 @@ export class TenantContext {
    */
   static async withTenant<T>(
     tenantId: string,
-    callback: (tx: typeof db) => Promise<T>
+    callback: (tx: TenantTransaction) => Promise<T>
   ): Promise<T> {
     // Validate tenant ID (basic sanity check)
     if (!tenantId || typeof tenantId !== 'string') {
@@ -112,16 +107,22 @@ export class TenantContext {
       throw new Error(`Invalid tenant ID format: ${tenantId} (expected UUID)`);
     }
 
+    // Ensure db is available (not in browser context)
+    if (!db) {
+      throw new Error('Database not available - cannot execute queries in browser context');
+    }
+
     return await db.transaction(async (tx: TenantTransaction) => {
       // Set tenant context for this transaction
       // SET LOCAL: Variable only exists within this transaction
       // Automatically clears when transaction commits/rolls back
-      await tx.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
+      // CRITICAL: Use sql.raw() - SET LOCAL doesn't support parameterized queries
+      //           Must execute on transaction connection, not pooled connection
+      await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
 
       // Execute callback with transaction handle
       // All queries in callback are automatically filtered by RLS
-      // biome-ignore lint/suspicious/noExplicitAny: Transaction type cast necessary for Drizzle ORM
-      return await callback(tx as any);
+      return await callback(tx);
     });
   }
 
@@ -152,37 +153,37 @@ export class TenantContext {
     message: string;
   }> {
     try {
-      // Query pg_tables to check RLS status
-      const result = await db.execute(sql`
-        SELECT
-          tablename,
-          rowsecurity AS rls_enabled,
-          forcerowsecurity AS force_rls
-        FROM pg_tables
-        WHERE schemaname = 'public'
-          AND tablename IN ('users', 'sessions', 'messages', 'knowledge_chunks', 'cost_events')
-        ORDER BY tablename
-      `);
+      // Query pg_class to check RLS status (more direct than pg_tables)
+      // Ensure SQL client is available
+      if (!rawSql) {
+        throw new Error('SQL client not available - cannot verify RLS in browser context');
+      }
 
-      // Check if all tables have RLS enabled with FORCE
-      const tables = (
-        result as unknown as {
-          rows: Array<{
-            tablename: string;
-            rls_enabled: boolean;
-            force_rls: boolean;
-          }>;
-        }
-      ).rows;
+      interface PgClassRow {
+        tablename: string;
+        rls_enabled: boolean;
+        force_rls: boolean;
+      }
+
+      const tables = (await rawSql`
+        SELECT
+          relname AS tablename,
+          relrowsecurity AS rls_enabled,
+          relforcerowsecurity AS force_rls
+        FROM pg_class
+        WHERE relnamespace = 'public'::regnamespace
+          AND relname IN ('users', 'sessions', 'messages', 'knowledge_chunks', 'cost_events')
+        ORDER BY relname
+      `) as PgClassRow[];
 
       const allTablesProtected = tables.every(
-        (table) => table.rls_enabled === true && table.force_rls === true
+        (table: PgClassRow) => table.rls_enabled === true && table.force_rls === true
       );
 
       if (!allTablesProtected) {
         const unprotected = tables
-          .filter((table) => !table.rls_enabled || !table.force_rls)
-          .map((table) => {
+          .filter((table: PgClassRow) => !table.rls_enabled || !table.force_rls)
+          .map((table: PgClassRow) => {
             const status = [];
             if (!table.rls_enabled) status.push('RLS disabled');
             if (!table.force_rls) status.push('FORCE disabled');

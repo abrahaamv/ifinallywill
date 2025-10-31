@@ -12,6 +12,7 @@
  */
 
 import { widgets } from '@platform/db';
+import { internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { count, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -77,7 +78,16 @@ export const widgetsRouter = router({
   list: protectedProcedure.input(listWidgetsSchema).query(async ({ ctx, input }) => {
     try {
       // Build query with filters
-      let query = ctx.db.select().from(widgets).$dynamic();
+      let query = ctx.db.select({
+        id: widgets.id,
+        tenantId: widgets.tenantId,
+        name: widgets.name,
+        domainWhitelist: widgets.domainWhitelist,
+        settings: widgets.settings,
+        isActive: widgets.isActive,
+        createdAt: widgets.createdAt,
+        updatedAt: widgets.updatedAt
+      }).from(widgets).$dynamic();
 
       // RLS handles tenant filtering automatically
       // No need for .where(eq(widgets.tenantId, ctx.tenantId))
@@ -109,11 +119,10 @@ export const widgetsRouter = router({
         hasMore: input.offset + results.length < totalCount,
       };
     } catch (error) {
-      console.error('Failed to list widgets:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve widgets',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -125,11 +134,19 @@ export const widgetsRouter = router({
    */
   get: protectedProcedure.input(getWidgetSchema).query(async ({ ctx, input }) => {
     try {
-      const [widget] = await ctx.db.select().from(widgets).where(eq(widgets.id, input.id)).limit(1);
+      const [widget] = await ctx.db.select({
+        id: widgets.id,
+        tenantId: widgets.tenantId,
+        name: widgets.name,
+        domainWhitelist: widgets.domainWhitelist,
+        settings: widgets.settings,
+        isActive: widgets.isActive,
+        createdAt: widgets.createdAt,
+        updatedAt: widgets.updatedAt
+      }).from(widgets).where(eq(widgets.id, input.id)).limit(1);
 
       if (!widget) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Widget not found or access denied',
         });
       }
@@ -146,11 +163,10 @@ export const widgetsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to get widget:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve widget',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -175,8 +191,7 @@ export const widgetsRouter = router({
         .returning();
 
       if (!newWidget) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create widget',
         });
       }
@@ -192,11 +207,10 @@ export const widgetsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to create widget:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to create widget',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -210,14 +224,13 @@ export const widgetsRouter = router({
     try {
       // Verify widget exists and belongs to tenant (RLS)
       const [existing] = await ctx.db
-        .select()
+        .select({ id: widgets.id })
         .from(widgets)
         .where(eq(widgets.id, input.id))
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Widget not found or access denied',
         });
       }
@@ -236,8 +249,7 @@ export const widgetsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to update widget',
         });
       }
@@ -253,11 +265,10 @@ export const widgetsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to update widget:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to update widget',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -276,8 +287,7 @@ export const widgetsRouter = router({
         .returning({ id: widgets.id });
 
       if (!deleted) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Widget not found or access denied',
         });
       }
@@ -289,11 +299,10 @@ export const widgetsRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to delete widget:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to delete widget',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),

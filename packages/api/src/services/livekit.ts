@@ -9,6 +9,9 @@
  */
 
 import { AccessToken, type Room, RoomServiceClient } from 'livekit-server-sdk';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('livekit-service');
 
 /**
  * LiveKit configuration
@@ -153,7 +156,7 @@ export class LiveKitService {
 
       return this.mapRoomToInfo(room, tenantId);
     } catch (error) {
-      console.error('Failed to get room:', error);
+      logger.error('Failed to get room', { error, fullRoomName });
       return null;
     }
   }
@@ -237,7 +240,7 @@ export function createLiveKitService(): LiveKitService | null {
   const apiSecret = process.env.LIVEKIT_API_SECRET;
 
   if (!url || !apiKey || !apiSecret) {
-    console.warn(
+    logger.warn(
       'LiveKit not configured. Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET environment variables.'
     );
     return null;

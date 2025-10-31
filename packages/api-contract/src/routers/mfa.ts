@@ -19,7 +19,7 @@
 
 import { MFAService, passwordService } from '@platform/auth';
 import { db, eq, users } from '@platform/db';
-import { TRPCError } from '@trpc/server';
+import { badRequest, notFound, unauthorized } from '@platform/shared';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 
@@ -43,13 +43,12 @@ export const mfaRouter = router({
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
     if (!user) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+      throw notFound({ message: 'User not found' });
     }
 
     // Check if MFA already enabled
     if (user.mfaEnabled) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw badRequest({
         message: 'MFA is already enabled. Disable first to re-setup.',
       });
     }
@@ -96,7 +95,7 @@ export const mfaRouter = router({
       const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       if (!user) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        throw notFound({ message: 'User not found' });
       }
 
       // Verify password
@@ -107,12 +106,12 @@ export const mfaRouter = router({
       );
 
       if (!passwordVerification.valid) {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid password' });
+        throw unauthorized({ message: 'Invalid password' });
       }
 
       // Check if MFA already enabled
       if (user.mfaEnabled) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'MFA is already enabled' });
+        throw badRequest({ message: 'MFA is already enabled' });
       }
 
       // Generate fresh setup (to verify against)
@@ -122,8 +121,7 @@ export const mfaRouter = router({
       const mfaResult = await MFAService.verifyCode(verificationCode, setup.secret, []);
 
       if (!mfaResult.valid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Invalid verification code. Please try again.',
         });
       }
@@ -169,7 +167,7 @@ export const mfaRouter = router({
       const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       if (!user) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        throw notFound({ message: 'User not found' });
       }
 
       // Verify password
@@ -180,7 +178,7 @@ export const mfaRouter = router({
       );
 
       if (!passwordVerification.valid) {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid password' });
+        throw unauthorized({ message: 'Invalid password' });
       }
 
       // Disable MFA and clear secret + backup codes
@@ -221,11 +219,11 @@ export const mfaRouter = router({
       const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       if (!user) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        throw notFound({ message: 'User not found' });
       }
 
       if (!user.mfaEnabled || !user.mfaSecret) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'MFA is not enabled' });
+        throw badRequest({ message: 'MFA is not enabled' });
       }
 
       // Verify code
@@ -264,7 +262,7 @@ export const mfaRouter = router({
       const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       if (!user) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        throw notFound({ message: 'User not found' });
       }
 
       // Verify password
@@ -275,11 +273,11 @@ export const mfaRouter = router({
       );
 
       if (!passwordVerification.valid) {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Invalid password' });
+        throw unauthorized({ message: 'Invalid password' });
       }
 
       if (!user.mfaEnabled) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'MFA is not enabled' });
+        throw badRequest({ message: 'MFA is not enabled' });
       }
 
       // Generate new backup codes
@@ -312,7 +310,7 @@ export const mfaRouter = router({
       .limit(1);
 
     if (!user) {
-      throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+      throw notFound({ message: 'User not found' });
     }
 
     return {

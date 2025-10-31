@@ -25,10 +25,25 @@ import {
   estimateTokens,
   validateChunkOptions,
 } from '@platform/knowledge';
+import { badRequest, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { count, eq, ilike, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { adminProcedure, ownerProcedure, protectedProcedure, router } from '../trpc';
+
+/**
+ * SQL query result interfaces for type-safe database operations
+ */
+interface SimilaritySearchRow {
+  id: string;
+  document_id: string;
+  content: string;
+  position: number;
+  metadata: Record<string, unknown> | null;
+  document_title: string;
+  document_category: string | null;
+  similarity_score: number | string;
+}
 
 /**
  * Input validation schemas
@@ -144,7 +159,7 @@ export const knowledgeRouter = router({
       const totalCount = Number(countResult[0]?.count ?? 0);
 
       return {
-        documents: results.map((doc: any) => ({
+        documents: results.map((doc) => ({
           id: doc.id,
           title: doc.title,
           content: doc.content,
@@ -157,11 +172,10 @@ export const knowledgeRouter = router({
         hasMore: input.offset + results.length < totalCount,
       };
     } catch (error) {
-      console.error('Failed to list documents:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve documents',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -180,8 +194,7 @@ export const knowledgeRouter = router({
         .limit(1);
 
       if (!document) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Document not found or access denied',
         });
       }
@@ -198,11 +211,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to get document:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve document',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -230,8 +242,7 @@ export const knowledgeRouter = router({
         .returning();
 
       if (!newDocument) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create document',
         });
       }
@@ -247,11 +258,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to create document:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to create document',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -272,8 +282,7 @@ export const knowledgeRouter = router({
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Document not found or access denied',
         });
       }
@@ -293,8 +302,7 @@ export const knowledgeRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to update document',
         });
       }
@@ -310,11 +318,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to update document:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to update document',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -335,8 +342,7 @@ export const knowledgeRouter = router({
         .returning({ id: knowledgeDocuments.id });
 
       if (!deleted) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Document not found or access denied',
         });
       }
@@ -348,11 +354,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to delete document:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to delete document',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -382,22 +387,19 @@ export const knowledgeRouter = router({
           // Validate file type (text-based only)
           const textMimeTypes = ['text/plain', 'text/markdown', 'application/json', 'text/csv'];
           if (!textMimeTypes.includes(input.file.type)) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
+            throw badRequest({
               message: `Unsupported file type: ${input.file.type}. Only text-based files are supported.`,
             });
           }
 
           // File size limit: 10MB
           if (input.file.size > 10 * 1024 * 1024) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
+            throw badRequest({
               message: 'File size must be less than 10MB',
             });
           }
         } catch (error) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
+          throw badRequest({
             message: `Failed to process file: ${error instanceof Error ? error.message : 'Unknown error'}`,
           });
         }
@@ -407,61 +409,29 @@ export const knowledgeRouter = router({
       if (input.chunkOptions) {
         const validation = validateChunkOptions(input.chunkOptions as ChunkOptions);
         if (!validation.valid) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
+          throw badRequest({
             message: `Invalid chunk options: ${validation.errors.join(', ')}`,
           });
         }
       }
 
-      // 1. Create document record
-      const documentMetadata: Record<string, unknown> = {
-        ...(input.metadata || {}),
-      };
-
-      if (input.file) {
-        documentMetadata.uploadedFileName = input.file.name;
-        documentMetadata.uploadedFileType = input.file.type;
-        documentMetadata.uploadedFileSize = input.file.size;
-        documentMetadata.uploadedAt = new Date().toISOString();
-      }
-
-      const [newDocument] = await ctx.db
-        .insert(knowledgeDocuments)
-        .values({
-          tenantId: ctx.tenantId,
-          title: input.title,
-          content: documentContent,
-          category: input.category,
-          metadata: documentMetadata,
-        })
-        .returning();
-
-      if (!newDocument) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create document',
-        });
-      }
-
-      // 2. Chunk the document
+      // 2. Chunk the document (before transaction)
       const chunks = chunkDocument(documentContent, input.chunkOptions as ChunkOptions);
 
       if (chunks.length === 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Document is empty or could not be chunked',
         });
       }
 
-      // 3. Generate embeddings for all chunks (batch)
+      // 3. Generate embeddings for all chunks (batch, before transaction)
       let embeddings: number[][] = [];
       try {
         // Initialize Voyage AI provider
         if (!process.env.VOYAGE_API_KEY) {
-          throw new Error(
-            'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.'
-          );
+          throw internalError({
+            message: 'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.',
+          });
         }
 
         const voyageProvider = new VoyageEmbeddingProvider({
@@ -474,28 +444,62 @@ export const knowledgeRouter = router({
 
         // Verify embeddings count matches chunks
         if (embeddings.length !== chunks.length) {
-          throw new Error(
-            `Embedding count mismatch: expected ${chunks.length}, got ${embeddings.length}`
-          );
+          throw internalError({
+            message: `Embedding count mismatch: expected ${chunks.length}, got ${embeddings.length}`,
+          });
         }
       } catch (error) {
-        console.error('Failed to generate embeddings:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: `Embedding generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          cause: error as Error,
+          logLevel: 'error',
         });
       }
 
-      // 4. Store chunks with embeddings
-      const chunkRecords = chunks.map((chunk, index) => ({
-        documentId: newDocument.id,
-        content: chunk.content,
-        embedding: sql`${JSON.stringify(embeddings[index])}::vector`,
-        position: chunk.position,
-        metadata: chunk.metadata,
-      }));
+      // Transaction: Atomically insert document and chunks
+      const newDocument = await ctx.db.transaction(async (tx) => {
+        // 1. Create document record
+        const documentMetadata: Record<string, unknown> = {
+          ...(input.metadata || {}),
+        };
 
-      await ctx.db.insert(knowledgeChunks).values(chunkRecords);
+        if (input.file) {
+          documentMetadata.uploadedFileName = input.file.name;
+          documentMetadata.uploadedFileType = input.file.type;
+          documentMetadata.uploadedFileSize = input.file.size;
+          documentMetadata.uploadedAt = new Date().toISOString();
+        }
+
+        const [document] = await tx
+          .insert(knowledgeDocuments)
+          .values({
+            tenantId: ctx.tenantId,
+            title: input.title,
+            content: documentContent,
+            category: input.category,
+            metadata: documentMetadata,
+          })
+          .returning();
+
+        if (!document) {
+          throw internalError({
+            message: 'Failed to create document',
+          });
+        }
+
+        // 4. Store chunks with embeddings
+        const chunkRecords = chunks.map((chunk, index) => ({
+          documentId: document.id,
+          content: chunk.content,
+          embedding: sql`${JSON.stringify(embeddings[index])}::vector`,
+          position: chunk.position,
+          metadata: chunk.metadata,
+        }));
+
+        await tx.insert(knowledgeChunks).values(chunkRecords);
+
+        return document;
+      });
 
       // 5. Calculate and return summary
       const totalTokens = chunks.reduce((sum, chunk) => sum + estimateTokens(chunk.content), 0);
@@ -521,11 +525,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to upload document:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to upload document',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -546,8 +549,7 @@ export const knowledgeRouter = router({
     try {
       // 1. Generate query embedding
       if (!process.env.VOYAGE_API_KEY) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Semantic search not configured. VOYAGE_API_KEY required.',
         });
       }
@@ -559,8 +561,7 @@ export const knowledgeRouter = router({
       const [queryEmbedding] = await voyageProvider.embedBatch([input.query], 'query');
 
       if (!queryEmbedding) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to generate query embedding',
         });
       }
@@ -592,7 +593,7 @@ export const knowledgeRouter = router({
       const results = await ctx.db.execute(similarityQuery);
 
       // 3. Filter by minimum score and format results
-      const filteredResults = (results.rows as any[])
+      const filteredResults = (results as unknown as SimilaritySearchRow[])
         .filter((row) => Number(row.similarity_score) >= (input.minScore || 0.7))
         .map((row) => ({
           id: row.id,
@@ -620,11 +621,10 @@ export const knowledgeRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Semantic search failed:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),

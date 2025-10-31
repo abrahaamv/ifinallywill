@@ -6,8 +6,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env src/server.ts",
+    "dev": "tsx watch --env-file=../../.env.local src/server.ts",
     "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
     "clean": "rm -rf dist node_modules .turbo"
@@ -21,6 +24,7 @@
     "@platform/auth": "workspace:*",
     "@platform/db": "workspace:*",
     "@platform/realtime": "workspace:*",
+    "@platform/shared": "workspace:*",
     "@trpc/server": "11.0.0",
     "fastify": "5.3.2",
     "ioredis": "5.4.2",
@@ -28,7 +32,9 @@
   },
   "devDependencies": {
     "@types/node": "22.10.5",
+    "@vitest/coverage-v8": "2.1.8",
     "tsx": "4.19.2",
-    "typescript": "5.7.2"
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   }
 }

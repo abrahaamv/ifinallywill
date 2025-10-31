@@ -9,15 +9,20 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "biome check --write .",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.32.1",
     "@google/generative-ai": "0.21.0",
+    "@platform/shared": "workspace:*",
     "openai": "4.104.0"
   },
   "devDependencies": {
     "@types/node": "22.10.5",
-    "typescript": "5.7.2"
+    "@vitest/coverage-v8": "2.1.8",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   }
 }

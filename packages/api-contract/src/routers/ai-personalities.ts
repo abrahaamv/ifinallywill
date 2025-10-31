@@ -3,13 +3,37 @@
  * Manage AI assistant personalities with custom tones, knowledge bases, and behaviors
  */
 
+import { aiPersonalities } from '@platform/db';
+import { badRequest, internalError, notFound } from '@platform/shared';
+import { and, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 
 /**
+ * Personality metadata interface
+ */
+interface PersonalityMetadata {
+  tone?: string;
+  knowledgeBaseIds?: string[];
+  tags?: string[];
+  category?: string;
+  usageStats?: {
+    totalUses: number;
+    avgTokens: number;
+    avgCost: number;
+  };
+}
+
+/**
  * Personality tone options
  */
-const personalityToneSchema = z.enum(['professional', 'friendly', 'casual', 'empathetic', 'technical']);
+const personalityToneSchema = z.enum([
+  'professional',
+  'friendly',
+  'casual',
+  'empathetic',
+  'technical',
+]);
 
 /**
  * Input validation schemas
@@ -50,60 +74,37 @@ export const aiPersonalitiesRouter = router({
    * List all personalities for current tenant
    */
   list: protectedProcedure.query(async ({ ctx }) => {
-    const { db: _db, tenantId } = ctx;
+    const { db, tenantId } = ctx;
 
-    // TODO: Query ai_personalities table with RLS enforcement
-    // For now, return mock data to avoid database errors
-    const personalities = [
-      {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        tenantId,
-        name: 'Professional Support Agent',
-        tone: 'professional' as const,
-        systemPrompt:
-          'You are a professional customer support agent. Provide clear, concise answers with a formal tone.',
-        knowledgeBaseIds: [],
-        temperature: 0.7,
-        maxTokens: 1000,
-        isDefault: true,
-        usageCount: 1247,
-        lastUsed: new Date('2024-01-15T10:30:00Z'),
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-15T10:30:00Z'),
-      },
-      {
-        id: '223e4567-e89b-12d3-a456-426614174001',
-        tenantId,
-        name: 'Friendly Helper',
-        tone: 'friendly' as const,
-        systemPrompt:
-          'You are a friendly and approachable AI assistant. Use a warm, conversational tone while being helpful.',
-        knowledgeBaseIds: [],
-        temperature: 0.8,
-        maxTokens: 1200,
-        isDefault: false,
-        usageCount: 543,
-        lastUsed: new Date('2024-01-14T15:45:00Z'),
-        createdAt: new Date('2024-01-02T00:00:00Z'),
-        updatedAt: new Date('2024-01-14T15:45:00Z'),
-      },
-      {
-        id: '323e4567-e89b-12d3-a456-426614174002',
-        tenantId,
-        name: 'Technical Expert',
-        tone: 'technical' as const,
-        systemPrompt:
-          'You are a technical expert. Provide detailed, accurate technical information with precise terminology.',
-        knowledgeBaseIds: [],
-        temperature: 0.5,
-        maxTokens: 1500,
-        isDefault: false,
-        usageCount: 892,
-        lastUsed: new Date('2024-01-16T08:20:00Z'),
-        createdAt: new Date('2024-01-03T00:00:00Z'),
-        updatedAt: new Date('2024-01-16T08:20:00Z'),
-      },
-    ];
+    // Query ai_personalities table with tenant isolation (RLS enforcement via WHERE clause)
+    const results = await db
+      .select()
+      .from(aiPersonalities)
+      .where(and(eq(aiPersonalities.tenantId, tenantId), eq(aiPersonalities.isActive, true)))
+      .orderBy(desc(aiPersonalities.isDefault), desc(aiPersonalities.updatedAt));
+
+    // Transform database results to match API schema
+    const personalities = results.map((p) => {
+      const metadata = p.metadata as PersonalityMetadata | null;
+      return {
+        id: p.id,
+        tenantId: p.tenantId,
+        name: p.name,
+        tone: metadata?.tone || 'professional',
+        systemPrompt: p.systemPrompt,
+        knowledgeBaseIds: metadata?.knowledgeBaseIds || [],
+        temperature: Number(p.temperature),
+        maxTokens: p.maxTokens || 1000,
+        isDefault: p.isDefault,
+        usageCount: metadata?.usageStats?.totalUses || 0,
+        lastUsed:
+          metadata && 'lastUsed' in metadata && metadata.lastUsed
+            ? new Date(metadata.lastUsed as string)
+            : null,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      };
+    });
 
     return {
       personalities,
@@ -115,24 +116,52 @@ export const aiPersonalitiesRouter = router({
    * Create a new personality
    */
   create: protectedProcedure.input(createPersonalitySchema).mutation(async ({ ctx, input }) => {
-    const { db: _db, tenantId } = ctx;
+    const { db, tenantId } = ctx;
 
-    // TODO: Insert into ai_personalities table with RLS enforcement
-    // For now, return mock success response
-    const personality = {
-      id: crypto.randomUUID(),
-      tenantId,
-      ...input,
-      isDefault: false,
-      usageCount: 0,
-      lastUsed: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    // Insert into ai_personalities table with tenant isolation
+    const [personality] = await db
+      .insert(aiPersonalities)
+      .values({
+        tenantId,
+        name: input.name,
+        systemPrompt: input.systemPrompt,
+        temperature: input.temperature.toString(),
+        maxTokens: input.maxTokens,
+        isDefault: false,
+        isActive: true,
+        metadata: {
+          tone: input.tone,
+          knowledgeBaseIds: input.knowledgeBaseIds,
+          usageStats: {
+            totalUses: 0,
+            avgTokens: 0,
+            avgCost: 0,
+          },
+        } as PersonalityMetadata,
+      })
+      .returning();
+
+    if (!personality) {
+      throw internalError({ message: 'Failed to create personality' });
+    }
 
     return {
       success: true,
-      personality,
+      personality: {
+        id: personality.id,
+        tenantId: personality.tenantId,
+        name: personality.name,
+        tone: input.tone,
+        systemPrompt: personality.systemPrompt,
+        knowledgeBaseIds: input.knowledgeBaseIds,
+        temperature: Number(personality.temperature),
+        maxTokens: personality.maxTokens || 1000,
+        isDefault: personality.isDefault,
+        usageCount: 0,
+        lastUsed: null,
+        createdAt: personality.createdAt,
+        updatedAt: personality.updatedAt,
+      },
     };
   }),
 
@@ -140,19 +169,65 @@ export const aiPersonalitiesRouter = router({
    * Update an existing personality
    */
   update: protectedProcedure.input(updatePersonalitySchema).mutation(async ({ ctx, input }) => {
-    const { db: _db, tenantId } = ctx;
+    const { db, tenantId } = ctx;
     const { id, ...updates } = input;
 
-    // TODO: Update ai_personalities table with RLS enforcement
-    // Verify personality belongs to tenant before updating
-    // For now, return mock success response
+    // First, verify personality exists and belongs to tenant (RLS enforcement)
+    const [existing] = await db
+      .select()
+      .from(aiPersonalities)
+      .where(and(eq(aiPersonalities.id, id), eq(aiPersonalities.tenantId, tenantId)))
+      .limit(1);
+
+    if (!existing) {
+      throw notFound({ message: 'Personality not found or access denied' });
+    }
+
+    // Build update object
+    const updateData: Partial<typeof aiPersonalities.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (updates.name) updateData.name = updates.name;
+    if (updates.systemPrompt) updateData.systemPrompt = updates.systemPrompt;
+    if (updates.temperature !== undefined) updateData.temperature = updates.temperature.toString();
+    if (updates.maxTokens !== undefined) updateData.maxTokens = updates.maxTokens;
+
+    // Update metadata fields
+    if (updates.tone || updates.knowledgeBaseIds) {
+      const currentMetadata = (existing.metadata as PersonalityMetadata | null) || {};
+      updateData.metadata = {
+        ...currentMetadata,
+        ...(updates.tone && { tone: updates.tone }),
+        ...(updates.knowledgeBaseIds && { knowledgeBaseIds: updates.knowledgeBaseIds }),
+      } as PersonalityMetadata;
+    }
+
+    // Update personality
+    const [updated] = await db
+      .update(aiPersonalities)
+      .set(updateData)
+      .where(and(eq(aiPersonalities.id, id), eq(aiPersonalities.tenantId, tenantId)))
+      .returning();
+
+    if (!updated) {
+      throw internalError({ message: 'Failed to update personality' });
+    }
+
+    const updatedMetadata = updated.metadata as PersonalityMetadata | null;
     return {
       success: true,
       personality: {
-        id,
-        tenantId,
-        ...updates,
-        updatedAt: new Date(),
+        id: updated.id,
+        tenantId: updated.tenantId,
+        name: updated.name,
+        tone: updatedMetadata?.tone || 'professional',
+        systemPrompt: updated.systemPrompt,
+        knowledgeBaseIds: updatedMetadata?.knowledgeBaseIds || [],
+        temperature: Number(updated.temperature),
+        maxTokens: updated.maxTokens || 1000,
+        isDefault: updated.isDefault,
+        updatedAt: updated.updatedAt,
       },
     };
   }),
@@ -161,13 +236,36 @@ export const aiPersonalitiesRouter = router({
    * Delete a personality
    */
   delete: protectedProcedure.input(deletePersonalitySchema).mutation(async ({ ctx, input }) => {
-    const { db: _db, tenantId: _tenantId } = ctx;
-    const { id: _id } = input;
+    const { db, tenantId } = ctx;
+    const { id } = input;
 
-    // TODO: Delete from ai_personalities table with RLS enforcement
-    // Verify personality belongs to tenant before deleting
+    // First, verify personality exists and belongs to tenant
+    const [existing] = await db
+      .select()
+      .from(aiPersonalities)
+      .where(and(eq(aiPersonalities.id, id), eq(aiPersonalities.tenantId, tenantId)))
+      .limit(1);
+
+    if (!existing) {
+      throw notFound({ message: 'Personality not found or access denied' });
+    }
+
     // Prevent deletion of default personality
-    // For now, return mock success response
+    if (existing.isDefault) {
+      throw badRequest({
+        message: 'Cannot delete default personality. Set another personality as default first.',
+      });
+    }
+
+    // Soft delete by setting isActive to false (preserves audit trail)
+    await db
+      .update(aiPersonalities)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(aiPersonalities.id, id), eq(aiPersonalities.tenantId, tenantId)));
+
     return {
       success: true,
     };
@@ -177,14 +275,47 @@ export const aiPersonalitiesRouter = router({
    * Set a personality as the default for the tenant
    */
   setDefault: protectedProcedure.input(setDefaultSchema).mutation(async ({ ctx, input }) => {
-    const { db: _db, tenantId: _tenantId } = ctx;
-    const { id: _id } = input;
+    const { db, tenantId } = ctx;
+    const { id } = input;
 
-    // TODO: Update ai_personalities table with RLS enforcement
-    // 1. Set all personalities for tenant to isDefault = false
-    // 2. Set specified personality to isDefault = true
-    // Verify personality belongs to tenant
-    // For now, return mock success response
+    // First, verify personality exists and belongs to tenant
+    const [existing] = await db
+      .select()
+      .from(aiPersonalities)
+      .where(
+        and(
+          eq(aiPersonalities.id, id),
+          eq(aiPersonalities.tenantId, tenantId),
+          eq(aiPersonalities.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!existing) {
+      throw notFound({ message: 'Personality not found or access denied' });
+    }
+
+    // Transaction: Atomically update default status
+    await db.transaction(async (tx) => {
+      // Set all personalities for tenant to isDefault = false
+      await tx
+        .update(aiPersonalities)
+        .set({
+          isDefault: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(aiPersonalities.tenantId, tenantId));
+
+      // Set specified personality to isDefault = true
+      await tx
+        .update(aiPersonalities)
+        .set({
+          isDefault: true,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(aiPersonalities.id, id), eq(aiPersonalities.tenantId, tenantId)));
+    });
+
     return {
       success: true,
     };

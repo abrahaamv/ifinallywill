@@ -4,6 +4,7 @@
  * Target: 75-85% cost reduction vs Claude-only baseline
  */
 
+import { createModuleLogger } from '@platform/shared';
 import { analyzeComplexity, requiresVisionModel, shouldUseMiniModel } from './complexity';
 import { calculateSavings } from './pricing';
 import { AnthropicProvider } from './providers/anthropic';
@@ -16,6 +17,8 @@ import type {
   AIProvider,
   Message,
 } from './types';
+
+const logger = createModuleLogger('ai-router');
 
 export interface RouterConfig {
   openaiApiKey: string;
@@ -88,7 +91,7 @@ export class AIRouter {
     const decision = this.selectProvider(request.messages);
 
     if (this.config.logRouting) {
-      console.log('[AIRouter] Routing decision:', {
+      logger.info('Routing decision', {
         provider: decision.provider,
         model: decision.model,
         reasoning: decision.reasoning,
@@ -119,7 +122,7 @@ export class AIRouter {
       // Log cost savings
       if (this.config.logRouting) {
         const savings = calculateSavings(response.usage.cost);
-        console.log('[AIRouter] Cost analysis:', {
+        logger.info('Cost analysis', {
           actualCost: response.usage.cost.toFixed(6),
           baselineCost: savings.baselineCost.toFixed(6),
           savings: savings.savings.toFixed(6),
@@ -131,7 +134,7 @@ export class AIRouter {
     } catch (error) {
       // Fallback to Anthropic if enabled and primary provider fails
       if (this.config.enableFallback && decision.provider !== 'anthropic') {
-        console.warn('[AIRouter] Primary provider failed, falling back to Anthropic:', error);
+        logger.warn('Primary provider failed, falling back to Anthropic', { error });
 
         return await this.anthropic.complete({
           ...request,
@@ -152,7 +155,7 @@ export class AIRouter {
     const decision = this.selectProvider(request.messages);
 
     if (this.config.logRouting) {
-      console.log('[AIRouter] Streaming routing decision:', {
+      logger.info('Streaming routing decision', {
         provider: decision.provider,
         model: decision.model,
         reasoning: decision.reasoning,
@@ -179,7 +182,7 @@ export class AIRouter {
     } catch (error) {
       // Fallback to Anthropic streaming if enabled
       if (this.config.enableFallback && decision.provider !== 'anthropic') {
-        console.warn('[AIRouter] Primary provider failed, falling back to Anthropic:', error);
+        logger.warn('Primary provider failed, falling back to Anthropic', { error });
 
         return yield* this.anthropic.streamComplete({
           ...request,

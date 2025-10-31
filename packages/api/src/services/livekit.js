@@ -4,6 +4,9 @@ import { TRPCError } from '@trpc/server';
  * Room management and access token generation
  */
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('livekit');
 /**
  * LiveKit configuration from environment
  */
@@ -11,7 +14,7 @@ const LIVEKIT_URL = process.env.LIVEKIT_URL;
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 if (!LIVEKIT_URL || !LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
-  console.warn(
+  logger.warn(
     'LiveKit environment variables not configured. LiveKit features will be unavailable.'
   );
 }
@@ -54,7 +57,7 @@ export async function generateAccessToken(roomName, participantName, participant
     });
     return await token.toJwt();
   } catch (error) {
-    console.error('Failed to generate access token:', error);
+    logger.error('Failed to generate access token', { error, roomName, participantName });
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to generate LiveKit access token',
@@ -94,7 +97,7 @@ export async function createRoom(roomName, tenantId, metadata) {
       createdAt: room.creationTime,
     };
   } catch (error) {
-    console.error('Failed to create room:', error);
+    logger.error('Failed to create room', { error, roomName });
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to create LiveKit room',
@@ -126,7 +129,7 @@ export async function listTenantRooms(tenantId) {
       metadata: room.metadata ? JSON.parse(room.metadata) : undefined,
     }));
   } catch (error) {
-    console.error('Failed to list rooms:', error);
+    logger.error('Failed to list rooms', { error });
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to list LiveKit rooms',
@@ -150,7 +153,7 @@ export async function deleteRoom(roomName) {
     await roomClient.deleteRoom(roomName);
     return { success: true };
   } catch (error) {
-    console.error('Failed to delete room:', error);
+    logger.error('Failed to delete room', { error, roomName });
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Failed to delete LiveKit room',

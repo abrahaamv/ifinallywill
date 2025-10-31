@@ -28,6 +28,7 @@
     "@auth/core": "0.40.0",
     "@auth/drizzle-adapter": "1.10.0",
     "@platform/db": "workspace:*",
+    "@platform/shared": "workspace:*",
     "argon2": "0.31.2",
     "bcryptjs": "2.4.3",
     "drizzle-orm": "0.44.6",
@@ -48,6 +49,6 @@
     "vitest": "2.1.8"
   },
   "peerDependencies": {
-    "react": "^18.3.1"
+    "react": "18.3.1"
   }
 }

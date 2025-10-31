@@ -26,3 +26,15 @@ export { usersRouter } from './routers/users';
 export { widgetsRouter } from './routers/widgets';
 export { knowledgeRouter } from './routers/knowledge';
 export { sessionsRouter } from './routers/sessions';
+
+// Export error handling utilities (Production Readiness - 2025-10-27)
+export {
+  createError,
+  sanitizeErrorMessage,
+  logError,
+  handleDatabaseError,
+  withErrorHandling,
+  ERROR_CODES,
+  APP_ERROR_TYPES,
+} from './errors';
+export type { ErrorDetails } from './errors';

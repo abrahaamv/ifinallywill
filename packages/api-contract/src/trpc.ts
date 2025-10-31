@@ -2,16 +2,58 @@
  * tRPC Server Setup (Phase 3)
  *
  * Core tRPC configuration and procedure builders with auth integration.
+ * Enhanced with centralized error handling (Production Readiness)
  */
 
 import { TRPCError, initTRPC } from '@trpc/server';
 import { sql } from 'drizzle-orm';
 import type { Context } from './context';
+import { logError, sanitizeErrorMessage } from './errors';
 
 /**
- * Initialize tRPC with context type
+ * Initialize tRPC with context type and error handling
  */
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  /**
+   * Global error handler
+   *
+   * Handles all errors consistently:
+   * - Logs errors with context
+   * - Sanitizes messages for production
+   * - Provides structured error responses
+   */
+  errorFormatter({ shape, error, ctx }) {
+    const isProd = process.env.NODE_ENV === 'production';
+
+    // Log error with request context
+    logError(error, {
+      path: shape.data.path,
+      code: shape.data.code,
+      httpStatus: shape.data.httpStatus,
+      tenantId: ctx?.tenantId,
+      userId: ctx?.userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Sanitize error message for production
+    const sanitizedMessage = sanitizeErrorMessage(error, isProd);
+
+    return {
+      ...shape,
+      message: sanitizedMessage,
+      data: {
+        ...shape.data,
+        // Include additional error details in development only
+        ...(isProd
+          ? {}
+          : {
+              cause: error.cause,
+              stack: error.stack,
+            }),
+      },
+    };
+  },
+});
 
 /**
  * Export reusable router and procedure builders

@@ -1,10 +1,21 @@
 import crypto from 'node:crypto';
 import { hash, verify } from '@node-rs/argon2';
 import { serviceDb, tenants, users, verificationTokens } from '@platform/db';
+import {
+  badRequest,
+  conflict,
+  createModuleLogger,
+  forbidden,
+  internalError,
+  notFound,
+  unauthorized,
+} from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
+
+const logger = createModuleLogger('auth-router');
 
 // Validation schemas
 const registerSchema = z.object({
@@ -57,27 +68,42 @@ export const authRouter = router({
   login: publicProcedure.input(loginSchema).mutation(async ({ input }) => {
     // Verify service database is available
     if (!serviceDb) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Service database not configured.',
       });
     }
 
     // Find user by email
     // ⚠️ CRITICAL: Use serviceDb for unauthenticated login
-    const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
+    const [user] = await serviceDb
+      .select({
+        id: users.id,
+        tenantId: users.tenantId,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        passwordAlgorithm: users.passwordAlgorithm,
+        role: users.role,
+        name: users.name,
+        emailVerified: users.emailVerified,
+        mfaEnabled: users.mfaEnabled,
+        mfaSecret: users.mfaSecret,
+        mfaBackupCodes: users.mfaBackupCodes,
+        failedLoginAttempts: users.failedLoginAttempts,
+        lockedUntil: users.lockedUntil
+      })
+      .from(users)
+      .where(eq(users.email, input.email))
+      .limit(1);
 
     if (!user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
+      throw unauthorized({
         message: 'Invalid email or password',
       });
     }
 
     // Check if account is locked
     if (user.lockedUntil && new Date() < user.lockedUntil) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw forbidden({
         message: `Account is locked due to too many failed login attempts. Try again later.`,
       });
     }
@@ -92,7 +118,7 @@ export const authRouter = router({
         parallelism: 1,
       });
     } catch (error) {
-      console.error('Password verification error:', error);
+      logger.error('Password verification error', { error });
       isValidPassword = false;
     }
 
@@ -122,16 +148,14 @@ export const authRouter = router({
           .where(eq(users.id, user.id));
       }
 
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
+      throw unauthorized({
         message: 'Invalid email or password',
       });
     }
 
     // Check if email is verified
     if (!user.emailVerified) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw forbidden({
         message: 'Please verify your email before logging in.',
       });
     }
@@ -139,17 +163,15 @@ export const authRouter = router({
     // Check if MFA is enabled
     if (user.mfaEnabled) {
       if (!input.mfaCode) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
+        throw forbidden({
           message: 'MFA code required',
-          cause: 'MFA_REQUIRED',
+          meta: { reason: 'MFA_REQUIRED' },
         });
       }
 
       // Verify MFA code using real MFA service
       if (!user.mfaSecret) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'MFA secret not configured for this account',
         });
       }
@@ -163,8 +185,7 @@ export const authRouter = router({
       );
 
       if (!verification.valid) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
+        throw unauthorized({
           message: 'Invalid MFA code',
         });
       }
@@ -202,23 +223,21 @@ export const authRouter = router({
   register: publicProcedure.input(registerSchema).mutation(async ({ input }) => {
     // Verify service database is available
     if (!serviceDb) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Service database not configured. Set SERVICE_DATABASE_URL environment variable.',
+      throw internalError({
+        message: 'Service database not configured.',
       });
     }
 
     // Check if user already exists
     // ⚠️ CRITICAL: Use serviceDb to bypass RLS for existence check
     const [existingUser] = await serviceDb
-      .select()
+      .select({ id: users.id })
       .from(users)
       .where(eq(users.email, input.email))
       .limit(1);
 
     if (existingUser) {
-      throw new TRPCError({
-        code: 'CONFLICT',
+      throw conflict({
         message: 'User with this email already exists',
       });
     }
@@ -250,8 +269,7 @@ export const authRouter = router({
         .returning();
 
       if (!newTenant) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create tenant',
         });
       }
@@ -272,8 +290,7 @@ export const authRouter = router({
         .returning();
 
       if (!newUser) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create user',
         });
       }
@@ -310,13 +327,13 @@ export const authRouter = router({
         // DEVELOPMENT ONLY - Remove in production
         verificationToken,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle PostgreSQL unique constraint violations
-      if (error?.cause?.code === '23505') {
+      const pgError = error as { cause?: { code?: string; constraint_name?: string } };
+      if (pgError?.cause?.code === '23505') {
         // Unique constraint violation - email already exists
-        if (error.cause.constraint_name === 'users_email_unique') {
-          throw new TRPCError({
-            code: 'CONFLICT',
+        if (pgError.cause?.constraint_name === 'users_email_unique') {
+          throw conflict({
             message: 'User with this email already exists',
           });
         }
@@ -328,10 +345,11 @@ export const authRouter = router({
       }
 
       // Log unexpected errors and throw generic error
-      console.error('Registration error:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      logger.error('Registration error', { error });
+      throw internalError({
         message: 'Failed to create account. Please try again.',
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -342,8 +360,7 @@ export const authRouter = router({
   verifyEmail: publicProcedure.input(verifyEmailSchema).mutation(async ({ input }) => {
     // Verify service database is available
     if (!serviceDb) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Service database not configured.',
       });
     }
@@ -351,14 +368,17 @@ export const authRouter = router({
     // Find verification token
     // ⚠️ CRITICAL: Use serviceDb for unauthenticated email verification
     const [tokenRecord] = await serviceDb
-      .select()
+      .select({
+        identifier: verificationTokens.identifier,
+        token: verificationTokens.token,
+        expires: verificationTokens.expires
+      })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
       .limit(1);
 
     if (!tokenRecord) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw notFound({
         message: 'Invalid or expired verification token',
       });
     }
@@ -368,22 +388,25 @@ export const authRouter = router({
       // Delete expired token
       await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw badRequest({
         message: 'Verification token has expired. Please request a new one.',
       });
     }
 
     // Find user by email
     const [user] = await serviceDb
-      .select()
+      .select({
+        id: users.id,
+        tenantId: users.tenantId,
+        email: users.email,
+        emailVerified: users.emailVerified
+      })
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))
       .limit(1);
 
     if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw notFound({
         message: 'User not found',
       });
     }
@@ -414,15 +437,22 @@ export const authRouter = router({
     .mutation(async ({ input }) => {
       // Verify service database is available
       if (!serviceDb) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Service database not configured.',
         });
       }
 
       // Find user
       // ⚠️ CRITICAL: Use serviceDb for unauthenticated operation
-      const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
+      const [user] = await serviceDb
+        .select({
+          id: users.id,
+          email: users.email,
+          emailVerified: users.emailVerified
+        })
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
 
       if (!user) {
         // Don't reveal if user exists or not
@@ -441,7 +471,9 @@ export const authRouter = router({
       }
 
       // Delete any existing verification tokens for this email
-      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
+      await serviceDb
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.identifier, input.email));
 
       // Generate new verification token
       const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -473,15 +505,21 @@ export const authRouter = router({
     .mutation(async ({ input }) => {
       // Verify service database is available
       if (!serviceDb) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Service database not configured.',
         });
       }
 
       // Find user
       // ⚠️ CRITICAL: Use serviceDb for unauthenticated operation
-      const [user] = await serviceDb.select().from(users).where(eq(users.email, input.email)).limit(1);
+      const [user] = await serviceDb
+        .select({
+          id: users.id,
+          email: users.email
+        })
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
 
       if (!user) {
         // Don't reveal if user exists or not
@@ -492,7 +530,9 @@ export const authRouter = router({
       }
 
       // Delete any existing reset tokens for this email
-      await serviceDb.delete(verificationTokens).where(eq(verificationTokens.identifier, input.email));
+      await serviceDb
+        .delete(verificationTokens)
+        .where(eq(verificationTokens.identifier, input.email));
 
       // Generate password reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
@@ -522,8 +562,7 @@ export const authRouter = router({
   resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ input }) => {
     // Verify service database is available
     if (!serviceDb) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Service database not configured.',
       });
     }
@@ -531,14 +570,17 @@ export const authRouter = router({
     // Find reset token
     // ⚠️ CRITICAL: Use serviceDb for unauthenticated password reset
     const [tokenRecord] = await serviceDb
-      .select()
+      .select({
+        identifier: verificationTokens.identifier,
+        token: verificationTokens.token,
+        expires: verificationTokens.expires
+      })
       .from(verificationTokens)
       .where(eq(verificationTokens.token, input.token))
       .limit(1);
 
     if (!tokenRecord) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw notFound({
         message: 'Invalid or expired reset token',
       });
     }
@@ -548,22 +590,26 @@ export const authRouter = router({
       // Delete expired token
       await serviceDb.delete(verificationTokens).where(eq(verificationTokens.token, input.token));
 
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw badRequest({
         message: 'Reset token has expired. Please request a new one.',
       });
     }
 
     // Find user by email
     const [user] = await serviceDb
-      .select()
+      .select({
+        id: users.id,
+        tenantId: users.tenantId,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        passwordAlgorithm: users.passwordAlgorithm
+      })
       .from(users)
       .where(eq(users.email, tokenRecord.identifier))
       .limit(1);
 
     if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw notFound({
         message: 'User not found',
       });
     }

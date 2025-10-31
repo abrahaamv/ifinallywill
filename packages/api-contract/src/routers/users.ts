@@ -12,6 +12,7 @@
  */
 
 import { users } from '@platform/db';
+import { badRequest, conflict, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { count, eq, ilike } from 'drizzle-orm';
 import { z } from 'zod';
@@ -68,8 +69,7 @@ export const usersRouter = router({
       const [user] = await ctx.db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
 
       if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'User not found',
         });
       }
@@ -87,11 +87,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to get current user:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve user profile',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -114,8 +113,7 @@ export const usersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to update profile',
         });
       }
@@ -131,11 +129,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to update profile:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to update profile',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -187,11 +184,10 @@ export const usersRouter = router({
         hasMore: input.offset + results.length < totalCount,
       };
     } catch (error) {
-      console.error('Failed to list users:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve users',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -206,8 +202,7 @@ export const usersRouter = router({
       const [user] = await ctx.db.select().from(users).where(eq(users.id, input.id)).limit(1);
 
       if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'User not found or access denied',
         });
       }
@@ -225,11 +220,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to get user:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to retrieve user',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -249,8 +243,7 @@ export const usersRouter = router({
         .limit(1);
 
       if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
+        throw conflict({
           message: 'User with this email already exists',
         });
       }
@@ -269,8 +262,7 @@ export const usersRouter = router({
         .returning();
 
       if (!newUser) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create user',
         });
       }
@@ -285,11 +277,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to create user:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to create user',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -306,8 +297,7 @@ export const usersRouter = router({
       const [existing] = await ctx.db.select().from(users).where(eq(users.id, input.id)).limit(1);
 
       if (!existing) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'User not found or access denied',
         });
       }
@@ -325,8 +315,7 @@ export const usersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to update user',
         });
       }
@@ -342,11 +331,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to update user:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to update user',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -361,8 +349,7 @@ export const usersRouter = router({
     try {
       // Prevent self-deletion
       if (input.id === ctx.userId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Cannot delete your own account',
         });
       }
@@ -374,8 +361,7 @@ export const usersRouter = router({
         .returning({ id: users.id });
 
       if (!deleted) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'User not found or access denied',
         });
       }
@@ -387,11 +373,10 @@ export const usersRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to delete user:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to delete user',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),

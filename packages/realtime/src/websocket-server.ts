@@ -12,12 +12,15 @@
 import type { IncomingMessage } from 'http';
 import type { Server } from 'http';
 import { authSessions, messages, users } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
 import { parse as parseCookie } from 'cookie';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import Redis from 'ioredis';
 import postgres from 'postgres';
 import { WebSocket, WebSocketServer } from 'ws';
+
+const logger = createModuleLogger('websocket');
 
 /**
  * Message types for WebSocket communication
@@ -122,7 +125,7 @@ export class RealtimeServer {
     // Start heartbeat to detect dead connections
     this.startHeartbeat();
 
-    console.log(`[WebSocket] Server initialized (${this.serverId})`);
+    logger.info('Server initialized', { serverId: this.serverId });
   }
 
   /**
@@ -181,7 +184,7 @@ export class RealtimeServer {
       lastActivity: Date.now(),
     });
 
-    console.log(`[WebSocket] Client connected: ${clientId} (${userId})`);
+    logger.info('Client connected', { clientId, userId });
 
     // Send welcome message
     this.sendToClient(clientId, {
@@ -211,7 +214,7 @@ export class RealtimeServer {
 
     // Handle errors
     ws.on('error', (error: Error) => {
-      console.error(`[WebSocket] Client error (${clientId}):`, error);
+      logger.error('Client error', { clientId, error });
       this.handleDisconnect(clientId);
     });
   }
@@ -245,10 +248,10 @@ export class RealtimeServer {
           break;
 
         default:
-          console.warn(`[WebSocket] Unknown message type: ${message.type}`);
+          logger.warn('Unknown message type', { messageType: message.type, clientId });
       }
     } catch (error) {
-      console.error(`[WebSocket] Failed to parse message from ${clientId}:`, error);
+      logger.error('Failed to parse message', { clientId, error });
       this.sendToClient(clientId, {
         type: MessageType.ERROR,
         payload: { error: 'Invalid message format' },
@@ -354,7 +357,7 @@ export class RealtimeServer {
           break;
       }
     } catch (error) {
-      console.error(`[WebSocket] Failed to parse Redis message:`, error);
+      logger.error('Failed to parse Redis message', { error });
     }
   }
 
@@ -388,7 +391,7 @@ export class RealtimeServer {
         })
       );
     } catch (error) {
-      console.error(`[WebSocket] Failed to send message to ${clientId}:`, error);
+      logger.error('Failed to send message', { clientId, error });
       this.handleDisconnect(clientId);
     }
   }
@@ -400,7 +403,7 @@ export class RealtimeServer {
     const client = this.clients.get(clientId);
     if (!client) return;
 
-    console.log(`[WebSocket] Client disconnected: ${clientId}`);
+    logger.info('Client disconnected', { clientId });
 
     // Remove from typing indicators
     const typingSet = this.typingUsers.get(client.sessionId);
@@ -443,7 +446,7 @@ export class RealtimeServer {
       for (const [clientId, client] of this.clients) {
         // Close stale connections (no activity for 2 minutes)
         if (now - client.lastActivity > 120000) {
-          console.log(`[WebSocket] Closing stale connection: ${clientId}`);
+          logger.info('Closing stale connection', { clientId, lastActivity: client.lastActivity });
           client.ws.close();
           this.handleDisconnect(clientId);
           continue;
@@ -510,7 +513,7 @@ export class RealtimeServer {
         tenantId: user.tenantId,
       };
     } catch (error) {
-      console.error('[WebSocket] Session verification failed:', error);
+      logger.error('Session verification failed', { error });
       return null;
     }
   }
@@ -532,7 +535,7 @@ export class RealtimeServer {
         metadata: {} as Record<string, unknown>, // WebSocket messages don't have AI metadata
       });
     } catch (error) {
-      console.error('[WebSocket] Failed to persist message:', error);
+      logger.error('Failed to persist message', { error });
       // Don't throw - message was already sent, just log the error
     }
   }
@@ -541,7 +544,7 @@ export class RealtimeServer {
    * Shutdown server gracefully
    */
   async shutdown(): Promise<void> {
-    console.log('[WebSocket] Shutting down server...');
+    logger.info('Shutting down server');
 
     // Close all client connections
     for (const [_clientId, client] of this.clients) {
@@ -559,6 +562,6 @@ export class RealtimeServer {
     await this.redis.quit();
     await this.redisSub.quit();
 
-    console.log('[WebSocket] Server shut down successfully');
+    logger.info('Server shut down successfully');
   }
 }

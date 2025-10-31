@@ -13,6 +13,7 @@ import {
   authSessions as sessions,
   verificationTokens,
 } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
 import { eq } from 'drizzle-orm';
 import NextAuth from 'next-auth';
 import type { NextAuthConfig, Session } from 'next-auth';
@@ -22,6 +23,16 @@ import Microsoft from 'next-auth/providers/microsoft-entra-id';
 import { z } from 'zod';
 import { MFAService } from '../services/mfa.service';
 import { passwordService } from '../services/password.service';
+
+const logger = createModuleLogger('auth');
+
+/**
+ * Extended User type with session token for Auth.js credentials provider
+ * This temporary property is used to pass session tokens through Auth.js callbacks
+ */
+interface UserWithSessionToken {
+  sessionToken?: string;
+}
 
 /**
  * Auth.js configuration with OAuth providers
@@ -45,6 +56,7 @@ export const authConfig: NextAuthConfig = {
   // Pass custom table schemas to map our naming to Auth.js defaults
   // CRITICAL: Use serviceDb (BYPASSRLS) for Auth.js operations
   // Auth.js needs to write sessions/accounts without RLS policy restrictions
+  // Type cast required: DrizzleAdapter types expect SQLite but we use PostgreSQL
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   adapter: DrizzleAdapter(serviceDb, {
     usersTable: users,
@@ -92,13 +104,13 @@ export const authConfig: NextAuthConfig = {
 
         const { email, password, mfaCode } = parsedCredentials.data;
 
-        console.log('[Auth] Login attempt for email:', email);
+        logger.info('Login attempt', { email });
 
         // CRITICAL: Use serviceDb (BYPASSRLS) for authentication queries
         // Regular db connection hits RLS policies and can't see users during login
         // This is the industry-standard pattern (Supabase, Firebase, Auth0)
         if (!serviceDb) {
-          console.error('[Auth] Service database not configured');
+          logger.error('Service database not configured');
           return null;
         }
 
@@ -112,7 +124,7 @@ export const authConfig: NextAuthConfig = {
 
         // Check account lockout (Phase 8 security)
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-          console.error('[Auth] Account locked until:', user.lockedUntil);
+          logger.error('Account locked', { lockedUntil: user.lockedUntil, email });
           return null;
         }
 
@@ -137,7 +149,7 @@ export const authConfig: NextAuthConfig = {
                 lockedUntil: lockUntil,
               })
               .where(eq(users.id, user.id));
-            console.error('[Auth] Account locked after 5 failed attempts');
+            logger.error('Account locked after 5 failed attempts', { email });
           } else {
             await serviceDb
               .update(users)
@@ -157,7 +169,7 @@ export const authConfig: NextAuthConfig = {
               passwordAlgorithm: 'argon2id',
             })
             .where(eq(users.id, user.id));
-          console.log('[Auth] Password upgraded to Argon2id');
+          logger.info('Password upgraded to Argon2id', { email });
         }
 
         // Check MFA if enabled (Phase 8 security)
@@ -175,7 +187,7 @@ export const authConfig: NextAuthConfig = {
           );
 
           if (!mfaResult.valid) {
-            console.error('[Auth] MFA verification failed');
+            logger.error('MFA verification failed', { email });
             return null;
           }
 
@@ -190,7 +202,7 @@ export const authConfig: NextAuthConfig = {
               .update(users)
               .set({ mfaBackupCodes: updatedBackupCodes })
               .where(eq(users.id, user.id));
-            console.log('[Auth] MFA backup code consumed');
+            logger.info('MFA backup code consumed', { email });
           }
         }
 
@@ -204,7 +216,7 @@ export const authConfig: NextAuthConfig = {
           })
           .where(eq(users.id, user.id));
 
-        console.log('[Auth] Authentication successful for:', email);
+        logger.info('Authentication successful', { email });
 
         // Return user object (Auth.js will handle session creation in signIn callback)
         return {
@@ -310,14 +322,15 @@ export const authConfig: NextAuthConfig = {
           });
 
           // Store session token in user object for cookie setting
-          (user as any).sessionToken = sessionToken;
+          (user as UserWithSessionToken).sessionToken = sessionToken;
 
-          console.log('[Auth] Created session for credentials login:', {
+          logger.info('Created session for credentials login', {
             userId: user.id,
             sessionToken: sessionToken.substring(0, 12) + '...',
+            email: user.email,
           });
         } catch (error) {
-          console.error('[Auth] Failed to create session:', error);
+          logger.error('Failed to create session', { error, email: user.email });
           return false;
         }
       }
@@ -337,7 +350,7 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user, account }) {
       // Pass session token through JWT callback chain for credentials provider
       if (account?.provider === 'credentials' && user) {
-        token.sessionId = (user as any).sessionToken;
+        token.sessionId = (user as UserWithSessionToken).sessionToken;
       }
       return token;
     },
@@ -368,7 +381,7 @@ export const authConfig: NextAuthConfig = {
    */
   jwt: {
     encode: async ({ token }) => {
-      console.log('[Auth] JWT encode called - returning session token for credentials');
+      logger.debug('JWT encode called - returning session token for credentials');
       // Return database session token instead of encoding a JWT
       return (token?.sessionId as string) ?? '';
     },
@@ -389,13 +402,13 @@ export const authConfig: NextAuthConfig = {
   // Events for logging and monitoring
   events: {
     async signIn({ user }) {
-      console.log(`User signed in: ${user.email} (${user.id})`);
+      logger.info('User signed in', { email: user.email, userId: user.id });
     },
     async signOut() {
-      console.log('User signed out');
+      logger.info('User signed out');
     },
     async createUser({ user }) {
-      console.log(`New user created: ${user.email} (${user.id})`);
+      logger.info('New user created', { email: user.email, userId: user.id });
     },
   },
 

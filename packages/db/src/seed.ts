@@ -1,10 +1,18 @@
 import crypto from 'node:crypto';
 import { sql } from 'drizzle-orm';
+import { createDatabaseLogger } from '@platform/shared';
 import { db } from './client';
 import * as schema from './schema/index';
 
+const logger = createDatabaseLogger();
+
 export async function seed() {
-  console.log('🌱 Seeding database...');
+  logger.info('🌱 Seeding database...');
+
+  // Ensure database is available (not in browser context)
+  if (!db) {
+    throw new Error('Database not available - cannot seed in browser context');
+  }
 
   try {
     // Temporarily disable RLS for all tables during seeding
@@ -15,13 +23,13 @@ export async function seed() {
     await db.execute(sql`ALTER TABLE widgets DISABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE knowledge_documents DISABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE ai_personalities DISABLE ROW LEVEL SECURITY`);
-    console.log('✅ Disabled RLS for seeding');
+    logger.info('✅ Disabled RLS for seeding');
 
     // Set a placeholder tenant ID to satisfy application logic
     // (not required for RLS since it's disabled, but good for consistency)
     const placeholderTenantId = '00000000-0000-0000-0000-000000000000';
     await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${placeholderTenantId}'`));
-    console.log('✅ Set placeholder tenant context');
+    logger.info('✅ Set placeholder tenant context');
 
     // Create demo tenant
     const tenantResult = await db
@@ -43,11 +51,11 @@ export async function seed() {
       throw new Error('Failed to create tenant');
     }
 
-    console.log('✅ Created tenant:', tenant.id);
+    logger.info('✅ Created tenant', { tenantId: tenant.id });
 
     // Update session variable to the actual tenant ID for subsequent inserts
     await db.execute(sql.raw(`SET SESSION app.current_tenant_id = '${tenant.id}'`));
-    console.log('✅ Updated tenant context to:', tenant.id);
+    logger.info('✅ Updated tenant context', { tenantId: tenant.id });
 
     // Create demo users with proper Argon2id password hashing
     // NOTE: In production, users will authenticate via OAuth (Google/Microsoft)
@@ -82,7 +90,7 @@ export async function seed() {
       throw new Error('Failed to create admin user');
     }
 
-    console.log('✅ Created admin user:', admin.email, '(password: Admin@123!)');
+    logger.info('✅ Created admin user', { email: admin.email, note: 'password: Admin@123!' });
 
     // Regular user (member role)
     const memberPassword = await hash('Member@123!', {
@@ -110,7 +118,7 @@ export async function seed() {
       throw new Error('Failed to create member user');
     }
 
-    console.log('✅ Created member user:', member.email, '(password: Member@123!)');
+    logger.info('✅ Created member user', { email: member.email, note: 'password: Member@123!' });
 
     // Team admin (admin role)
     const teamAdminPassword = await hash('TeamAdmin@123!', {
@@ -138,7 +146,7 @@ export async function seed() {
       throw new Error('Failed to create team admin user');
     }
 
-    console.log('✅ Created team admin user:', teamAdmin.email, '(password: TeamAdmin@123!)');
+    logger.info('✅ Created team admin user', { email: teamAdmin.email, note: 'password: TeamAdmin@123!' });
 
     const user = admin; // Use admin for subsequent operations
 
@@ -153,7 +161,7 @@ export async function seed() {
       expires: expiryDate,
     });
 
-    console.log('✅ Created auth session');
+    logger.info('✅ Created auth session');
 
     // Create demo widget
     const widgetResult = await db
@@ -175,7 +183,7 @@ export async function seed() {
       throw new Error('Failed to create widget');
     }
 
-    console.log('✅ Created widget:', widget.id);
+    logger.info('✅ Created widget', { widgetId: widget.id });
 
     // Create demo knowledge document
     const docResult = await db
@@ -197,7 +205,7 @@ export async function seed() {
       throw new Error('Failed to create knowledge document');
     }
 
-    console.log('✅ Created knowledge document:', doc.id);
+    logger.info('✅ Created knowledge document', { documentId: doc.id });
 
     // Create AI personality
     const personalityResult = await db
@@ -220,7 +228,7 @@ export async function seed() {
       throw new Error('Failed to create AI personality');
     }
 
-    console.log('✅ Created AI personality:', personality.id);
+    logger.info('✅ Created AI personality', { personalityId: personality.id });
 
     // Re-enable RLS for all tables after seeding
     await db.execute(sql`ALTER TABLE tenants ENABLE ROW LEVEL SECURITY`);
@@ -229,11 +237,11 @@ export async function seed() {
     await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
-    console.log('✅ Re-enabled RLS after seeding');
+    logger.info('✅ Re-enabled RLS after seeding');
 
-    console.log('🎉 Seeding complete!');
+    logger.info('🎉 Seeding complete!');
   } catch (error) {
-    console.error('❌ Seeding failed:', error);
+    logger.error('❌ Seeding failed', { error });
 
     // Ensure RLS is re-enabled even if seeding fails
     try {
@@ -243,9 +251,9 @@ export async function seed() {
       await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
       await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
       await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
-      console.log('✅ Re-enabled RLS in error handler');
+      logger.info('✅ Re-enabled RLS in error handler');
     } catch (rlsError) {
-      console.error('❌ Failed to re-enable RLS:', rlsError);
+      logger.error('❌ Failed to re-enable RLS', { error: rlsError });
     }
 
     throw error;
@@ -256,11 +264,11 @@ export async function seed() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   seed()
     .then(() => {
-      console.log('✅ Seed completed successfully');
+      logger.info('✅ Seed completed successfully');
       process.exit(0);
     })
     .catch((err) => {
-      console.error('❌ Seed failed:', err);
+      logger.error('❌ Seed failed', { error: err });
       process.exit(1);
     });
 }

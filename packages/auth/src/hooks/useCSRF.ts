@@ -37,7 +37,10 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { createModuleLogger } from '@platform/shared';
 import { CSRFService, type CSRFToken } from '../services/csrf.service';
+
+const logger = createModuleLogger('useCSRF');
 
 export interface UseCSRFResult {
   /** Current CSRF token (null if not loaded or error) */
@@ -79,7 +82,7 @@ export function useCSRF(): UseCSRFResult {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch CSRF token';
       setError(errorMessage);
-      console.error('CSRF token fetch error:', err);
+      logger.error('CSRF token fetch error', { error: err });
     } finally {
       setLoading(false);
     }

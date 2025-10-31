@@ -27,6 +27,9 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:
 import * as bcrypt from 'bcryptjs';
 import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('MFAService');
 
 /**
  * MFA setup result with secret and QR code
@@ -174,7 +177,7 @@ export class MFAService {
         }
       } catch (error: unknown) {
         // Decryption or validation failed, fall through to backup codes
-        console.error('TOTP verification error:', error);
+        logger.error('TOTP verification error', { error });
       }
     }
 

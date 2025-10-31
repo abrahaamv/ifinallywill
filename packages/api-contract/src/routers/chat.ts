@@ -12,10 +12,26 @@
  */
 
 import { messages, sessions } from '@platform/db';
+import { badRequest, createModuleLogger, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
+
+const logger = createModuleLogger('chat-router');
+
+/**
+ * Message metadata interface for type-safe metadata storage
+ */
+interface MessageMetadata {
+  model: string;
+  tokensUsed: number;
+  costUsd: number;
+  latencyMs: number;
+  ragChunksRetrieved: number;
+  ragProcessingTimeMs: number;
+  ragTopRelevance: string;
+}
 
 /**
  * Input validation schemas
@@ -60,15 +76,13 @@ export const chatRouter = router({
         .limit(1);
 
       if (!session) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
 
       if (session.endedAt) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Cannot send message to ended session',
         });
       }
@@ -85,8 +99,7 @@ export const chatRouter = router({
         .returning();
 
       if (!userMessage) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to store user message',
         });
       }
@@ -102,20 +115,22 @@ export const chatRouter = router({
       // Step 2: Execute RAG query to get relevant knowledge
       // RLS policies automatically filter by tenant via get_current_tenant_id()
       const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
-      const ragResult = await executeRAGQuery(ctx.db as any, {
+      const ragResult = await executeRAGQuery(ctx.db, {
         query: input.content,
         topK: 5,
         minScore: 0.7,
       });
 
-      console.log('[RAG] Query:', input.content);
-      console.log('[RAG] Chunks retrieved:', ragResult.totalChunks);
-      console.log('[RAG] Context length:', ragResult.context.length);
-      console.log('[RAG] Top chunk preview:', ragResult.chunks[0]?.chunk.content.substring(0, 100));
+      logger.info('[RAG] Query details', {
+        query: input.content,
+        chunksRetrieved: ragResult.totalChunks,
+        contextLength: ragResult.context.length,
+        topChunkPreview: ragResult.chunks[0]?.chunk.content.substring(0, 100),
+      });
 
       // Step 3: Build enhanced prompt with RAG context
       const enhancedPrompt = buildRAGPrompt(input.content, ragResult.context);
-      console.log('[RAG] Enhanced prompt length:', enhancedPrompt.length);
+      logger.info('[RAG] Enhanced prompt', { promptLength: enhancedPrompt.length });
 
       // Step 4: Convert history to AI format with RAG-enhanced system message
       const aiMessages = [
@@ -163,13 +178,12 @@ export const chatRouter = router({
             ragChunksRetrieved: ragResult.totalChunks,
             ragProcessingTimeMs: ragResult.processingTimeMs,
             ragTopRelevance: ragResult.chunks[0]?.relevance || 'none',
-          } as any,
+          } as MessageMetadata,
         })
         .returning();
 
       if (!assistantMessage) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to store AI response',
         });
       }
@@ -201,11 +215,10 @@ export const chatRouter = router({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error('Failed to send chat message:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
+      throw internalError({
         message: 'Failed to process chat message',
-        cause: error,
+        cause: error as Error,
+        logLevel: 'error',
       });
     }
   }),
@@ -229,15 +242,13 @@ export const chatRouter = router({
         .limit(1);
 
       if (!session) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Session not found or access denied',
         });
       }
 
       if (session.endedAt) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Cannot send message to ended session',
         });
       }
@@ -253,8 +264,7 @@ export const chatRouter = router({
         .returning();
 
       if (!userMessage) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to store user message',
         });
       }
@@ -304,7 +314,7 @@ export const chatRouter = router({
         },
       };
     } catch (error) {
-      console.error('Failed to stream chat message:', error);
+      logger.error('Failed to stream chat message', { error });
       yield {
         type: 'error' as const,
         error: error instanceof Error ? error.message : 'Unknown error',
