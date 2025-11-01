@@ -28,7 +28,7 @@ export const PRICING: Record<AIModel, ModelPricing> = {
     outputPerMillion: 10.0,
   },
 
-  // Anthropic - Fallback for complex tasks
+  // Anthropic - Complex reasoning
   'claude-3-5-sonnet-20241022': {
     provider: 'anthropic',
     model: 'claude-3-5-sonnet-20241022',
@@ -36,7 +36,13 @@ export const PRICING: Record<AIModel, ModelPricing> = {
     outputPerMillion: 15.0,
   },
 
-  // Google - Vision tasks
+  // Google - Three-tier routing
+  'gemini-1.5-flash': {
+    provider: 'google',
+    model: 'gemini-1.5-flash',
+    inputPerMillion: 0.0, // Free tier
+    outputPerMillion: 0.0, // Free tier
+  },
   'gemini-2.0-flash-exp': {
     provider: 'google',
     model: 'gemini-2.0-flash-exp',

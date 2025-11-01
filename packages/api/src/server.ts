@@ -14,12 +14,20 @@
 
 import cors from '@fastify/cors';
 import { appRouter, createContext } from '@platform/api-contract';
+import {
+  VoyageEmbeddingProvider,
+  warmEmbeddingCache,
+  type CacheWarmingConfig,
+} from '@platform/knowledge';
 import { RealtimeServer } from '@platform/realtime';
 import { createModuleLogger } from '@platform/shared';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import Fastify from 'fastify';
+import Redis from 'ioredis';
 import { authPlugin } from './plugins/auth';
 import { rateLimitPlugin } from './plugins/rate-limit';
+// import { initializeSurveyScheduler } from './cron/survey-scheduler'; // TODO: Re-enable when survey scheduler is implemented
 
 const logger = createModuleLogger('api-server');
 
@@ -30,6 +38,59 @@ const DATABASE_URL =
   process.env.DATABASE_URL || 'postgresql://platform:platform_dev_password@localhost:5432/platform';
 
 async function main() {
+  // Phase 12 Week 3: Initialize Redis client for RAG caching
+  let redis: Redis | undefined;
+  let embeddingProvider: VoyageEmbeddingProvider | undefined;
+
+  try {
+    redis = new Redis(REDIS_URL);
+    logger.info('Redis client initialized for RAG caching');
+
+    // Test Redis connection
+    await redis.ping();
+    logger.info('Redis connection verified');
+  } catch (error) {
+    logger.warn('Redis initialization failed, RAG caching disabled', { error });
+    redis = undefined;
+  }
+
+  // Phase 12 Week 3: Initialize Voyage embedding provider
+  try {
+    if (process.env.VOYAGE_API_KEY) {
+      embeddingProvider = new VoyageEmbeddingProvider({
+        apiKey: process.env.VOYAGE_API_KEY,
+        model: 'voyage-2',
+      });
+      logger.info('Voyage embedding provider initialized');
+
+      // Phase 12 Week 2-3: Warm embedding cache on startup
+      if (redis && embeddingProvider) {
+        logger.info('Starting cache warming...');
+        const warmingConfig: CacheWarmingConfig = {
+          redis,
+          embeddingProvider,
+          batchSize: 10,
+          ttl: 86400, // 24 hours
+        };
+
+        const stats = await warmEmbeddingCache(warmingConfig);
+        logger.info('Cache warming complete', {
+          totalQueries: stats.totalQueries,
+          cachedQueries: stats.cachedQueries,
+          cacheHits: stats.cacheHits,
+          hitRate: `${((stats.cacheHits / stats.totalQueries) * 100).toFixed(1)}%`,
+          durationMs: stats.durationMs,
+          estimatedCost: `$${stats.estimatedCost.toFixed(4)}`,
+        });
+      }
+    } else {
+      logger.warn('VOYAGE_API_KEY not set, semantic search disabled');
+    }
+  } catch (error) {
+    logger.warn('Voyage provider initialization failed, semantic search disabled', { error });
+    embeddingProvider = undefined;
+  }
+
   // Create Fastify instance
   const fastify = Fastify({
     logger: {
@@ -120,7 +181,13 @@ async function main() {
     prefix: '/trpc',
     trpcOptions: {
       router: appRouter,
-      createContext,
+      createContext: async (opts: { req: FastifyRequest; res: FastifyReply }) => {
+        return createContext({
+          ...opts,
+          redis,
+          embeddingProvider,
+        });
+      },
       onError({ path, error }: { path?: string; error: unknown }) {
         fastify.log.error({ path, error }, 'tRPC Error');
       },
@@ -148,6 +215,10 @@ async function main() {
     heartbeatInterval: 30000, // 30 seconds
   });
 
+  // Initialize survey scheduler (Phase 11 Week 3)
+  // TODO: Re-enable when survey scheduler is implemented
+  // initializeSurveyScheduler();
+
   try {
     await realtimeServer.initialize();
     fastify.log.info(`WebSocket server listening on port ${WS_PORT}`);
@@ -168,6 +239,12 @@ async function main() {
     if (realtimeServer) {
       await realtimeServer.shutdown();
       fastify.log.info('WebSocket server closed');
+    }
+
+    // Close Redis connection (Phase 12 Week 3)
+    if (redis) {
+      await redis.quit();
+      fastify.log.info('Redis connection closed');
     }
 
     process.exit(0);

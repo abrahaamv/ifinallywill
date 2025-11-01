@@ -12,6 +12,7 @@ export type AIModel =
   // Anthropic
   | 'claude-3-5-sonnet-20241022'
   // Google
+  | 'gemini-1.5-flash'
   | 'gemini-2.0-flash-exp';
 
 export interface Message {

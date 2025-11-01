@@ -48,3 +48,14 @@ export {
   type ClusteringCost,
   type Phase10CostSummary,
 } from './cost-tracking';
+
+// Phase 11 device fingerprinting
+export {
+  FINGERPRINT_CONFIG,
+  parseFingerprintResult,
+  isValidFingerprint,
+  isPotentialAbuse,
+  getShortFingerprint,
+  type FingerprintResult,
+  type ExtendedFingerprint,
+} from './fingerprint';

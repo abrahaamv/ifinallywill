@@ -227,6 +227,9 @@ export const sessions = pgTable('sessions', {
   meetingId: uuid('meeting_id').references(() => meetings.id, {
     onDelete: 'set null',
   }),
+  // Phase 11: Link sessions to end users
+  endUserId: uuid('end_user_id'), // Will be foreign key after end_users table is created
+  isDemo: boolean('is_demo').default(false), // Landing page demo sessions
   mode: text('mode', { enum: ['text', 'meeting'] })
     .notNull()
     .default('text'),
@@ -332,6 +335,9 @@ export const knowledgeChunks = pgTable('knowledge_chunks', {
     chunkSize?: number;
     overlapSize?: number;
   }>(),
+  // Phase 12 Week 1: BM25 full-text search and hierarchical retrieval
+  tokenCount: integer('token_count'),
+  parentChunkId: uuid('parent_chunk_id').references((): any => knowledgeChunks.id, { onDelete: 'set null' }),
 });
 
 export const knowledgeChunksRelations = relations(knowledgeChunks, ({ one }) => ({
@@ -601,6 +607,18 @@ export const dataRequestsRelations = relations(dataRequests, ({ one }) => ({
 // ==================== PHASE 10 AI ENHANCEMENTS ====================
 
 export * from './phase10';
+
+// ==================== END USER ENGAGEMENT ====================
+
+export * from './end-user-engagement';
+
+// ==================== RAG EVALUATION (PHASE 12 WEEK 4) ====================
+
+export * from './rag-evaluation';
+
+// ==================== CRM INTEGRATIONS (PHASE 12 WEEK 5-6) ====================
+
+export * from './crm-integrations';
 
 // ==================== INDEXES ====================
 // Indexes are defined via SQL migration files in packages/db/migrations/

@@ -110,7 +110,6 @@ export const isBrowser = typeof window !== 'undefined' && typeof window.document
  */
 export const isDevelopment =
   typeof import.meta !== 'undefined' &&
-  // @ts-expect-error - Vite env.MODE exists at runtime
   import.meta.env?.MODE === 'development';
 
 /**
@@ -118,5 +117,4 @@ export const isDevelopment =
  */
 export const isProduction =
   typeof import.meta !== 'undefined' &&
-  // @ts-expect-error - Vite env.MODE exists at runtime
   import.meta.env?.MODE === 'production';

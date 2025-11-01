@@ -8,9 +8,11 @@ import { Auth } from '@auth/core';
 import { authConfig } from '@platform/auth';
 import { db } from '@platform/db';
 import type * as schema from '@platform/db/src/schema';
+import type { VoyageEmbeddingProvider } from '@platform/knowledge';
 import { createModuleLogger } from '@platform/shared';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import type Redis from 'ioredis';
 
 const logger = createModuleLogger('trpc-context');
 
@@ -45,6 +47,8 @@ export interface Session {
  * - userId: Current user ID (from session, empty string if not authenticated)
  * - role: User's role in current tenant ('owner' | 'admin' | 'member', 'member' if not authenticated)
  * - db: Database instance (for tenant-scoped queries)
+ * - redis: Redis client for caching (Phase 12 Week 2-3)
+ * - embeddingProvider: Voyage embedding provider for semantic search (Phase 12 Week 2-3)
  */
 export interface Context {
   session: Session | null;
@@ -52,6 +56,8 @@ export interface Context {
   userId: string;
   role: 'owner' | 'admin' | 'member';
   db: PostgresJsDatabase<typeof schema>;
+  redis?: Redis;
+  embeddingProvider?: VoyageEmbeddingProvider;
 }
 
 /**
@@ -96,12 +102,18 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
  *
  * Extracts Auth.js session from request cookies and builds context object.
  * Called on every tRPC request via Fastify adapter.
+ *
+ * Phase 12 Week 3: Enhanced with Redis and Voyage embedding provider for RAG caching
  */
 export async function createContext({
   req,
+  redis,
+  embeddingProvider,
 }: {
   req: FastifyRequest;
   res: FastifyReply;
+  redis?: Redis;
+  embeddingProvider?: VoyageEmbeddingProvider;
 }): Promise<Context> {
   // Get Auth.js session from request cookies
   const session = await getSession(req);
@@ -117,5 +129,7 @@ export async function createContext({
     userId,
     role,
     db,
+    redis,
+    embeddingProvider,
   };
 }

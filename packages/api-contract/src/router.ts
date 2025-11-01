@@ -15,6 +15,12 @@ import { mfaRouter } from './routers/mfa';
 import { sessionsRouter } from './routers/sessions';
 import { usersRouter } from './routers/users';
 import { widgetsRouter } from './routers/widgets';
+import { endUsersRouter } from './routers/end-users';
+import { verificationRouter } from './routers/verification';
+import { surveysRouter } from './routers/surveys';
+import { escalationsRouter } from './routers/escalations';
+import { problemsRouter } from './routers/problems';
+import { crmRouter } from './routers/crm';
 import { router } from './trpc';
 
 /**
@@ -32,6 +38,12 @@ export const appRouter = router({
   mfa: mfaRouter, // Phase 8 Day 6-7
   apiKeys: apiKeysRouter, // Phase 8 Day 8-10
   aiPersonalities: aiPersonalitiesRouter, // Phase 4 Enhancement
+  endUsers: endUsersRouter, // Phase 11 Day 1-4
+  verification: verificationRouter, // Phase 11 Day 3-6 (SMS/Email)
+  surveys: surveysRouter, // Phase 11 Week 2 (In-widget feedback)
+  escalations: escalationsRouter, // Phase 11 Week 4 (Human agent handoff)
+  problems: problemsRouter, // Phase 11 Week 4 (Semantic deduplication)
+  crm: crmRouter, // Phase 12 Week 5 (CRM integrations)
 });
 
 /**

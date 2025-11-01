@@ -2,14 +2,19 @@
  * AI Provider Router
  * Intelligent routing to cost-optimize AI provider selection
  * Target: 75-85% cost reduction vs Claude-only baseline
+ *
+ * Feature Flag: ZERO_DAY environment variable
+ * - ZERO_DAY=true:  OpenAI-only strategy (stable, 69% cost reduction)
+ * - ZERO_DAY=false: Phase 12 Gemini strategy (77% cost reduction)
  */
 
 import { createModuleLogger } from '@platform/shared';
-import { analyzeComplexity, requiresVisionModel, shouldUseMiniModel } from './complexity';
+import { requiresVisionModel } from './complexity';
 import { calculateSavings } from './pricing';
 import { AnthropicProvider } from './providers/anthropic';
 import { GoogleProvider } from './providers/google';
 import { OpenAIProvider } from './providers/openai';
+import { createComplexityAnalyzer } from './routing/complexity-analyzer';
 import type {
   AICompletionRequest,
   AICompletionResponse,
@@ -19,6 +24,21 @@ import type {
 } from './types';
 
 const logger = createModuleLogger('ai-router');
+
+/**
+ * Feature Flag: ZERO_DAY routing strategy
+ * - true:  Emergency fallback to proven OpenAI (stable but higher cost)
+ * - false: Phase 12 documented Gemini strategy (lower cost)
+ */
+const ZERO_DAY_MODE =
+  process.env.ZERO_DAY === 'true' || process.env.ZERO_DAY === '1';
+
+// Log active strategy on module load
+if (ZERO_DAY_MODE) {
+  logger.warn('🚨 ZERO_DAY MODE ACTIVE: Using OpenAI-only routing (stable fallback)');
+} else {
+  logger.info('✅ Phase 12 Strategy: Using Gemini + OpenAI + Claude routing');
+}
 
 export interface RouterConfig {
   openaiApiKey: string;
@@ -50,9 +70,10 @@ export class AIRouter {
 
   /**
    * Determine optimal provider and model for request
+   * Supports two strategies via ZERO_DAY feature flag
    */
   private selectProvider(messages: Message[]): RoutingDecision {
-    // Check for vision requirements first
+    // Check for vision requirements first (same for both strategies)
     if (requiresVisionModel(messages)) {
       return {
         provider: 'google',
@@ -62,24 +83,102 @@ export class AIRouter {
       };
     }
 
-    // Analyze message complexity
-    const complexity = analyzeComplexity(messages);
+    // Extract user query for complexity analysis
+    const lastMessage = messages[messages.length - 1];
+    const query = lastMessage?.content || '';
 
-    // Route based on complexity score
-    if (shouldUseMiniModel(complexity)) {
-      // 70% of requests: Simple/routine queries
+    // Use Phase 12 complexity analyzer
+    const complexityAnalyzer = createComplexityAnalyzer();
+    const complexity = complexityAnalyzer.analyze(query, {
+      conversationHistory: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+    });
+
+    // Route based on ZERO_DAY feature flag
+    if (ZERO_DAY_MODE) {
+      return this.selectStableProvider(complexity);
+    } else {
+      return this.selectDefaultProvider(complexity);
+    }
+  }
+
+  /**
+   * Stable Provider Strategy: OpenAI-focused routing (stable, proven)
+   * Used when ZERO_DAY=true for emergency fallback
+   * Cost reduction: 69% vs all-Claude baseline
+   */
+  private selectStableProvider(complexity: {
+    score: number;
+    level: string;
+  }): RoutingDecision {
+    if (complexity.score < 0.4) {
+      // 70% of requests: Simple queries
       return {
         provider: 'openai',
         model: 'gpt-4o-mini',
-        reasoning: `Low complexity (${complexity.score.toFixed(2)}): ${complexity.reasoning}`,
+        reasoning: `[STABLE] gpt-4o-mini (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
         complexityScore: complexity.score,
       };
     }
-    // 30% of requests: Complex reasoning/creativity
+
+    if (complexity.score < 0.7) {
+      // 25% of requests: Moderate complexity
+      return {
+        provider: 'openai',
+        model: 'gpt-4o',
+        reasoning: `[STABLE] gpt-4o (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
+        complexityScore: complexity.score,
+      };
+    }
+
+    // 5% of requests: Complex reasoning
     return {
-      provider: 'openai',
-      model: 'gpt-4o',
-      reasoning: `High complexity (${complexity.score.toFixed(2)}): ${complexity.reasoning}`,
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      reasoning: `[STABLE] claude-3-5-sonnet (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
+      complexityScore: complexity.score,
+    };
+  }
+
+  /**
+   * Default Provider Strategy: Gemini + OpenAI + Claude routing (cost-optimized)
+   * Used when ZERO_DAY=false or not set (follows Phase 12 documentation)
+   * Cost reduction: 77% vs all-Claude baseline
+   */
+  private selectDefaultProvider(complexity: {
+    score: number;
+    level: string;
+  }): RoutingDecision {
+    if (complexity.score < 0.4) {
+      // 70% of requests: Simple queries
+      // Gemini Flash (free during preview, then $0.40/1M)
+      return {
+        provider: 'google',
+        model: 'gemini-1.5-flash',
+        reasoning: `[DEFAULT] gemini-1.5-flash (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
+        complexityScore: complexity.score,
+      };
+    }
+
+    if (complexity.score < 0.7) {
+      // 25% of requests: Moderate complexity
+      // GPT-4o-mini ($0.49/1M blended)
+      return {
+        provider: 'openai',
+        model: 'gpt-4o-mini',
+        reasoning: `[DEFAULT] gpt-4o-mini (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
+        complexityScore: complexity.score,
+      };
+    }
+
+    // 5% of requests: Complex reasoning
+    // Claude Sonnet 4.5 ($11.55/1M blended)
+    return {
+      provider: 'anthropic',
+      model: 'claude-3-5-sonnet-20241022',
+      reasoning: `[DEFAULT] claude-3-5-sonnet (complexity: ${complexity.level}, score: ${complexity.score.toFixed(2)})`,
       complexityScore: complexity.score,
     };
   }

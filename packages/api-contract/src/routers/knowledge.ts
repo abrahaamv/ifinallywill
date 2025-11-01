@@ -24,6 +24,9 @@ import {
   chunkDocument,
   estimateTokens,
   validateChunkOptions,
+  HybridRetriever,
+  executeEnhancedRAGQuery,
+  type EnhancedRAGOptions,
 } from '@platform/knowledge';
 import { badRequest, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
@@ -121,6 +124,24 @@ const searchKnowledgeSchema = z.object({
 });
 
 /**
+ * Phase 12 Week 1: Hybrid search schemas
+ */
+const hybridSearchSchema = z.object({
+  query: z.string().min(1, 'Query is required'),
+  topK: z.number().int().min(1).max(50).default(25),
+  minScore: z.number().min(0).max(1).default(0.7).optional(),
+});
+
+const enhancedSearchSchema = z.object({
+  query: z.string().min(1, 'Query is required'),
+  topK: z.number().int().min(1).max(20).default(5),
+  minScore: z.number().min(0).max(1).default(0.7).optional(),
+  useHybridSearch: z.boolean().default(true),
+  useSmall2Big: z.boolean().default(false),
+  useReranking: z.boolean().default(true),
+});
+
+/**
  * Knowledge router with RLS enforcement
  */
 export const knowledgeRouter = router({
@@ -153,6 +174,23 @@ export const knowledgeRouter = router({
       // Apply pagination
       const results = await query.limit(input.limit).offset(input.offset);
 
+      // Get chunk counts for all documents
+      const chunkCounts = await ctx.db
+        .select({
+          documentId: knowledgeChunks.documentId,
+          count: count(),
+        })
+        .from(knowledgeChunks)
+        .where(
+          sql`${knowledgeChunks.documentId} IN (${sql.join(
+            results.map((r) => r.id),
+            sql`, `
+          )})`
+        )
+        .groupBy(knowledgeChunks.documentId);
+
+      const chunkCountMap = new Map(chunkCounts.map((c) => [c.documentId, Number(c.count)]));
+
       // Get total count
       const countResult = await ctx.db.select({ count: count() }).from(knowledgeDocuments);
 
@@ -167,6 +205,7 @@ export const knowledgeRouter = router({
           metadata: doc.metadata,
           createdAt: doc.createdAt,
           updatedAt: doc.updatedAt,
+          chunkCount: chunkCountMap.get(doc.id) || 0,
         })),
         total: totalCount,
         hasMore: input.offset + results.length < totalCount,
@@ -535,10 +574,117 @@ export const knowledgeRouter = router({
   }),
 
   // ==================== RAG OPERATIONS ====================
-  // These endpoints will be fully implemented in Phase 5 with @platform/knowledge integration
+
+  /**
+   * Phase 12 Week 1-3: Hybrid search with RRF fusion + caching
+   *
+   * Combines semantic and BM25 keyword search for optimal retrieval.
+   * Uses Reciprocal Rank Fusion (RRF) to merge results from both methods.
+   *
+   * Phase 12 Week 3: Enhanced with Redis caching and Voyage embeddings
+   *
+   * Process:
+   * 1. Classify query type (conceptual, technical, conversational, exact_match)
+   * 2. Parallel execution of semantic + BM25 searches (with embedding cache)
+   * 3. Fuse results using RRF or weighted combination
+   * 4. Return top-K ranked results
+   */
+  hybridSearch: protectedProcedure.input(hybridSearchSchema).query(async ({ ctx, input }) => {
+    try {
+      const retriever = new HybridRetriever(
+        ctx.db,
+        ctx.tenantId,
+        ctx.embeddingProvider,
+        ctx.redis
+      );
+      const results = await retriever.retrieve(input.query, input.topK);
+
+      // Filter by minimum score (default to 0.7)
+      const minScore = input.minScore ?? 0.7;
+      const filteredResults = results.filter((r) => r.score >= minScore);
+
+      return {
+        results: filteredResults.map((r) => ({
+          id: r.id,
+          documentId: r.documentId,
+          content: r.text,
+          score: Number(r.score.toFixed(4)),
+          metadata: r.metadata,
+          relevance:
+            r.score >= 0.85 ? 'high' : r.score >= 0.7 ? 'medium' : 'low',
+        })),
+        total: filteredResults.length,
+        query: input.query,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      throw internalError({
+        message: `Hybrid search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        cause: error as Error,
+        logLevel: 'error',
+      });
+    }
+  }),
+
+  /**
+   * Phase 12 Week 1-3: Enhanced RAG with full pipeline + caching
+   *
+   * Complete RAG query with all Phase 12 enhancements:
+   * - Hybrid search (semantic + BM25 with RRF) with caching
+   * - Small2Big hierarchical retrieval (optional)
+   * - Cohere reranking (Phase 10, optional)
+   *
+   * Phase 12 Week 3: Enhanced with Redis caching and Voyage embeddings
+   *
+   * Returns formatted context ready for LLM consumption.
+   */
+  enhancedSearch: protectedProcedure.input(enhancedSearchSchema).query(async ({ ctx, input }) => {
+    try {
+      const options: EnhancedRAGOptions = {
+        query: input.query,
+        topK: input.topK,
+        minScore: input.minScore || 0.7,
+        useHybridSearch: input.useHybridSearch,
+        useSmall2Big: input.useSmall2Big,
+        useReranking: input.useReranking,
+        tenantId: ctx.tenantId,
+        embeddingProvider: ctx.embeddingProvider,
+        redis: ctx.redis,
+      };
+
+      const result = await executeEnhancedRAGQuery(ctx.db, options);
+
+      return {
+        context: result.context,
+        chunks: result.chunks.map((c) => ({
+          id: c.chunk.id,
+          documentId: c.chunk.documentId,
+          content: c.chunk.content,
+          score: Number(c.score.toFixed(4)),
+          relevance: c.relevance,
+          metadata: c.chunk.metadata,
+        })),
+        totalChunks: result.totalChunks,
+        processingTimeMs: result.processingTimeMs,
+        query: input.query,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      throw internalError({
+        message: `Enhanced search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        cause: error as Error,
+        logLevel: 'error',
+      });
+    }
+  }),
 
   /**
    * Semantic search with vector similarity (Priority 2)
+   *
+   * Legacy endpoint - maintained for backward compatibility.
+   * For new implementations, use hybridSearch or enhancedSearch instead.
    *
    * Process:
    * 1. Generate query embedding via Voyage API
