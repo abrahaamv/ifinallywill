@@ -86,7 +86,7 @@ export function MessageList({
       )}
 
       {messages.length === 0 && !isLoading && (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
           <svg
             className="w-16 h-16 mb-4 text-gray-300"
             fill="none"
@@ -131,7 +131,7 @@ export function MessageList({
               >
                 {/* User name (only for other users' first message) */}
                 {!isOwn && showAvatar && (
-                  <div className="text-xs text-gray-500 mb-1 px-1">{message.userId}</div>
+                  <div className="text-xs text-muted-foreground mb-1 px-1">{message.userId}</div>
                 )}
 
                 {/* Message content */}
@@ -145,7 +145,7 @@ export function MessageList({
 
                 {/* Timestamp and status */}
                 <div className="flex items-center gap-1 mt-1 px-1">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {formatTimestamp(message.timestamp)}
                   </span>
                   {isOwn && message.status && (
@@ -161,7 +161,7 @@ export function MessageList({
       {/* Typing indicators */}
       {typingUsers.size > 0 && (
         <div className="flex justify-start">
-          <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+          <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-lg">
             <div className="flex gap-1">
               <span
                 className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
@@ -176,7 +176,7 @@ export function MessageList({
                 style={{ animationDelay: '300ms' }}
               ></span>
             </div>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {typingUsers.size === 1
                 ? `${Array.from(typingUsers)[0]} is typing`
                 : `${typingUsers.size} users are typing`}

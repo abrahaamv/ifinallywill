@@ -12,31 +12,15 @@ import {
   Minimize2,
   Send,
   Sparkles,
-  Target,
   User,
   X,
-  Zap,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { Message } from '../types/message';
 import { trpc } from '../utils/trpc';
+import { MessageDebugPanel } from './chat/MessageDebugPanel';
 
 const logger = createModuleLogger('ChatWidget');
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-  metadata?: {
-    model?: string;
-    tokensUsed?: number;
-    costUsd?: number;
-    latencyMs?: number;
-    ragChunksRetrieved?: number;
-    ragProcessingTimeMs?: number;
-    ragTopRelevance?: 'high' | 'medium' | 'low' | 'none';
-  };
-}
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +52,6 @@ export function ChatWidget() {
             mode: 'text',
             metadata: {
               userAgent: navigator.userAgent,
-              widgetMode: true,
             },
           });
           setSessionId(session.id);
@@ -263,47 +246,10 @@ export function ChatWidget() {
                         </CardContent>
                       </Card>
 
-                      {/* Metadata below message for assistant */}
+                      {/* Developer Info Panel */}
                       {message.metadata && message.role === 'assistant' && (
-                        <div className="px-2 space-y-0.5">
-                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                            {message.metadata.model && (
-                              <span className="flex items-center gap-1">
-                                <Sparkles className="w-3 h-3" />
-                                {message.metadata.model}**
-                              </span>
-                            )}
-                            {message.metadata.tokensUsed && (
-                              <span>{message.metadata.tokensUsed} tokens</span>
-                            )}
-                            {message.metadata.costUsd && (
-                              <span>${message.metadata.costUsd.toFixed(6)}</span>
-                            )}
-                            {message.metadata.latencyMs && (
-                              <span>{message.metadata.latencyMs}ms</span>
-                            )}
-                          </div>
-                          {message.metadata.ragChunksRetrieved !== undefined &&
-                            message.metadata.ragChunksRetrieved > 0 && (
-                              <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
-                                <span className="flex items-center gap-1">
-                                  📚 RAG: {message.metadata.ragChunksRetrieved} chunks***
-                                </span>
-                                {message.metadata.ragProcessingTimeMs && (
-                                  <span className="flex items-center gap-1">
-                                    <Zap className="w-3 h-3" />{' '}
-                                    {message.metadata.ragProcessingTimeMs}ms
-                                  </span>
-                                )}
-                                {message.metadata.ragTopRelevance &&
-                                  message.metadata.ragTopRelevance !== 'none' && (
-                                    <span className="flex items-center gap-1">
-                                      <Target className="w-3 h-3" />{' '}
-                                      {message.metadata.ragTopRelevance} relevance
-                                    </span>
-                                  )}
-                              </div>
-                            )}
+                        <div className="px-2">
+                          <MessageDebugPanel metadata={message.metadata} />
                         </div>
                       )}
                     </div>

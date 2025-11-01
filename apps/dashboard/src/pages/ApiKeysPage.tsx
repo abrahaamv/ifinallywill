@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@platform/ui';
-import { CheckCircle, Copy, Eye, EyeOff, Key, Plus, Shield, TrendingUp } from 'lucide-react';
+import { CheckCircle, Copy, Key, Plus, Shield, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 

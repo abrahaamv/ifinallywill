@@ -104,8 +104,8 @@ export function WidgetConfigPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Widget Configuration</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Widget Configuration</h1>
+          <p className="mt-2 text-muted-foreground">
             Customize and deploy your embeddable AI assistant widget
           </p>
         </div>
@@ -117,49 +117,49 @@ export function WidgetConfigPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active Widgets</p>
+              <p className="text-sm font-medium text-muted-foreground">Active Widgets</p>
               <MessageCircle className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : widgets.length}
             </p>
-            <p className="mt-1 text-xs text-gray-500">Across all domains</p>
+            <p className="mt-1 text-xs text-muted-foreground">Across all domains</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Bundle Size</p>
+              <p className="text-sm font-medium text-muted-foreground">Bundle Size</p>
               <Zap className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '52KB'}</p>
-            <p className="mt-1 text-xs text-gray-500">Gzipped (86KB raw)</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '52KB'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Gzipped (86KB raw)</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Load Time</p>
+              <p className="text-sm font-medium text-muted-foreground">Load Time</p>
               <Globe className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '1.2s'}</p>
-            <p className="mt-1 text-xs text-gray-500">Avg on 4G network</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '1.2s'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Avg on 4G network</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Performance</p>
+              <p className="text-sm font-medium text-muted-foreground">Performance</p>
               <Eye className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '98/100'}</p>
-            <p className="mt-1 text-xs text-gray-500">Lighthouse score</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '98/100'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Lighthouse score</p>
           </CardContent>
         </Card>
       </div>
@@ -168,7 +168,7 @@ export function WidgetConfigPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Configuration Panel */}
         <div className="space-y-6">
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings2 className="h-5 w-5" />
@@ -259,7 +259,7 @@ export function WidgetConfigPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Show Avatar</p>
-                        <p className="text-sm text-gray-500">Display AI assistant avatar</p>
+                        <p className="text-sm text-muted-foreground">Display AI assistant avatar</p>
                       </div>
                       <Switch defaultChecked={widgetConfig.showAvatar} />
                     </div>
@@ -284,7 +284,7 @@ export function WidgetConfigPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Allow File Upload</p>
-                        <p className="text-sm text-gray-500">Users can attach files to messages</p>
+                        <p className="text-sm text-muted-foreground">Users can attach files to messages</p>
                       </div>
                       <Switch defaultChecked={widgetConfig.allowFileUpload} />
                     </div>
@@ -292,7 +292,7 @@ export function WidgetConfigPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Show Timestamps</p>
-                        <p className="text-sm text-gray-500">Display message timestamps</p>
+                        <p className="text-sm text-muted-foreground">Display message timestamps</p>
                       </div>
                       <Switch defaultChecked={widgetConfig.showTimestamps} />
                     </div>
@@ -300,7 +300,7 @@ export function WidgetConfigPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Sound Notifications</p>
-                        <p className="text-sm text-gray-500">Play sound for new messages</p>
+                        <p className="text-sm text-muted-foreground">Play sound for new messages</p>
                       </div>
                       <Switch defaultChecked={widgetConfig.soundEnabled} />
                     </div>
@@ -308,12 +308,12 @@ export function WidgetConfigPage() {
 
                   {/* Advanced Tab */}
                   <TabsContent value="advanced" className="space-y-4">
-                    <div className="rounded-lg border border-gray-200 p-4">
+                    <div className="rounded-lg border border p-4">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 text-primary-600 mt-0.5" />
                         <div>
                           <p className="font-medium">Shadow DOM Isolation</p>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             Widget styles are isolated from parent page CSS using Shadow DOM. This
                             prevents style conflicts and ensures consistent appearance.
                           </p>
@@ -346,7 +346,7 @@ export function WidgetConfigPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Debug Mode</p>
-                        <p className="text-sm text-gray-500">Enable console logging</p>
+                        <p className="text-sm text-muted-foreground">Enable console logging</p>
                       </div>
                       <Switch />
                     </div>
@@ -357,7 +357,7 @@ export function WidgetConfigPage() {
           </Card>
 
           {/* Embed Code */}
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Code className="h-5 w-5" />
@@ -367,7 +367,7 @@ export function WidgetConfigPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
-                <pre className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
+                <pre className="overflow-x-auto rounded-lg border border bg-background p-4 text-sm">
                   <code>{getEmbedScript()}</code>
                 </pre>
                 <Button
@@ -407,7 +407,7 @@ export function WidgetConfigPage() {
 
         {/* Live Preview Panel */}
         <div className="space-y-6">
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -437,15 +437,15 @@ export function WidgetConfigPage() {
             </CardHeader>
             <CardContent>
               <div
-                className={`mx-auto rounded-lg border-2 border-gray-300 bg-gray-100 transition-all ${
+                className={`mx-auto rounded-lg border-2 border bg-muted transition-all ${
                   previewMode === 'desktop' ? 'h-[600px]' : 'h-[600px] w-[375px]'
                 }`}
               >
                 <div className="flex h-full items-center justify-center p-8">
                   <div className="text-center">
                     <MessageCircle className="mx-auto h-16 w-16 text-gray-400" />
-                    <p className="mt-4 text-gray-600">Widget preview will appear here</p>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-4 text-muted-foreground">Widget preview will appear here</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
                       {previewMode === 'desktop' ? 'Desktop' : 'Mobile'} view
                     </p>
                   </div>
@@ -455,30 +455,30 @@ export function WidgetConfigPage() {
           </Card>
 
           {/* Performance Metrics */}
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <CardTitle>Performance Metrics</CardTitle>
               <CardDescription>Widget bundle optimization details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Bundle Size (gzipped)</span>
+                <span className="text-sm text-muted-foreground">Bundle Size (gzipped)</span>
                 <Badge variant="secondary">52KB</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Raw Size</span>
+                <span className="text-sm text-muted-foreground">Raw Size</span>
                 <Badge variant="outline">86KB</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Load Time (4G)</span>
+                <span className="text-sm text-muted-foreground">Load Time (4G)</span>
                 <Badge variant="secondary">1.2s</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Lighthouse Score</span>
+                <span className="text-sm text-muted-foreground">Lighthouse Score</span>
                 <Badge variant="default">98/100</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Shadow DOM</span>
+                <span className="text-sm text-muted-foreground">Shadow DOM</span>
                 <Badge variant="secondary">Isolated</Badge>
               </div>
             </CardContent>

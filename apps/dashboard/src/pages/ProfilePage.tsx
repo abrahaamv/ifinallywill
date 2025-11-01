@@ -419,10 +419,7 @@ export function ProfilePage() {
                   <Label className="text-sm font-medium">User ID</Label>
                   <p className="mt-1 text-sm text-muted-foreground font-mono">{user.id}</p>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">Tenant ID</Label>
-                  <p className="mt-1 text-sm text-muted-foreground font-mono">{user.tenantId}</p>
-                </div>
+                {/* Tenant ID removed - not available in user type */}
               </div>
             </CardContent>
           </Card>

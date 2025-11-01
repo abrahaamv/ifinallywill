@@ -31,9 +31,9 @@ export function ChatWindow({ sessionId, wsUrl, onClose }: ChatWindowProps) {
   });
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-full bg-card rounded-lg shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border bg-gray-50">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div
@@ -45,14 +45,14 @@ export function ChatWindow({ sessionId, wsUrl, onClose }: ChatWindowProps) {
                     : 'bg-red-500'
               }`}
             />
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-foreground">
               {isConnected ? 'Chat' : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
             </h2>
           </div>
 
           {/* Online users count */}
           {onlineUsers.size > 0 && (
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -70,7 +70,7 @@ export function ChatWindow({ sessionId, wsUrl, onClose }: ChatWindowProps) {
         {onClose && (
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-muted-foreground transition-colors"
             aria-label="Close chat"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

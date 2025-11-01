@@ -38,15 +38,15 @@ const logger = createModuleLogger('PersonalitiesPage');
 interface Personality {
   id: string;
   name: string;
-  tone: 'professional' | 'friendly' | 'casual' | 'empathetic' | 'technical';
+  tone: string; // Can be 'professional' | 'friendly' | 'casual' | 'empathetic' | 'technical'
   systemPrompt: string;
   knowledgeBaseIds: string[];
   temperature: number;
   maxTokens: number;
   isDefault: boolean;
   usageCount: number;
-  lastUsed: Date | null;
-  createdAt: Date;
+  lastUsed: string | null; // tRPC returns string ISO timestamp
+  createdAt: string; // tRPC returns string ISO timestamp
 }
 
 interface PersonalityFormData {
@@ -150,7 +150,7 @@ export function PersonalitiesPage() {
     setSelectedPersonality(personality);
     setFormData({
       name: personality.name,
-      tone: personality.tone,
+      tone: personality.tone as 'professional' | 'friendly' | 'casual' | 'empathetic' | 'technical',
       systemPrompt: personality.systemPrompt,
       knowledgeBaseIds: personality.knowledgeBaseIds,
       temperature: personality.temperature,
@@ -165,7 +165,7 @@ export function PersonalitiesPage() {
       friendly: 'bg-green-100 text-green-700 border-green-200',
       casual: 'bg-amber-100 text-amber-700 border-amber-200',
       empathetic: 'bg-purple-100 text-purple-700 border-purple-200',
-      technical: 'bg-gray-100 text-gray-700 border-gray-200',
+      technical: 'bg-muted text-gray-700 border-gray-200',
     };
     return colors[tone as keyof typeof colors] || colors.professional;
   };
@@ -175,8 +175,8 @@ export function PersonalitiesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Personalities</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">AI Personalities</h1>
+          <p className="mt-2 text-muted-foreground">
             Configure AI assistants with custom tones, knowledge, and behaviors
           </p>
         </div>
@@ -188,55 +188,55 @@ export function PersonalitiesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
               <Brain className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : totalPersonalities}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active</p>
+              <p className="text-sm font-medium text-muted-foreground">Active</p>
               <Bot className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : activePersonalities}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total Usage</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Usage</p>
               <Users className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : totalUsage.toLocaleString()}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Avg Usage</p>
+              <p className="text-sm font-medium text-muted-foreground">Avg Usage</p>
               <Bot className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : avgUsage}</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : avgUsage}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Personalities Grid */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle>All Personalities</CardTitle>
           <CardDescription>{personalities.length} configured AI personalities</CardDescription>
@@ -257,8 +257,8 @@ export function PersonalitiesPage() {
           ) : personalities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Brain className="mb-4 h-16 w-16 text-gray-400" />
-              <p className="text-gray-600">No personalities configured</p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="text-muted-foreground">No personalities configured</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Create your first AI personality to get started
               </p>
               <Button className="mt-4" onClick={() => setIsCreateOpen(true)}>
@@ -271,7 +271,7 @@ export function PersonalitiesPage() {
               {personalities.map((personality) => (
                 <Card
                   key={personality.id}
-                  className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                  className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -300,7 +300,7 @@ export function PersonalitiesPage() {
                   </CardHeader>
 
                   <CardContent>
-                    <div className="space-y-2 text-xs text-gray-600">
+                    <div className="space-y-2 text-xs text-muted-foreground">
                       <div className="flex items-center justify-between">
                         <span>Temperature:</span>
                         <span className="font-medium">{personality.temperature.toFixed(1)}</span>

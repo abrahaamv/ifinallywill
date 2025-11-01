@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss()] as any, // Type assertion to bypass @types/node version conflict
   server: {
     port: 5174,
     proxy: {

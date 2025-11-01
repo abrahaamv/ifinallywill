@@ -145,8 +145,8 @@ export function OptimizePage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Optimization</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">AI Optimization</h1>
+          <p className="mt-2 text-muted-foreground">
             Knowledge gaps, improvement opportunities, and learning recommendations
           </p>
         </div>
@@ -158,55 +158,55 @@ export function OptimizePage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Knowledge Gaps</p>
+              <p className="text-sm font-medium text-muted-foreground">Knowledge Gaps</p>
               <FileQuestion className="h-5 w-5 text-orange-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{knowledgeGaps.length}</p>
-            <p className="mt-1 text-xs text-gray-500">Areas needing improvement</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{knowledgeGaps.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Areas needing improvement</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Opportunities</p>
+              <p className="text-sm font-medium text-muted-foreground">Opportunities</p>
               <Lightbulb className="h-5 w-5 text-blue-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {optimizationSuggestions.length}
             </p>
-            <p className="mt-1 text-xs text-gray-500">Active recommendations</p>
+            <p className="mt-1 text-xs text-muted-foreground">Active recommendations</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Avg AI Confidence</p>
+              <p className="text-sm font-medium text-muted-foreground">Avg AI Confidence</p>
               <Sparkles className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">86.3%</p>
-            <p className="mt-1 text-xs text-gray-500">Across all topics</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">86.3%</p>
+            <p className="mt-1 text-xs text-muted-foreground">Across all topics</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Potential Savings</p>
+              <p className="text-sm font-medium text-muted-foreground">Potential Savings</p>
               <TrendingUp className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">$148/mo</p>
-            <p className="mt-1 text-xs text-gray-500">From optimizations</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">$148/mo</p>
+            <p className="mt-1 text-xs text-muted-foreground">From optimizations</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Knowledge Gaps */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileQuestion className="h-5 w-5" />
@@ -233,7 +233,7 @@ export function OptimizePage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{gap.topic}</span>
-                      <div className="mt-1 text-xs text-gray-500">"{gap.exampleQuestions[0]}"</div>
+                      <div className="mt-1 text-xs text-muted-foreground">"{gap.exampleQuestions[0]}"</div>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -272,7 +272,7 @@ export function OptimizePage() {
       </Card>
 
       {/* Optimization Suggestions */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5" />
@@ -287,7 +287,7 @@ export function OptimizePage() {
               className={`rounded-lg border p-4 ${
                 suggestion.priority === 'high'
                   ? 'border-red-200 bg-red-50'
-                  : 'border-gray-200 bg-gray-50'
+                  : 'border bg-gray-50'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -309,15 +309,15 @@ export function OptimizePage() {
                   <h4 className="mb-2 font-semibold">{suggestion.suggestion}</h4>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Impact:</span>
+                      <span className="text-muted-foreground">Impact:</span>
                       <span className="ml-2 font-medium">{suggestion.impact}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Effort:</span>
+                      <span className="text-muted-foreground">Effort:</span>
                       <span className="ml-2 font-medium">{suggestion.effort}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Expected:</span>
+                      <span className="text-muted-foreground">Expected:</span>
                       <span className="ml-2 font-medium text-green-600">
                         {suggestion.expectedImprovement}
                       </span>
@@ -334,7 +334,7 @@ export function OptimizePage() {
       </Card>
 
       {/* Learning Progress */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -354,17 +354,17 @@ export function OptimizePage() {
                     <AlertCircle className="h-4 w-4 text-blue-600" />
                   ) : null}
                 </div>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {opportunity.conversations} conversations
                 </span>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex-1 space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">
+                    <span className="text-muted-foreground">
                       Current: {opportunity.currentPerformance}%
                     </span>
-                    <span className="text-gray-600">Target: {opportunity.targetPerformance}%</span>
+                    <span className="text-muted-foreground">Target: {opportunity.targetPerformance}%</span>
                   </div>
                   <Progress value={opportunity.currentPerformance} className="h-2" />
                 </div>

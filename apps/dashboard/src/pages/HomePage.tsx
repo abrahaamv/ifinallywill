@@ -112,10 +112,10 @@ export function HomePage() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Welcome back, {user.name.split(' ')[0]}
         </h1>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-2 text-muted-foreground">
           Here's what's happening with your AI assistant platform today.
         </p>
       </div>
@@ -123,7 +123,7 @@ export function HomePage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Conversations */}
-        <Card className="border-gray-200 shadow-card hover:shadow-md transition-shadow">
+        <Card className="border shadow-card hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             {isLoading ? (
               <div className="space-y-3">
@@ -134,11 +134,11 @@ export function HomePage() {
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-600">Conversations</p>
+                  <p className="text-sm font-medium text-muted-foreground">Conversations</p>
                   <MessageSquare className="h-5 w-5 text-primary-600" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-3xl font-bold text-foreground">
                     {totalSessions.toLocaleString()}
                   </p>
                   <span className="flex items-center gap-1 text-sm font-medium text-green-600">
@@ -146,14 +146,14 @@ export function HomePage() {
                     12%
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">+32 from last month</p>
+                <p className="mt-1 text-xs text-muted-foreground">+32 from last month</p>
               </>
             )}
           </CardContent>
         </Card>
 
         {/* Knowledge Base */}
-        <Card className="border-gray-200 shadow-card hover:shadow-md transition-shadow">
+        <Card className="border shadow-card hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             {isLoading ? (
               <div className="space-y-3">
@@ -164,11 +164,11 @@ export function HomePage() {
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-600">Documents</p>
+                  <p className="text-sm font-medium text-muted-foreground">Documents</p>
                   <BookOpen className="h-5 w-5 text-primary-600" />
                 </div>
                 <div className="mt-3 flex items-baseline gap-2">
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-3xl font-bold text-foreground">
                     {totalDocuments.toLocaleString()}
                   </p>
                   <span className="flex items-center gap-1 text-sm font-medium text-green-600">
@@ -176,44 +176,44 @@ export function HomePage() {
                     8%
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">+{totalDocuments} in knowledge base</p>
+                <p className="mt-1 text-xs text-muted-foreground">+{totalDocuments} in knowledge base</p>
               </>
             )}
           </CardContent>
         </Card>
 
         {/* Cost Savings */}
-        <Card className="border-gray-200 shadow-card hover:shadow-md transition-shadow">
+        <Card className="border shadow-card hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Cost Savings</p>
+              <p className="text-sm font-medium text-muted-foreground">Cost Savings</p>
               <DollarSign className="h-5 w-5 text-green-600" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <p className="text-3xl font-bold text-gray-900">{costSavings.toFixed(0)}%</p>
+              <p className="text-3xl font-bold text-foreground">{costSavings.toFixed(0)}%</p>
               <span className="flex items-center gap-1 text-sm font-medium text-green-600">
                 <TrendingDown className="h-4 w-4" />
                 85% reduction
               </span>
             </div>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               ${monthlyCost.toFixed(2)}/mo vs ${baselineCost.toFixed(2)}
             </p>
           </CardContent>
         </Card>
 
         {/* Active Now */}
-        <Card className="border-gray-200 shadow-card hover:shadow-md transition-shadow">
+        <Card className="border shadow-card hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active Now</p>
+              <p className="text-sm font-medium text-muted-foreground">Active Now</p>
               <Activity className="h-5 w-5 text-primary-600" />
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <p className="text-3xl font-bold text-gray-900">{activeNow}</p>
+              <p className="text-3xl font-bold text-foreground">{activeNow}</p>
               <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-green-400" />
             </div>
-            <p className="mt-1 text-xs text-gray-500">Real-time connections</p>
+            <p className="mt-1 text-xs text-muted-foreground">Real-time connections</p>
           </CardContent>
         </Card>
       </div>
@@ -222,7 +222,7 @@ export function HomePage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Activity Feed */}
         <div className="lg:col-span-2">
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -259,9 +259,9 @@ export function HomePage() {
 
                     {/* Content */}
                     <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                      <p className="text-sm text-gray-600">{activity.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <p className="text-sm font-medium text-foreground">{activity.title}</p>
+                      <p className="text-sm text-muted-foreground">{activity.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         {activity.timestamp}
                         {activity.user && (
@@ -282,7 +282,7 @@ export function HomePage() {
         {/* Quick Actions */}
         <div className="space-y-6">
           {/* Quick Actions Card */}
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <CardTitle className="text-lg">Quick Actions</CardTitle>
               <CardDescription>Get started with common tasks</CardDescription>
@@ -296,7 +296,7 @@ export function HomePage() {
                 <MessageSquare className="h-5 w-5 text-primary-600" />
                 <div className="text-left">
                   <p className="font-medium">Start Conversation</p>
-                  <p className="text-xs text-gray-500">Chat with AI assistant</p>
+                  <p className="text-xs text-muted-foreground">Chat with AI assistant</p>
                 </div>
               </Button>
 
@@ -308,7 +308,7 @@ export function HomePage() {
                 <Plus className="h-5 w-5 text-primary-600" />
                 <div className="text-left">
                   <p className="font-medium">Upload Documents</p>
-                  <p className="text-xs text-gray-500">Add to knowledge base</p>
+                  <p className="text-xs text-muted-foreground">Add to knowledge base</p>
                 </div>
               </Button>
 
@@ -320,7 +320,7 @@ export function HomePage() {
                 <Video className="h-5 w-5 text-primary-600" />
                 <div className="text-left">
                   <p className="font-medium">Create Meeting</p>
-                  <p className="text-xs text-gray-500">Start LiveKit room</p>
+                  <p className="text-xs text-muted-foreground">Start LiveKit room</p>
                 </div>
               </Button>
 
@@ -332,39 +332,39 @@ export function HomePage() {
                 <Users className="h-5 w-5 text-primary-600" />
                 <div className="text-left">
                   <p className="font-medium">Invite Team</p>
-                  <p className="text-xs text-gray-500">Add team members</p>
+                  <p className="text-xs text-muted-foreground">Add team members</p>
                 </div>
               </Button>
             </CardContent>
           </Card>
 
           {/* System Status */}
-          <Card className="border-gray-200 shadow-card">
+          <Card className="border shadow-card">
             <CardHeader>
               <CardTitle className="text-lg">System Status</CardTitle>
               <CardDescription>Platform health</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">API</span>
+                <span className="text-sm text-muted-foreground">API</span>
                 <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                   Operational
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Database</span>
+                <span className="text-sm text-muted-foreground">Database</span>
                 <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                   Operational
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">LiveKit</span>
+                <span className="text-sm text-muted-foreground">LiveKit</span>
                 <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                   Operational
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">AI Services</span>
+                <span className="text-sm text-muted-foreground">AI Services</span>
                 <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                   Operational
                 </Badge>

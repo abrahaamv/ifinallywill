@@ -142,12 +142,12 @@ export function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
           Create your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
           <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
             Sign in
@@ -156,7 +156,7 @@ export function SignupPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {successMessage && (
             <div className="mb-4 rounded-md bg-green-50 p-4">
               <div className="flex">
@@ -266,7 +266,7 @@ export function SignupPage() {
                 />
               </div>
               {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password}</p>}
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Must be 8+ characters with uppercase, lowercase, number, and special character
               </p>
             </div>
@@ -310,10 +310,10 @@ export function SignupPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
               </div>
             </div>
 
@@ -323,7 +323,7 @@ export function SignupPage() {
                 onClick={() => {
                   window.location.href = '/api/auth/signin/google';
                 }}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                className="w-full inline-flex justify-center py-2 px-4 border border rounded-md shadow-sm bg-card text-sm font-medium text-muted-foreground hover:bg-gray-50"
               >
                 <span className="sr-only">Sign up with Google</span>
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -336,7 +336,7 @@ export function SignupPage() {
                 onClick={() => {
                   window.location.href = '/api/auth/signin/microsoft';
                 }}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                className="w-full inline-flex justify-center py-2 px-4 border border rounded-md shadow-sm bg-card text-sm font-medium text-muted-foreground hover:bg-gray-50"
               >
                 <span className="sr-only">Sign up with Microsoft</span>
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

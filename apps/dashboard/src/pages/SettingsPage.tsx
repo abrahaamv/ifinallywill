@@ -57,60 +57,60 @@ export function SettingsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="mt-2 text-gray-600">Manage your account, security, and preferences</p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="mt-2 text-muted-foreground">Manage your account, security, and preferences</p>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Security Score</p>
+              <p className="text-sm font-medium text-muted-foreground">Security Score</p>
               <Shield className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '85/100'}</p>
-            <p className="mt-1 text-xs text-gray-500">Enable MFA for 95/100</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '85/100'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Enable MFA for 95/100</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active Sessions</p>
+              <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
               <Key className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '3'}</p>
-            <p className="mt-1 text-xs text-gray-500">2 devices, 1 browser</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '3'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">2 devices, 1 browser</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Last Login</p>
+              <p className="text-sm font-medium text-muted-foreground">Last Login</p>
               <UserCircle className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-xl font-bold text-gray-900">{isLoading ? '—' : 'Today'}</p>
-            <p className="mt-1 text-xs text-gray-500">10:45 AM from Chrome</p>
+            <p className="mt-3 text-xl font-bold text-foreground">{isLoading ? '—' : 'Today'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">10:45 AM from Chrome</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Password Age</p>
+              <p className="text-sm font-medium text-muted-foreground">Password Age</p>
               <Lock className="h-5 w-5 text-amber-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '89d'}</p>
-            <p className="mt-1 text-xs text-gray-500">Consider updating</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '89d'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Consider updating</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Settings Tabs */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardContent className="pt-6">
           {isLoading ? (
             <div className="space-y-4">
@@ -140,7 +140,7 @@ export function SettingsPage() {
 
               {/* Account Settings */}
               <TabsContent value="account" className="space-y-6">
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
                     <CardDescription>Update your account details and email address</CardDescription>
@@ -164,7 +164,7 @@ export function SettingsPage() {
                         type="email"
                         defaultValue={userData?.email || 'user@example.com'}
                       />
-                      <p className="text-xs text-gray-500">Used for login and notifications</p>
+                      <p className="text-xs text-muted-foreground">Used for login and notifications</p>
                     </div>
 
                     <div className="space-y-2">
@@ -181,33 +181,33 @@ export function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>OAuth Connections</CardTitle>
                     <CardDescription>Manage connected accounts for single sign-on</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                    <div className="flex items-center justify-between rounded-lg border border p-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
                           <Mail className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
                           <p className="font-medium">Google</p>
-                          <p className="text-xs text-gray-500">john.doe@gmail.com</p>
+                          <p className="text-xs text-muted-foreground">john.doe@gmail.com</p>
                         </div>
                       </div>
                       <Badge variant="secondary">Connected</Badge>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                    <div className="flex items-center justify-between rounded-lg border border p-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                          <UserCircle className="h-5 w-5 text-gray-600" />
+                          <UserCircle className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
                           <p className="font-medium">Microsoft</p>
-                          <p className="text-xs text-gray-500">Not connected</p>
+                          <p className="text-xs text-muted-foreground">Not connected</p>
                         </div>
                       </div>
                       <Button variant="outline" size="sm">
@@ -220,7 +220,7 @@ export function SettingsPage() {
 
               {/* Security Settings */}
               <TabsContent value="security" className="space-y-6">
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Password</CardTitle>
                     <CardDescription>Change your password (Argon2id hashing)</CardDescription>
@@ -234,7 +234,7 @@ export function SettingsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="newPassword">New Password</Label>
                       <Input id="newPassword" type="password" />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Minimum 8 characters, 1 uppercase, 1 number, 1 special character
                       </p>
                     </div>
@@ -248,7 +248,7 @@ export function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Two-Factor Authentication (TOTP MFA)</CardTitle>
                     <CardDescription>
@@ -256,14 +256,14 @@ export function SettingsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                    <div className="flex items-center justify-between rounded-lg border border p-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
                           <Shield className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
                           <p className="font-medium">Authenticator App</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {securitySettings.mfaEnabled ? 'Enabled' : 'Not enabled'}
                           </p>
                         </div>
@@ -313,7 +313,7 @@ export function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Session Management</CardTitle>
                     <CardDescription>Control session timeout and active devices</CardDescription>
@@ -343,7 +343,7 @@ export function SettingsPage() {
 
               {/* Notification Settings */}
               <TabsContent value="notifications" className="space-y-6">
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Email Notifications</CardTitle>
                     <CardDescription>Configure what emails you receive</CardDescription>
@@ -352,7 +352,7 @@ export function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Email Notifications</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           Receive email updates about your account
                         </p>
                       </div>
@@ -362,14 +362,14 @@ export function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Weekly Digest</p>
-                        <p className="text-sm text-gray-500">Summary of activity and insights</p>
+                        <p className="text-sm text-muted-foreground">Summary of activity and insights</p>
                       </div>
                       <Switch defaultChecked={notificationSettings.weeklyDigest} />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Integration Notifications</CardTitle>
                     <CardDescription>Configure external notification channels</CardDescription>
@@ -378,7 +378,7 @@ export function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Slack Notifications</p>
-                        <p className="text-sm text-gray-500">Send alerts to Slack channels</p>
+                        <p className="text-sm text-muted-foreground">Send alerts to Slack channels</p>
                       </div>
                       <Switch defaultChecked={notificationSettings.slackNotifications} />
                     </div>
@@ -386,7 +386,7 @@ export function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Desktop Notifications</p>
-                        <p className="text-sm text-gray-500">Browser push notifications</p>
+                        <p className="text-sm text-muted-foreground">Browser push notifications</p>
                       </div>
                       <Switch defaultChecked={notificationSettings.desktopNotifications} />
                     </div>
@@ -396,7 +396,7 @@ export function SettingsPage() {
 
               {/* Preferences */}
               <TabsContent value="preferences" className="space-y-6">
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Regional Settings</CardTitle>
                     <CardDescription>
@@ -450,7 +450,7 @@ export function SettingsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className="border">
                   <CardHeader>
                     <CardTitle>Interface Preferences</CardTitle>
                     <CardDescription>Customize your dashboard experience</CardDescription>
@@ -473,7 +473,7 @@ export function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">Compact Mode</p>
-                        <p className="text-sm text-gray-500">Reduce spacing for more content</p>
+                        <p className="text-sm text-muted-foreground">Reduce spacing for more content</p>
                       </div>
                       <Switch />
                     </div>

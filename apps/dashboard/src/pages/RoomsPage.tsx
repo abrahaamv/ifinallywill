@@ -125,8 +125,8 @@ export function RoomsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Meeting Rooms</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Meeting Rooms</h1>
+          <p className="mt-2 text-muted-foreground">
             Real-time WebRTC collaboration with screen sharing excellence
           </p>
         </div>
@@ -138,47 +138,47 @@ export function RoomsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active Rooms</p>
+              <p className="text-sm font-medium text-muted-foreground">Active Rooms</p>
               <Video className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : activeRooms}</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : activeRooms}</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Participants</p>
+              <p className="text-sm font-medium text-muted-foreground">Participants</p>
               <Users className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : totalParticipants}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Screen Sharing</p>
+              <p className="text-sm font-medium text-muted-foreground">Screen Sharing</p>
               <Activity className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : screenSharingSessions}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Avg Duration</p>
+              <p className="text-sm font-medium text-muted-foreground">Avg Duration</p>
               <Clock className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : `${avgDuration}m`}
             </p>
           </CardContent>
@@ -186,7 +186,7 @@ export function RoomsPage() {
       </div>
 
       {/* Create Room Section */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
@@ -219,7 +219,7 @@ export function RoomsPage() {
       </Card>
 
       {/* Active Rooms Grid */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle>Active Rooms</CardTitle>
           <CardDescription>
@@ -242,15 +242,15 @@ export function RoomsPage() {
           ) : rooms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Video className="mb-4 h-16 w-16 text-gray-400" />
-              <p className="text-gray-600">No active rooms</p>
-              <p className="mt-1 text-sm text-gray-500">Create a room to get started</p>
+              <p className="text-muted-foreground">No active rooms</p>
+              <p className="mt-1 text-sm text-muted-foreground">Create a room to get started</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {rooms.map((room) => (
                 <Card
                   key={room.roomSid}
-                  className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                  className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -269,7 +269,7 @@ export function RoomsPage() {
                   </CardHeader>
 
                   <CardContent>
-                    <div className="space-y-2 text-xs text-gray-600">
+                    <div className="space-y-2 text-xs text-muted-foreground">
                       <div className="flex items-center justify-between">
                         <span>Created:</span>
                         <span className="font-medium">{formatDate(room.createdAt)}</span>
@@ -327,12 +327,12 @@ export function RoomsPage() {
 
               <div>
                 <Label className="text-sm font-medium">Room ID</Label>
-                <p className="mt-1 text-sm font-mono text-gray-600">{selectedRoom.roomSid}</p>
+                <p className="mt-1 text-sm font-mono text-muted-foreground">{selectedRoom.roomSid}</p>
               </div>
 
               <div>
                 <Label className="text-sm font-medium">Created</Label>
-                <p className="mt-1 text-sm text-gray-600">{formatDate(selectedRoom.createdAt)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{formatDate(selectedRoom.createdAt)}</p>
               </div>
 
               <div>
@@ -366,7 +366,7 @@ export function RoomsPage() {
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Share this link with participants to join the meeting
                 </p>
               </div>

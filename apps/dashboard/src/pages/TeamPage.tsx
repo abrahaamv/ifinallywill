@@ -125,8 +125,8 @@ export function TeamPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
-          <p className="mt-2 text-gray-600">Manage team members, roles, and permissions</p>
+          <h1 className="text-3xl font-bold text-foreground">Team Management</h1>
+          <p className="mt-2 text-muted-foreground">Manage team members, roles, and permissions</p>
         </div>
         <Button>
           <UserPlus className="mr-2 h-4 w-4" />
@@ -136,55 +136,55 @@ export function TeamPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total Members</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Members</p>
               <Users className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : teamMembers.length}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active Now</p>
+              <p className="text-sm font-medium text-muted-foreground">Active Now</p>
               <UserCheck className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : teamMembers.filter((m) => m.status === 'active').length}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Conversations</p>
+              <p className="text-sm font-medium text-muted-foreground">Conversations</p>
               <MessageSquare className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : teamMembers.reduce((sum, m) => sum + m.conversations, 0)}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Avg Response</p>
+              <p className="text-sm font-medium text-muted-foreground">Avg Response</p>
               <Clock className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : '3.8 min'}</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : '3.8 min'}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filter */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle>Filter Members</CardTitle>
           <CardDescription>Search by name, email, or filter by role</CardDescription>
@@ -217,7 +217,7 @@ export function TeamPage() {
       </Card>
 
       {/* Team Members Grid */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle>Team Members</CardTitle>
           <CardDescription>
@@ -240,15 +240,15 @@ export function TeamPage() {
           ) : filteredMembers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Users className="mb-4 h-16 w-16 text-gray-400" />
-              <p className="text-gray-600">No team members found</p>
-              <p className="mt-1 text-sm text-gray-500">Try adjusting your filters</p>
+              <p className="text-muted-foreground">No team members found</p>
+              <p className="mt-1 text-sm text-muted-foreground">Try adjusting your filters</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredMembers.map((member) => (
                 <Card
                   key={member.id}
-                  className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                  className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">
@@ -270,14 +270,14 @@ export function TeamPage() {
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Role:</span>
+                        <span className="text-xs text-muted-foreground">Role:</span>
                         <Badge variant={getRoleBadgeColor(member.role)} className="capitalize">
                           {member.role}
                         </Badge>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Status:</span>
+                        <span className="text-xs text-muted-foreground">Status:</span>
                         <div className="flex items-center gap-2">
                           <div
                             className={`h-2 w-2 rounded-full ${member.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}
@@ -287,18 +287,18 @@ export function TeamPage() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Conversations:</span>
+                        <span className="text-xs text-muted-foreground">Conversations:</span>
                         <span className="text-xs font-medium">{member.conversations}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-600">Avg Response:</span>
+                        <span className="text-xs text-muted-foreground">Avg Response:</span>
                         <span className="text-xs font-medium font-mono">
                           {member.avgResponseTime}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1 text-xs text-gray-500 pt-2 border-t">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground pt-2 border-t">
                         <Clock className="h-3 w-3" />
                         <span>Last active: {member.lastActive}</span>
                       </div>
@@ -312,7 +312,7 @@ export function TeamPage() {
       </Card>
 
       {/* Role Definitions */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -322,12 +322,12 @@ export function TeamPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border p-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="destructive">Admin</Badge>
-                <span className="text-xs text-gray-500">Full Access</span>
+                <span className="text-xs text-muted-foreground">Full Access</span>
               </div>
-              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
                 <li>Manage team members and permissions</li>
                 <li>Configure integrations and webhooks</li>
                 <li>View all analytics and reports</li>
@@ -335,12 +335,12 @@ export function TeamPage() {
               </ul>
             </div>
 
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border p-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge>Manager</Badge>
-                <span className="text-xs text-gray-500">Team Management</span>
+                <span className="text-xs text-muted-foreground">Team Management</span>
               </div>
-              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
                 <li>Handle escalated conversations</li>
                 <li>View team analytics and performance</li>
                 <li>Manage knowledge base content</li>
@@ -348,12 +348,12 @@ export function TeamPage() {
               </ul>
             </div>
 
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border p-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="secondary">Agent</Badge>
-                <span className="text-xs text-gray-500">Conversation Handling</span>
+                <span className="text-xs text-muted-foreground">Conversation Handling</span>
               </div>
-              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
                 <li>Handle assigned conversations</li>
                 <li>View own performance metrics</li>
                 <li>Update knowledge base articles</li>
@@ -361,12 +361,12 @@ export function TeamPage() {
               </ul>
             </div>
 
-            <div className="rounded-lg border border-gray-200 p-4">
+            <div className="rounded-lg border border p-4">
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="outline">Viewer</Badge>
-                <span className="text-xs text-gray-500">Read Only</span>
+                <span className="text-xs text-muted-foreground">Read Only</span>
               </div>
-              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
                 <li>View conversations and transcripts</li>
                 <li>Access analytics dashboards</li>
                 <li>Read knowledge base content</li>

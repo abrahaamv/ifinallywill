@@ -147,8 +147,8 @@ export function IntegrationsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
-          <p className="mt-2 text-gray-600">Connect with your favorite tools and platforms</p>
+          <h1 className="text-3xl font-bold text-foreground">Integrations</h1>
+          <p className="mt-2 text-muted-foreground">Connect with your favorite tools and platforms</p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -158,53 +158,53 @@ export function IntegrationsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Connected</p>
+              <p className="text-sm font-medium text-muted-foreground">Connected</p>
               <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{connectedCount}</p>
-            <p className="mt-1 text-xs text-gray-500">Active integrations</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{connectedCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Active integrations</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Available</p>
+              <p className="text-sm font-medium text-muted-foreground">Available</p>
               <Plug className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{availableCount}</p>
-            <p className="mt-1 text-xs text-gray-500">Ready to connect</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{availableCount}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Ready to connect</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Webhooks</p>
+              <p className="text-sm font-medium text-muted-foreground">Webhooks</p>
               <Webhook className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{activeWebhooks}</p>
-            <p className="mt-1 text-xs text-gray-500">Active endpoints</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{activeWebhooks}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Active endpoints</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Health</p>
+              <p className="text-sm font-medium text-muted-foreground">Health</p>
               <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">99.9%</p>
-            <p className="mt-1 text-xs text-gray-500">Webhook success rate</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">99.9%</p>
+            <p className="mt-1 text-xs text-muted-foreground">Webhook success rate</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Available Integrations */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -230,7 +230,7 @@ export function IntegrationsPage() {
             {filteredIntegrations.map((integration) => (
               <Card
                 key={integration.id}
-                className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -249,11 +249,11 @@ export function IntegrationsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-sm text-gray-600">{integration.description}</p>
+                  <p className="text-sm text-muted-foreground">{integration.description}</p>
 
                   <div className="space-y-1">
                     {integration.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
+                      <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Check className="h-3 w-3 text-green-600" />
                         {feature}
                       </div>
@@ -288,7 +288,7 @@ export function IntegrationsPage() {
       </Card>
 
       {/* Webhooks */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Webhook className="h-5 w-5" />
@@ -355,7 +355,7 @@ export function IntegrationsPage() {
       </Card>
 
       {/* API Configuration */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Code className="h-5 w-5" />
@@ -382,7 +382,7 @@ export function IntegrationsPage() {
                   <Input id="api-key" type="password" value="pk_live_xxxxxxxxxxxxx" readOnly />
                   <Button variant="outline">Regenerate</Button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Last used: 2024-10-11 14:52</p>
+                <p className="mt-1 text-xs text-muted-foreground">Last used: 2024-10-11 14:52</p>
               </div>
 
               <div>

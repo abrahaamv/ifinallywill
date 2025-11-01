@@ -11,6 +11,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
   Skeleton,
@@ -23,12 +29,14 @@ import {
   AlertCircle,
   BookOpen,
   Database,
+  Eye,
   FileText,
   Search,
   Sparkles,
   Star,
   Trash2,
   Upload,
+  X,
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
@@ -48,6 +56,10 @@ export function KnowledgePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -59,6 +71,14 @@ export function KnowledgePage() {
     limit: 50,
     offset: 0,
   });
+
+  const {
+    data: selectedDocument,
+    isLoading: isLoadingDocument,
+  } = trpc.knowledge.get.useQuery(
+    { id: selectedDocId || '' },
+    { enabled: !!selectedDocId }
+  );
 
   const uploadMutation = trpc.knowledge.upload.useMutation({
     onSuccess: () => {
@@ -75,6 +95,14 @@ export function KnowledgePage() {
     },
   });
 
+  const deleteMutation = trpc.knowledge.delete.useMutation({
+    onSuccess: () => {
+      setIsDeleteDialogOpen(false);
+      setDeleteDocId(null);
+      refetch();
+    },
+  });
+
   const documents = documentsData?.documents || [];
   const totalCount = documentsData?.total || 0;
 
@@ -82,7 +110,7 @@ export function KnowledgePage() {
     (doc) =>
       searchQuery === '' ||
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.category.toLowerCase().includes(searchQuery.toLowerCase())
+      (doc.category?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,14 +145,29 @@ export function KnowledgePage() {
     });
   };
 
-  const getDocumentIcon = (category: string) => {
+  const getDocumentIcon = (category: string | null) => {
     const icons: Record<string, any> = {
       documentation: BookOpen,
       api: Database,
       guide: FileText,
       general: FileText,
     };
-    return icons[category] || FileText;
+    return icons[category || ''] || FileText;
+  };
+
+  const handleViewDocument = (docId: string) => {
+    setSelectedDocId(docId);
+    setIsViewerOpen(true);
+  };
+
+  const handleDeleteClick = (docId: string) => {
+    setDeleteDocId(docId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDocId) return;
+    await deleteMutation.mutateAsync({ id: deleteDocId });
   };
 
   return (
@@ -132,8 +175,8 @@ export function KnowledgePage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Knowledge Base</h1>
-          <p className="mt-2 text-gray-600">Manage documents for RAG-enhanced AI responses</p>
+          <h1 className="text-3xl font-bold text-foreground">Knowledge Base</h1>
+          <p className="mt-2 text-muted-foreground">Manage documents for RAG-enhanced AI responses</p>
         </div>
         <Button onClick={() => setShowUploadModal(!showUploadModal)}>
           <Upload className="mr-2 h-4 w-4" />
@@ -143,7 +186,7 @@ export function KnowledgePage() {
 
       {/* Upload Form */}
       {showUploadModal && (
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardHeader>
             <CardTitle>Upload Document</CardTitle>
             <CardDescription>
@@ -185,7 +228,7 @@ export function KnowledgePage() {
                   accept=".txt,.md,.pdf,.doc,.docx"
                   required
                 />
-                <p className="text-xs text-gray-500">Supported: TXT, MD, PDF, DOC, DOCX</p>
+                <p className="text-xs text-muted-foreground">Supported: TXT, MD, PDF, DOC, DOCX</p>
               </div>
 
               <div className="flex gap-3">
@@ -203,35 +246,35 @@ export function KnowledgePage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total Documents</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Documents</p>
               <BookOpen className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">{isLoading ? '—' : totalCount}</p>
+            <p className="mt-3 text-3xl font-bold text-foreground">{isLoading ? '—' : totalCount}</p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total Chunks</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Chunks</p>
               <Database className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0)}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Embeddings</p>
+              <p className="text-sm font-medium text-muted-foreground">Embeddings</p>
               <Sparkles className="h-5 w-5 text-primary-600" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : documents.reduce((sum, doc) => sum + (doc.chunkCount || 0), 0)}
             </p>
           </CardContent>
@@ -239,7 +282,7 @@ export function KnowledgePage() {
       </div>
 
       {/* Library Interface */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -285,8 +328,8 @@ export function KnowledgePage() {
               ) : filteredDocuments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <BookOpen className="mb-4 h-16 w-16 text-gray-400" />
-                  <p className="text-gray-600">No documents found</p>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="text-muted-foreground">No documents found</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {searchQuery
                       ? 'Try a different search term'
                       : 'Upload your first document to get started'}
@@ -299,7 +342,7 @@ export function KnowledgePage() {
                     return (
                       <Card
                         key={doc.id}
-                        className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                        className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
@@ -320,7 +363,7 @@ export function KnowledgePage() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="space-y-2 text-xs text-gray-600">
+                          <div className="space-y-2 text-xs text-muted-foreground">
                             <div className="flex items-center justify-between">
                               <span>Chunks:</span>
                               <span className="font-medium">{doc.chunkCount || 0}</span>
@@ -331,11 +374,21 @@ export function KnowledgePage() {
                             </div>
                           </div>
                           <div className="mt-3 flex gap-2">
-                            <Button variant="outline" size="sm" className="flex-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleViewDocument(doc.id)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
                               View
                             </Button>
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-gray-400" />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(doc.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </CardContent>
@@ -349,8 +402,8 @@ export function KnowledgePage() {
             <TabsContent value="starred">
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Star className="mb-4 h-16 w-16 text-gray-400" />
-                <p className="text-gray-600">No starred documents</p>
-                <p className="mt-1 text-sm text-gray-500">Star documents to find them quickly</p>
+                <p className="text-muted-foreground">No starred documents</p>
+                <p className="mt-1 text-sm text-muted-foreground">Star documents to find them quickly</p>
               </div>
             </TabsContent>
 
@@ -361,7 +414,7 @@ export function KnowledgePage() {
                   return (
                     <Card
                       key={doc.id}
-                      className="group cursor-pointer border-gray-200 shadow-sm transition-all hover:shadow-md"
+                      className="group cursor-pointer border shadow-sm transition-all hover:shadow-md"
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
@@ -379,7 +432,7 @@ export function KnowledgePage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-2 text-xs text-gray-600">
+                        <div className="space-y-2 text-xs text-muted-foreground">
                           <div className="flex items-center justify-between">
                             <span>Chunks:</span>
                             <span className="font-medium">{doc.chunkCount || 0}</span>
@@ -390,11 +443,21 @@ export function KnowledgePage() {
                           </div>
                         </div>
                         <div className="mt-3 flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleViewDocument(doc.id)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
                             View
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4 text-gray-400" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </CardContent>
@@ -406,6 +469,76 @@ export function KnowledgePage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Document Viewer Modal */}
+      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {selectedDocument?.title || 'Document'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDocument?.category} • Uploaded{' '}
+              {selectedDocument?.createdAt && formatDate(selectedDocument.createdAt)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto">
+            {isLoadingDocument ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            ) : selectedDocument?.content ? (
+              <div className="prose prose-sm max-w-none">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono bg-background p-4 rounded-lg">
+                  {selectedDocument.content}
+                </pre>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <AlertCircle className="mr-2 h-5 w-5" />
+                No content available
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewerOpen(false)}>
+              <X className="mr-2 h-4 w-4" />
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone and will
+              remove all associated chunks and embeddings.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

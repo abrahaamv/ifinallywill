@@ -121,7 +121,7 @@ export function MessageInput({
   const showCharCount = remainingChars < 100;
 
   return (
-    <div className="border-t border-gray-200 bg-white p-4">
+    <div className="border-t border bg-card p-4">
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           <textarea
@@ -131,7 +131,7 @@ export function MessageInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled}
-            className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2 pr-16 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full resize-none rounded-lg border border px-4 py-2 pr-16 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-muted disabled:cursor-not-allowed"
             style={{
               minHeight: '44px',
               maxHeight: '200px',
@@ -156,7 +156,7 @@ export function MessageInput({
           Send
         </Button>
       </div>
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-2 text-xs text-muted-foreground">
         Press Enter to send, Shift+Enter for new line
       </div>
     </div>

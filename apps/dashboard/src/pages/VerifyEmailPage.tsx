@@ -76,15 +76,15 @@ export function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
           Email Verification
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-card py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {isVerifying && !isVerified && (
             <div className="text-center">
               <svg
@@ -107,7 +107,7 @@ export function VerifyEmailPage() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <p className="text-gray-600">Verifying your email...</p>
+              <p className="text-muted-foreground">Verifying your email...</p>
             </div>
           )}
 
@@ -126,10 +126,10 @@ export function VerifyEmailPage() {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 Email Verified Successfully!
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Your email has been verified. Redirecting to login...
               </p>
             </div>
@@ -159,7 +159,7 @@ export function VerifyEmailPage() {
               <div className="space-y-4">
                 {emailFromState && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Didn't receive the email? Check your spam folder or resend the verification
                       link.
                     </p>
@@ -208,14 +208,14 @@ export function VerifyEmailPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Please check your email and click the verification link to activate your account.
               </p>
 
               <Button
                 onClick={handleResend}
                 disabled={isVerifying}
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-2 px-4 border border rounded-md shadow-sm text-sm font-medium text-gray-700 bg-card hover:bg-background focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isVerifying ? 'Sending...' : 'Resend Verification Email'}
               </Button>

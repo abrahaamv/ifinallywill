@@ -18,7 +18,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -69,8 +68,6 @@ export function CostsPage() {
   const budgetStatus = (currentMonth.total / currentMonth.budget) * 100;
   const monthlyChange =
     ((currentMonth.total - currentMonth.previousMonth) / currentMonth.previousMonth) * 100;
-
-  const isLoading = false; // Will be true when tRPC integration is added
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] p-6 space-y-6">

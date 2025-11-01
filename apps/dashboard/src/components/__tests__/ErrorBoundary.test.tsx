@@ -4,7 +4,6 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ErrorInfo } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorBoundary, withErrorBoundary } from '../ErrorBoundary';
 
@@ -112,7 +111,7 @@ describe('ErrorBoundary', () => {
     });
 
     it('provides reset button that clears error state', () => {
-      const { rerender } = render(
+      render(
         <ErrorBoundary level="page">
           <ThrowError shouldThrow={true} />
         </ErrorBoundary>

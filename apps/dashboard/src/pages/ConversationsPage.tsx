@@ -52,11 +52,18 @@ export function ConversationsPage() {
   const conversations = data?.sessions || [];
   const totalCount = data?.total || 0;
 
+  // Helper function to compute status from session data
+  const getConversationStatus = (conv: typeof conversations[0]): string => {
+    if (conv.endedAt) return 'completed';
+    return 'active';
+  };
+
   // Filter conversations based on search and status
   const filteredConversations = conversations.filter((conv) => {
     const matchesSearch =
       searchQuery === '' || conv.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || conv.status === statusFilter;
+    const convStatus = getConversationStatus(conv);
+    const matchesStatus = statusFilter === 'all' || convStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -71,7 +78,7 @@ export function ConversationsPage() {
       abandoned: { variant: 'outline', icon: XCircle, label: 'Abandoned' },
     };
 
-    const config = variants[status] || variants.active;
+    const config = (variants[status] || variants.active)!;
     const Icon = config.icon;
 
     return (
@@ -97,8 +104,8 @@ export function ConversationsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Conversations</h1>
-          <p className="mt-2 text-gray-600">Manage and review AI assistant conversations</p>
+          <h1 className="text-3xl font-bold text-foreground">Conversations</h1>
+          <p className="mt-2 text-muted-foreground">Manage and review AI assistant conversations</p>
         </div>
         <Button>
           <MessageCircle className="mr-2 h-4 w-4" />
@@ -108,57 +115,57 @@ export function ConversationsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
               <MessageCircle className="h-5 w-5 text-gray-400" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
+            <p className="mt-3 text-3xl font-bold text-foreground">
               {isLoading ? '—' : totalCount.toLocaleString()}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Active</p>
+              <p className="text-sm font-medium text-muted-foreground">Active</p>
               <Clock className="h-5 w-5 text-blue-500" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
-              {isLoading ? '—' : conversations.filter((c) => c.status === 'active').length}
+            <p className="mt-3 text-3xl font-bold text-foreground">
+              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'active').length}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
+              <p className="text-sm font-medium text-muted-foreground">Completed</p>
               <CheckCircle2 className="h-5 w-5 text-green-500" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
-              {isLoading ? '—' : conversations.filter((c) => c.status === 'completed').length}
+            <p className="mt-3 text-3xl font-bold text-foreground">
+              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'completed').length}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-gray-200 shadow-card">
+        <Card className="border shadow-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-600">Escalated</p>
+              <p className="text-sm font-medium text-muted-foreground">Escalated</p>
               <AlertCircle className="h-5 w-5 text-red-500" />
             </div>
-            <p className="mt-3 text-3xl font-bold text-gray-900">
-              {isLoading ? '—' : conversations.filter((c) => c.status === 'escalated').length}
+            <p className="mt-3 text-3xl font-bold text-foreground">
+              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'escalated').length}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Conversations Table */}
-      <Card className="border-gray-200 shadow-card">
+      <Card className="border shadow-card">
         <CardHeader>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -212,8 +219,8 @@ export function ConversationsPage() {
           ) : filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <MessageCircle className="mb-4 h-12 w-12 text-gray-400" />
-              <p className="text-gray-600">No conversations found</p>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="text-muted-foreground">No conversations found</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {searchQuery || statusFilter !== 'all'
                   ? 'Try adjusting your filters'
                   : 'Start a new conversation to get started'}
@@ -236,34 +243,34 @@ export function ConversationsPage() {
                 <TableBody>
                   {filteredConversations.map((conv) => (
                     <TableRow key={conv.id} className="hover:bg-gray-50">
-                      <TableCell className="font-mono text-sm text-gray-600">
+                      <TableCell className="font-mono text-sm text-muted-foreground">
                         {conv.id.substring(0, 8)}...
                       </TableCell>
-                      <TableCell>{getStatusBadge(conv.status)}</TableCell>
+                      <TableCell>{getStatusBadge(getConversationStatus(conv))}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {conv.userId ? (
+                          {conv.mode === 'meeting' ? (
                             <>
                               <User className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm">Human</span>
+                              <span className="text-sm">Meeting</span>
                             </>
                           ) : (
                             <>
                               <Bot className="h-4 w-4 text-primary-600" />
-                              <span className="text-sm">AI-Only</span>
+                              <span className="text-sm">Text Chat</span>
                             </>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
+                      <TableCell className="text-sm text-muted-foreground">
                         {/* Mock message count */}
                         {Math.floor(Math.random() * 20) + 1}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
+                      <TableCell className="text-sm text-muted-foreground">
                         {formatDate(conv.createdAt)}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatDate(conv.updatedAt)}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {conv.endedAt ? formatDate(conv.endedAt) : 'Active'}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
