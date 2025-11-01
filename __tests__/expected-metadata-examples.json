@@ -1,0 +1,492 @@
+{
+  "scenarios": [
+    {
+      "name": "Simple Greeting (Fast Tier)",
+      "query": "Hi, how are you today?",
+      "expectedMetadata": {
+        "model": "gemini-2.0-flash-lite-exp-8b",
+        "modelRouting": {
+          "selectedModel": "gemini-2.0-flash-lite-exp-8b",
+          "modelTier": "fast",
+          "provider": "google",
+          "reasoning": "Selected gemini-2.0-flash-lite-exp-8b based on complexity score simple",
+          "fallbacksAvailable": 2,
+          "wasEscalated": false,
+          "attemptNumber": 1
+        },
+        "complexity": {
+          "level": "simple",
+          "score": 0.2,
+          "factors": {
+            "entityCount": 0,
+            "depth": 1,
+            "specificity": 2,
+            "technicalTerms": 0,
+            "ambiguity": 1
+          }
+        },
+        "confidence": {
+          "score": 0.9,
+          "indicators": {
+            "uncertainty": 0.1,
+            "specificity": 0.85,
+            "consistency": 0.9,
+            "factuality": 0.85
+          },
+          "requiresEscalation": false
+        },
+        "rag": {
+          "chunksRetrieved": 0,
+          "processingTimeMs": 75,
+          "topRelevance": "none",
+          "method": "hybrid",
+          "rerankingApplied": true,
+          "chunks": []
+        },
+        "prompt": {
+          "systemPrompt": "You are a helpful AI assistant...",
+          "queryType": "conversational",
+          "groundingApplied": false,
+          "citationsRequired": false,
+          "uncertaintyGuidance": true
+        },
+        "ragas": {
+          "faithfulness": 0.75,
+          "answerRelevancy": 0.3,
+          "contextRelevancy": 0.15,
+          "contextPrecision": 0.15,
+          "contextRecall": 0.15,
+          "overall": 0.25
+        },
+        "cost": {
+          "total": 0.000015,
+          "inputTokens": 75,
+          "outputTokens": 35,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "rerankingCost": 0.0
+        },
+        "performance": {
+          "totalLatencyMs": 1100,
+          "ragLatencyMs": 75,
+          "modelLatencyMs": 650,
+          "startTime": "2024-01-01T12:00:00.000Z",
+          "endTime": "2024-01-01T12:00:01.100Z"
+        }
+      },
+      "notes": [
+        "RAGAS scores low for greetings - expected",
+        "Fast tier model used - cost optimized",
+        "No RAG retrieval - greeting doesn't need knowledge",
+        "All timing values must be positive"
+      ]
+    },
+    {
+      "name": "Technical Question (Balanced Tier)",
+      "query": "What are the main differences between REST and GraphQL APIs?",
+      "expectedMetadata": {
+        "model": "gemini-2.5-flash-preview-04",
+        "modelRouting": {
+          "selectedModel": "gemini-2.5-flash-preview-04",
+          "modelTier": "balanced",
+          "provider": "google",
+          "reasoning": "Selected gemini-2.5-flash-preview-04 based on complexity score moderate",
+          "fallbacksAvailable": 1,
+          "wasEscalated": false,
+          "attemptNumber": 1
+        },
+        "complexity": {
+          "level": "moderate",
+          "score": 0.55,
+          "factors": {
+            "entityCount": 3,
+            "depth": 4,
+            "specificity": 6,
+            "technicalTerms": 3,
+            "ambiguity": 2
+          }
+        },
+        "confidence": {
+          "score": 0.8,
+          "indicators": {
+            "uncertainty": 0.2,
+            "specificity": 0.8,
+            "consistency": 0.85,
+            "factuality": 0.82
+          },
+          "requiresEscalation": false
+        },
+        "rag": {
+          "chunksRetrieved": 2,
+          "processingTimeMs": 350,
+          "topRelevance": "medium",
+          "method": "hybrid",
+          "rerankingApplied": true,
+          "chunks": [
+            {
+              "id": "chunk-uuid-1",
+              "content": "REST API endpoints use HTTP methods (GET, POST, PUT, DELETE)...",
+              "score": 0.78,
+              "source": "api-documentation.md"
+            },
+            {
+              "id": "chunk-uuid-2",
+              "content": "GraphQL allows clients to request exactly the data they need...",
+              "score": 0.72,
+              "source": "api-documentation.md"
+            }
+          ]
+        },
+        "prompt": {
+          "systemPrompt": "You are a helpful AI assistant. Use the following context...",
+          "queryType": "technical-explanation",
+          "groundingApplied": true,
+          "citationsRequired": false,
+          "uncertaintyGuidance": true
+        },
+        "ragas": {
+          "faithfulness": 0.85,
+          "answerRelevancy": 0.9,
+          "contextRelevancy": 0.7,
+          "contextPrecision": 0.75,
+          "contextRecall": 0.8,
+          "overall": 0.8
+        },
+        "cost": {
+          "total": 0.00008,
+          "inputTokens": 180,
+          "outputTokens": 320,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "rerankingCost": 0.000005
+        },
+        "performance": {
+          "totalLatencyMs": 1650,
+          "ragLatencyMs": 350,
+          "modelLatencyMs": 1150,
+          "rerankingLatencyMs": 45,
+          "startTime": "2024-01-01T12:00:00.000Z",
+          "endTime": "2024-01-01T12:00:01.650Z"
+        }
+      },
+      "notes": [
+        "Moderate complexity triggers balanced tier",
+        "RAG retrieves relevant API documentation",
+        "RAGAS scores good (>0.7) due to grounding",
+        "Reranking applied for better relevance"
+      ]
+    },
+    {
+      "name": "Knowledge-Based Query (RAG Heavy)",
+      "query": "What are the API rate limits mentioned in our documentation?",
+      "expectedMetadata": {
+        "model": "gemini-2.5-flash-preview-04",
+        "modelRouting": {
+          "selectedModel": "gemini-2.5-flash-preview-04",
+          "modelTier": "balanced",
+          "provider": "google",
+          "reasoning": "Selected gemini-2.5-flash-preview-04 based on complexity score moderate",
+          "fallbacksAvailable": 1,
+          "wasEscalated": false,
+          "attemptNumber": 1
+        },
+        "complexity": {
+          "level": "moderate",
+          "score": 0.6,
+          "factors": {
+            "entityCount": 4,
+            "depth": 4,
+            "specificity": 7,
+            "technicalTerms": 3,
+            "ambiguity": 2
+          }
+        },
+        "confidence": {
+          "score": 0.85,
+          "indicators": {
+            "uncertainty": 0.15,
+            "specificity": 0.85,
+            "consistency": 0.9,
+            "factuality": 0.88
+          },
+          "requiresEscalation": false
+        },
+        "rag": {
+          "chunksRetrieved": 5,
+          "processingTimeMs": 720,
+          "topRelevance": "high",
+          "method": "hybrid",
+          "rerankingApplied": true,
+          "chunks": [
+            {
+              "id": "chunk-uuid-1",
+              "content": "## Rate Limits\n\nFree Tier:\n- 100 requests per hour\n- 1,000 requests per day...",
+              "score": 0.92,
+              "source": "api-documentation.md"
+            },
+            {
+              "id": "chunk-uuid-2",
+              "content": "Pro Tier:\n- 1,000 requests per hour\n- 10,000 requests per day...",
+              "score": 0.89,
+              "source": "api-documentation.md"
+            },
+            {
+              "id": "chunk-uuid-3",
+              "content": "Enterprise Tier:\n- 10,000 requests per hour\n- Custom limits available...",
+              "score": 0.87,
+              "source": "api-documentation.md"
+            },
+            {
+              "id": "chunk-uuid-4",
+              "content": "All responses include rate limit information in headers: X-RateLimit-Limit...",
+              "score": 0.81,
+              "source": "api-documentation.md"
+            },
+            {
+              "id": "chunk-uuid-5",
+              "content": "When you exceed the rate limit, you'll receive a 429 Too Many Requests response.",
+              "score": 0.78,
+              "source": "api-documentation.md"
+            }
+          ]
+        },
+        "prompt": {
+          "systemPrompt": "You are a helpful AI assistant. Use the following context from our documentation to answer accurately...",
+          "queryType": "factual-lookup",
+          "groundingApplied": true,
+          "citationsRequired": false,
+          "uncertaintyGuidance": true
+        },
+        "ragas": {
+          "faithfulness": 0.92,
+          "answerRelevancy": 0.95,
+          "contextRelevancy": 0.9,
+          "contextPrecision": 0.88,
+          "contextRecall": 0.93,
+          "overall": 0.916
+        },
+        "cost": {
+          "total": 0.00012,
+          "inputTokens": 450,
+          "outputTokens": 280,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "rerankingCost": 0.00001
+        },
+        "performance": {
+          "totalLatencyMs": 2150,
+          "ragLatencyMs": 720,
+          "modelLatencyMs": 1280,
+          "rerankingLatencyMs": 85,
+          "startTime": "2024-01-01T12:00:00.000Z",
+          "endTime": "2024-01-01T12:00:02.150Z"
+        }
+      },
+      "notes": [
+        "High RAG retrieval - 5 chunks from documentation",
+        "Excellent RAGAS scores (>0.9) due to perfect grounding",
+        "Query type: factual-lookup (retrieval-focused)",
+        "High context relevancy and precision",
+        "All chunks from api-documentation.md as expected"
+      ]
+    },
+    {
+      "name": "Complex Reasoning (Powerful Tier)",
+      "query": "How would you design a scalable microservices architecture for an e-commerce platform?",
+      "expectedMetadata": {
+        "model": "claude-sonnet-4.5",
+        "modelRouting": {
+          "selectedModel": "claude-sonnet-4.5",
+          "modelTier": "powerful",
+          "provider": "anthropic",
+          "reasoning": "Selected claude-sonnet-4.5 based on complexity score complex",
+          "fallbacksAvailable": 0,
+          "wasEscalated": true,
+          "attemptNumber": 2
+        },
+        "complexity": {
+          "level": "complex",
+          "score": 0.82,
+          "factors": {
+            "entityCount": 10,
+            "depth": 8,
+            "specificity": 9,
+            "technicalTerms": 7,
+            "ambiguity": 4
+          }
+        },
+        "confidence": {
+          "score": 0.85,
+          "indicators": {
+            "uncertainty": 0.15,
+            "specificity": 0.9,
+            "consistency": 0.88,
+            "factuality": 0.85
+          },
+          "requiresEscalation": false
+        },
+        "rag": {
+          "chunksRetrieved": 1,
+          "processingTimeMs": 420,
+          "topRelevance": "medium",
+          "method": "hybrid",
+          "rerankingApplied": true,
+          "chunks": [
+            {
+              "id": "chunk-uuid-1",
+              "content": "Microservices architecture involves decomposing applications into small, independent services...",
+              "score": 0.68,
+              "source": "product-features.md"
+            }
+          ]
+        },
+        "prompt": {
+          "systemPrompt": "You are a helpful AI assistant specializing in system architecture...",
+          "queryType": "technical-explanation",
+          "groundingApplied": true,
+          "citationsRequired": false,
+          "uncertaintyGuidance": true
+        },
+        "ragas": {
+          "faithfulness": 0.78,
+          "answerRelevancy": 0.88,
+          "contextRelevancy": 0.65,
+          "contextPrecision": 0.7,
+          "contextRecall": 0.72,
+          "overall": 0.746
+        },
+        "cost": {
+          "total": 0.00035,
+          "inputTokens": 220,
+          "outputTokens": 650,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "rerankingCost": 0.000005
+        },
+        "performance": {
+          "totalLatencyMs": 2850,
+          "ragLatencyMs": 420,
+          "modelLatencyMs": 2280,
+          "rerankingLatencyMs": 50,
+          "startTime": "2024-01-01T12:00:00.000Z",
+          "endTime": "2024-01-01T12:00:02.850Z"
+        }
+      },
+      "notes": [
+        "Complex query triggers powerful tier (Claude Sonnet)",
+        "wasEscalated: true (tried Flash first, escalated to Claude)",
+        "High cost ($0.00035) due to powerful model + long output",
+        "Longer model latency (2280ms) for complex reasoning",
+        "Lower RAGAS due to limited knowledge base content on architecture"
+      ]
+    },
+    {
+      "name": "Ambiguous Query (Low Confidence)",
+      "query": "What do you think about it?",
+      "expectedMetadata": {
+        "model": "gemini-2.0-flash-lite-exp-8b",
+        "modelRouting": {
+          "selectedModel": "gemini-2.0-flash-lite-exp-8b",
+          "modelTier": "fast",
+          "provider": "google",
+          "reasoning": "Selected gemini-2.0-flash-lite-exp-8b based on complexity score simple",
+          "fallbacksAvailable": 2,
+          "wasEscalated": false,
+          "attemptNumber": 1
+        },
+        "complexity": {
+          "level": "simple",
+          "score": 0.25,
+          "factors": {
+            "entityCount": 0,
+            "depth": 1,
+            "specificity": 1,
+            "technicalTerms": 0,
+            "ambiguity": 8
+          }
+        },
+        "confidence": {
+          "score": 0.35,
+          "indicators": {
+            "uncertainty": 0.65,
+            "specificity": 0.3,
+            "consistency": 0.5,
+            "factuality": 0.4
+          },
+          "requiresEscalation": true
+        },
+        "rag": {
+          "chunksRetrieved": 0,
+          "processingTimeMs": 60,
+          "topRelevance": "none",
+          "method": "hybrid",
+          "rerankingApplied": true,
+          "chunks": []
+        },
+        "prompt": {
+          "systemPrompt": "You are a helpful AI assistant...",
+          "queryType": "conversational",
+          "groundingApplied": false,
+          "citationsRequired": false,
+          "uncertaintyGuidance": true
+        },
+        "ragas": {
+          "faithfulness": 0.6,
+          "answerRelevancy": 0.2,
+          "contextRelevancy": 0.1,
+          "contextPrecision": 0.1,
+          "contextRecall": 0.1,
+          "overall": 0.22
+        },
+        "cost": {
+          "total": 0.00001,
+          "inputTokens": 45,
+          "outputTokens": 60,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "rerankingCost": 0.0
+        },
+        "performance": {
+          "totalLatencyMs": 850,
+          "ragLatencyMs": 60,
+          "modelLatencyMs": 580,
+          "startTime": "2024-01-01T12:00:00.000Z",
+          "endTime": "2024-01-01T12:00:00.850Z"
+        }
+      },
+      "notes": [
+        "Low confidence score (0.35) - requiresEscalation: true",
+        "High ambiguity factor (8) in complexity",
+        "High uncertainty indicator (0.65)",
+        "Expected response: Request for clarification",
+        "Very low RAGAS due to ambiguous query"
+      ]
+    }
+  ],
+  "validationGuidelines": {
+    "timing": {
+      "rule": "All timing values MUST be positive",
+      "checks": [
+        "totalLatencyMs > 0",
+        "ragLatencyMs > 0",
+        "modelLatencyMs > 0",
+        "totalLatencyMs >= ragLatencyMs + modelLatencyMs"
+      ]
+    },
+    "ragas": {
+      "simple_queries": "0.2 - 0.4 (greetings, ambiguous)",
+      "moderate_queries": "0.7 - 0.85 (technical questions)",
+      "knowledge_based": "0.85 - 0.95 (factual lookups with RAG)"
+    },
+    "cost": {
+      "fast_tier": "$0.00001 - $0.00003",
+      "balanced_tier": "$0.00005 - $0.0001",
+      "powerful_tier": "$0.0002 - $0.0005"
+    },
+    "model_selection": {
+      "simple": "gemini-2.0-flash-lite-exp-8b (fast)",
+      "moderate": "gemini-2.5-flash-preview-04 (balanced)",
+      "complex": "claude-sonnet-4.5 (powerful)"
+    }
+  }
+}
