@@ -16,6 +16,7 @@
   "dependencies": {
     "@platform/api-contract": "workspace:*",
     "@platform/auth": "workspace:*",
+    "@platform/db": "workspace:*",
     "@platform/shared": "workspace:*",
     "@platform/ui": "workspace:*",
     "@tanstack/react-query": "5.67.1",
