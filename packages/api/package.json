@@ -17,8 +17,10 @@
   },
   "dependencies": {
     "@auth/core": "0.40.0",
+    "@fastify/compress": "8.0.1",
     "@fastify/cors": "10.0.1",
     "@fastify/formbody": "8.0.2",
+    "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "10.3.0",
     "@platform/api-contract": "workspace:*",
     "@platform/auth": "workspace:*",

@@ -22,6 +22,10 @@
     
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "test:load": "cd tests/load && pnpm test:all",
+    "test:load:api": "cd tests/load && pnpm test:api",
+    "test:load:websocket": "cd tests/load && pnpm test:websocket",
+    "test:load:mixed": "cd tests/load && pnpm test:mixed",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d",
     "db:down": "docker compose -f infrastructure/docker/docker-compose.yml down",
