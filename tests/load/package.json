@@ -1,0 +1,31 @@
+{
+  "name": "@platform/load-tests",
+  "version": "1.0.0",
+  "description": "k6 load testing suite for Enterprise AI Assistant Platform",
+  "private": true,
+  "scripts": {
+    "test:smoke": "k6 run -e LOAD_PROFILE=smoke scenarios/api-load.js",
+    "test:api": "k6 run -e LOAD_PROFILE=light scenarios/api-load.js",
+    "test:api:medium": "k6 run -e LOAD_PROFILE=medium scenarios/api-load.js",
+    "test:api:heavy": "k6 run -e LOAD_PROFILE=heavy scenarios/api-load.js",
+    "test:api:stress": "k6 run -e LOAD_PROFILE=stress scenarios/api-load.js",
+    "test:websocket": "k6 run -e LOAD_PROFILE=light scenarios/websocket-load.js",
+    "test:websocket:medium": "k6 run -e LOAD_PROFILE=medium scenarios/websocket-load.js",
+    "test:websocket:heavy": "k6 run -e LOAD_PROFILE=heavy scenarios/websocket-load.js",
+    "test:mixed": "k6 run -e LOAD_PROFILE=light scenarios/mixed-scenario.js",
+    "test:mixed:medium": "k6 run -e LOAD_PROFILE=medium scenarios/mixed-scenario.js",
+    "test:mixed:heavy": "k6 run -e LOAD_PROFILE=heavy scenarios/mixed-scenario.js",
+    "test:all": "pnpm test:api && pnpm test:websocket && pnpm test:mixed",
+    "test:quick": "pnpm test:smoke",
+    "clean": "rm -rf results/*.json results/*.html results/*.csv"
+  },
+  "keywords": [
+    "k6",
+    "load-testing",
+    "performance",
+    "websocket",
+    "api"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}

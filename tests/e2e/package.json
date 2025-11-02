@@ -1,0 +1,31 @@
+{
+  "name": "@platform/e2e-tests",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for Enterprise AI Assistant Platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:auth": "playwright test tests/auth.spec.ts",
+    "test:chat": "playwright test tests/chat.spec.ts",
+    "test:widget": "playwright test tests/widget.spec.ts",
+    "test:knowledge": "playwright test tests/knowledge.spec.ts",
+    "test:dashboard": "playwright test tests/dashboard.spec.ts",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+    "report": "playwright show-report test-results/html",
+    "codegen": "playwright codegen",
+    "install": "playwright install --with-deps"
+  },
+  "dependencies": {
+    "@playwright/test": "1.49.1"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2"
+  }
+}

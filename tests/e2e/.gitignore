@@ -1,0 +1,22 @@
+# Environment files
+.env
+.env.test
+.env.local
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules
+node_modules/
+
+# Playwright
+/playwright/.auth/

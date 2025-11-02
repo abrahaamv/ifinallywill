@@ -8,13 +8,14 @@ Comprehensive test suite for the LiveKit multi-modal agent with cost optimizatio
 
 ```
 tests/
-├── __init__.py                 # Package initialization
-├── conftest.py                 # Pytest fixtures and configuration
-├── pytest.ini                  # Pytest settings
-├── test_ai_router.py           # AI routing and model selection tests
-├── test_frame_processor.py     # Frame deduplication tests
-├── test_integration.py         # E2E integration and cost validation
-└── README.md                   # This file
+├── __init__.py                       # Package initialization
+├── conftest.py                       # Pytest fixtures and configuration
+├── pytest.ini                        # Pytest settings
+├── test_ai_router.py                 # AI routing and model selection tests
+├── test_frame_processor.py           # Frame deduplication tests
+├── test_integration.py               # E2E integration and cost validation
+├── test_production_validation.py     # Production validation tests (NEW)
+└── README.md                         # This file
 ```
 
 ## Running Tests
@@ -55,6 +56,9 @@ pytest -m integration
 
 **Integration Tests** (`-m integration`):
 - `test_integration.py`: End-to-end workflows, cost validation, performance metrics
+
+**Production Validation Tests**:
+- `test_production_validation.py`: LiveKit integration, multi-modal features, backend integration, agent resilience
 
 ## Test Coverage
 
@@ -111,6 +115,40 @@ pytest -m integration
 **Error Handling**:
 - ✅ Provider failure tracking
 - ✅ Rate limiting enforcement
+
+### Production Validation Tests
+
+**LiveKit Integration** (`test_production_validation.py`):
+- ✅ Agent connection to rooms
+- ✅ Audio track subscription handling
+- ✅ Screen share video processing
+- ✅ Data channel messaging
+
+**Multi-Modal Features**:
+- ✅ Vision context injection in LLM calls
+- ✅ Vision analysis workflow (screen share)
+- ✅ RAG knowledge base integration
+- ✅ Three-tier AI routing (Flash-Lite → Flash → Claude)
+
+**Backend Integration**:
+- ✅ Tenant configuration loading from API
+- ✅ RAG search API calls with circuit breaker
+- ✅ Cost event logging to backend
+- ✅ Circuit breaker opens on failures
+- ✅ JWT token caching and refresh
+
+**Agent Resilience**:
+- ✅ Invalid video frame handling
+- ✅ LLM timeout recovery
+- ✅ Backend API unavailability handling
+- ✅ Frame processor error recovery
+- ✅ Resource cleanup on disconnect
+
+**Production Workflows**:
+- ✅ Complete agent lifecycle (start → process → cleanup)
+- ✅ Multi-user room simulation
+- ✅ Long-running session stability (50+ requests)
+- ✅ Cost tracking accuracy validation
 
 ## Cost Reduction Validation
 
