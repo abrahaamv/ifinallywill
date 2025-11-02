@@ -67,9 +67,22 @@ export class ApiKeyService {
    *
    * CRITICAL: Use dedicated secret, not SESSION_SECRET
    * Rotation requires re-hashing all active keys
+   * MUST be set in production - no fallback to prevent weak hashing
    */
-  private static readonly API_KEY_SECRET =
-    process.env.API_KEY_SECRET || 'development-api-key-secret-change-in-production';
+  private static readonly API_KEY_SECRET = (() => {
+    const secret = process.env.API_KEY_SECRET;
+
+    // Fail-fast in production if secret is missing
+    if (process.env.NODE_ENV === 'production' && !secret) {
+      throw new Error(
+        'API_KEY_SECRET required in production. ' +
+        'Generate a secure key: openssl rand -hex 32'
+      );
+    }
+
+    // In development, use a consistent fallback for testing
+    return secret || 'development-api-key-secret-do-not-use-in-production';
+  })();
 
   /**
    * Generate new API key

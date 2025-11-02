@@ -54,13 +54,26 @@ export interface MFAVerificationResult {
  * Handles TOTP generation, QR code creation, and verification.
  */
 export class MFAService {
-  // Encryption key derived from SESSION_SECRET
-  // In production, use a separate MFA_ENCRYPTION_KEY
-  private static readonly ENCRYPTION_KEY = scryptSync(
-    process.env.SESSION_SECRET || 'development-secret-change-in-production',
-    'mfa-salt',
-    32
-  );
+  // Encryption key derived from MFA_ENCRYPTION_KEY environment variable
+  // CRITICAL: Must be set in production - no fallback to prevent weak encryption
+  private static readonly ENCRYPTION_KEY = (() => {
+    const secret = process.env.MFA_ENCRYPTION_KEY || process.env.SESSION_SECRET;
+
+    // Fail-fast in production if secret is missing
+    if (process.env.NODE_ENV === 'production' && !secret) {
+      throw new Error(
+        'MFA_ENCRYPTION_KEY or SESSION_SECRET required in production. ' +
+        'Generate a secure key: openssl rand -hex 32'
+      );
+    }
+
+    // In development, use a consistent fallback for testing
+    return scryptSync(
+      secret || 'development-secret-do-not-use-in-production',
+      'mfa-salt',
+      32
+    );
+  })();
 
   /**
    * Generate MFA setup for new user

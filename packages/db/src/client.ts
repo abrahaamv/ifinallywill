@@ -19,17 +19,19 @@ if (!isBrowser && !connectionString) {
 
 // Create postgres client with connection pooling (only in Node.js environment)
 // Pool configuration optimized for production workload:
-// - max: 20 connections (supports ~200 concurrent requests with typical query times)
-// - idle_timeout: 30s (balance between resource usage and connection reuse)
+// - max: 50 connections (supports ~500 concurrent requests with typical query times)
+// - idle_timeout: 20s (close idle connections quickly, recycle efficiently)
 // - connect_timeout: 10s (fail fast on connection issues)
-// - prepare: true (prepared statements reduce query planning overhead)
+// - max_lifetime: 3600s (recycle connections hourly to prevent stale connections)
+// - prepare: false (disabled for PgBouncer compatibility in production)
 const client = isBrowser
   ? null
   : postgres(connectionString!, {
-      max: 20, // Maximum connections (increased from 10 for better concurrency)
-      idle_timeout: 30, // Close idle connections after 30s (increased from 20s)
+      max: 50, // Maximum connections (optimized for production load)
+      idle_timeout: 20, // Close idle connections after 20s
       connect_timeout: 10, // Connection timeout in seconds
-      prepare: true, // Use prepared statements (faster)
+      max_lifetime: 3600, // Recycle connections every hour
+      prepare: false, // Disable prepared statements for PgBouncer compatibility
     });
 
 // Create service role client with BYPASS RLS for admin operations
@@ -39,10 +41,11 @@ const serviceClient = isBrowser
   ? null
   : serviceConnectionString
     ? postgres(serviceConnectionString, {
-        max: 10, // Admin operations pool (increased from 5 for registration spikes)
-        idle_timeout: 30, // Match main pool timeout (increased from 20s)
+        max: 15, // Admin operations pool (optimized for registration spikes)
+        idle_timeout: 20, // Match main pool timeout
         connect_timeout: 10, // Connection timeout in seconds
-        prepare: true, // Use prepared statements (faster)
+        max_lifetime: 3600, // Recycle connections every hour
+        prepare: false, // Disable for PgBouncer compatibility
       })
     : null;
 

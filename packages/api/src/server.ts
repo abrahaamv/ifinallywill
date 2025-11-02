@@ -12,7 +12,10 @@
  * - Account lockout protection (5 attempts = 15 minutes)
  */
 
+import compress from '@fastify/compress';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import { constants as zlibConstants } from 'node:zlib';
 import { appRouter, createContext } from '@platform/api-contract';
 import {
   VoyageEmbeddingProvider,
@@ -20,7 +23,7 @@ import {
   type CacheWarmingConfig,
 } from '@platform/knowledge';
 import { RealtimeServer } from '@platform/realtime';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger, validateEnvironment } from '@platform/shared';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import Fastify from 'fastify';
@@ -28,6 +31,10 @@ import Redis from 'ioredis';
 import { authPlugin } from './plugins/auth';
 import { rateLimitPlugin } from './plugins/rate-limit';
 // import { initializeSurveyScheduler } from './cron/survey-scheduler'; // TODO: Re-enable when survey scheduler is implemented
+
+// CRITICAL: Validate environment variables before any initialization
+// Fail-fast if required configuration is missing or invalid
+validateEnvironment();
 
 const logger = createModuleLogger('api-server');
 
@@ -122,6 +129,61 @@ async function main() {
     }
   });
 
+  // Register security headers plugin (BEFORE other plugins)
+  // Provides comprehensive HTTP security headers
+  await fastify.register(helmet, {
+    // Content Security Policy - restricts resource loading
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for tRPC/Fastify
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'"], // API calls
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    // Cross-Origin policies
+    crossOriginEmbedderPolicy: false, // Allow embedding (for widget)
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, // Allow OAuth popups
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow widget embedding
+    // Prevent clickjacking
+    frameguard: { action: 'deny' },
+    // Hide powered-by header
+    hidePoweredBy: true,
+    // Strict transport security (HTTPS only)
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    // Prevent MIME sniffing
+    noSniff: true,
+    // Referrer policy
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    // XSS protection
+    xssFilter: true,
+  });
+
+  // Register compression plugin for response size optimization
+  // Provides 60-70% size reduction for text responses
+  await fastify.register(compress, {
+    global: true,
+    threshold: 1024, // Only compress responses > 1KB
+    encodings: ['br', 'gzip', 'deflate'], // Brotli preferred (best compression)
+    zlibOptions: {
+      level: 6, // Balanced compression level (1-9, higher = better compression but slower)
+    },
+    brotliOptions: {
+      params: {
+        [zlibConstants.BROTLI_PARAM_QUALITY]: 4, // Balanced quality (0-11)
+      },
+    },
+  });
+
   // Register CORS with production security
   await fastify.register(cors, {
     origin: (origin, callback) => {
@@ -172,9 +234,9 @@ async function main() {
   // Protects authentication endpoints from brute-force attacks
   await fastify.register(rateLimitPlugin);
 
-  // Register Auth.js plugin (BEFORE tRPC)
+  // Register Auth.js plugin with Redis session caching (BEFORE tRPC)
   // This must come first to enable session management for tRPC context
-  await fastify.register(authPlugin);
+  await fastify.register(authPlugin, { redis });
 
   // Register tRPC plugin
   await fastify.register(fastifyTRPCPlugin, {

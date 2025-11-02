@@ -3,12 +3,14 @@
  *
  * Core tRPC configuration and procedure builders with auth integration.
  * Enhanced with centralized error handling (Production Readiness)
+ * Phase 8: CSRF protection for mutations (Week 1 Critical Fix #8)
  */
 
 import { TRPCError, initTRPC } from '@trpc/server';
 import { sql } from 'drizzle-orm';
 import type { Context } from './context';
 import { logError, sanitizeErrorMessage } from './errors';
+import { validateCSRF } from './middleware/csrf';
 
 /**
  * Initialize tRPC with context type and error handling
@@ -134,6 +136,37 @@ export const ownerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
       message: 'Owner role required - insufficient permissions',
     });
   }
+
+  return next({ ctx });
+});
+
+/**
+ * CSRF-protected procedure - for mutations only
+ *
+ * Validates CSRF token on all state-changing operations (mutations).
+ * Works in conjunction with Auth.js CSRF protection.
+ *
+ * Security Model:
+ * - Queries (GET): No CSRF check (read-only operations)
+ * - Mutations (POST): Require valid X-CSRF-Token header
+ * - Token validated against Auth.js /api/auth/csrf endpoint
+ *
+ * Usage:
+ * - Use protectedMutation instead of protectedProcedure for mutations
+ * - Queries should continue using protectedProcedure
+ *
+ * Example:
+ * ```typescript
+ * updateUser: protectedMutation
+ *   .input(z.object({ name: z.string() }))
+ *   .mutation(async ({ input, ctx }) => {
+ *     // CSRF validated, safe to proceed
+ *   })
+ * ```
+ */
+export const protectedMutation = protectedProcedure.use(async ({ ctx, next }) => {
+  // Validate CSRF token from request headers
+  await validateCSRF(ctx.req);
 
   return next({ ctx });
 });

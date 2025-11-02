@@ -116,9 +116,9 @@ export class TenantContext {
       // Set tenant context for this transaction
       // SET LOCAL: Variable only exists within this transaction
       // Automatically clears when transaction commits/rolls back
-      // CRITICAL: Use sql.raw() - SET LOCAL doesn't support parameterized queries
-      //           Must execute on transaction connection, not pooled connection
-      await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+      // SECURITY: Use parameterized query to prevent SQL injection
+      //           sql`` template tag properly escapes the tenantId parameter
+      await tx.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
 
       // Execute callback with transaction handle
       // All queries in callback are automatically filtered by RLS

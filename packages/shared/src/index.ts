@@ -59,3 +59,13 @@ export {
   type FingerprintResult,
   type ExtendedFingerprint,
 } from './fingerprint';
+
+// Phase 8 environment validation (Week 1 Critical Fix #10)
+export {
+  validateEnvironment,
+  getEnv,
+  isProduction,
+  isDevelopment,
+  isTest,
+  type ValidatedEnv,
+} from './env-validation';

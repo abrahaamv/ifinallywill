@@ -5,7 +5,7 @@
  */
 
 import { Auth } from '@auth/core';
-import { authConfig } from '@platform/auth';
+import { createAuthConfig } from '@platform/auth';
 import { db } from '@platform/db';
 import type * as schema from '@platform/db/src/schema';
 import type { VoyageEmbeddingProvider } from '@platform/knowledge';
@@ -42,6 +42,7 @@ export interface Session {
  * tRPC Context
  *
  * Available in all tRPC procedures and includes:
+ * - req: Fastify request object (for CSRF validation)
  * - session: Auth.js session (null if not authenticated)
  * - tenantId: Current tenant ID (from session, empty string if not authenticated)
  * - userId: Current user ID (from session, empty string if not authenticated)
@@ -51,6 +52,7 @@ export interface Session {
  * - embeddingProvider: Voyage embedding provider for semantic search (Phase 12 Week 2-3)
  */
 export interface Context {
+  req: FastifyRequest;
   session: Session | null;
   tenantId: string;
   userId: string;
@@ -79,6 +81,8 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
       headers: request.headers as HeadersInit,
     });
 
+    // Create auth config without Redis for session checks (lightweight)
+    const authConfig = createAuthConfig();
     const response = await Auth(authRequest, authConfig);
 
     if (response.status === 200) {
@@ -124,6 +128,7 @@ export async function createContext({
   const role = session?.user?.role || 'member';
 
   return {
+    req,
     session,
     tenantId,
     userId,

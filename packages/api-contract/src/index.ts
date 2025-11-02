@@ -16,6 +16,7 @@ export {
   router,
   publicProcedure,
   protectedProcedure,
+  protectedMutation,
   adminProcedure,
   ownerProcedure,
 } from './trpc';

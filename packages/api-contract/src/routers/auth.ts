@@ -60,6 +60,19 @@ const loginSchema = z.object({
   mfaCode: z.string().optional(),
 });
 
+const generateVerificationCodeSchema = z.object({
+  identifier: z.string().min(1, 'Phone number or email is required'),
+  type: z.enum(['email', 'phone'], {
+    errorMap: () => ({ message: 'Type must be either "email" or "phone"' }),
+  }),
+});
+
+const verifyCodeSchema = z.object({
+  identifier: z.string().min(1, 'Phone number or email is required'),
+  type: z.enum(['email', 'phone']),
+  code: z.string().length(6, 'Verification code must be 6 digits'),
+});
+
 export const authRouter = router({
   /**
    * Login with email and password
@@ -663,5 +676,151 @@ export const authRouter = router({
       success: true,
       message: 'Signed out successfully',
     };
+  }),
+
+  /**
+   * Generate verification code for phone or email
+   * Sends code via SMS (Twilio) or email (SendGrid)
+   * Fix #3 - SMS verification implementation
+   */
+  generateVerificationCode: publicProcedure
+    .input(generateVerificationCodeSchema)
+    .mutation(async ({ input, ctx }) => {
+      // Import services dynamically
+      const { createVerificationCodeService } = await import('@platform/auth');
+      const { createSMSService } = await import('@platform/api/services/sms');
+      const { createEmailService } = await import('@platform/api/services/email');
+
+      // Get Redis from context
+      if (!ctx.redis) {
+        throw internalError({
+          message: 'Redis not configured',
+        });
+      }
+
+      // Create verification code service
+      const verificationService = createVerificationCodeService(ctx.redis);
+
+      try {
+        // Generate code
+        const result = await verificationService.generateCode(input.identifier, input.type);
+
+        // Send code via SMS or email
+        if (input.type === 'phone') {
+          const smsService = createSMSService();
+          const sendResult = await smsService.sendVerificationCode(input.identifier, result.code);
+
+          if (!sendResult.success) {
+            throw internalError({
+              message: 'Failed to send verification code via SMS',
+            });
+          }
+
+          logger.info('Verification code sent via SMS', {
+            identifier: input.identifier.substring(0, 3) + '***',
+            expiresAt: result.expiresAt,
+          });
+        } else {
+          const emailService = createEmailService();
+          const sendResult = await emailService.sendVerificationCode(input.identifier, result.code);
+
+          if (!sendResult.success) {
+            throw internalError({
+              message: 'Failed to send verification code via email',
+            });
+          }
+
+          logger.info('Verification code sent via email', {
+            identifier: input.identifier.substring(0, 2) + '***',
+            expiresAt: result.expiresAt,
+          });
+        }
+
+        return {
+          success: true,
+          message: `Verification code sent to ${input.type === 'phone' ? 'phone number' : 'email address'}`,
+          expiresAt: result.expiresAt,
+        };
+      } catch (error) {
+        // If error is already a TRPCError, re-throw it
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        // Handle rate limit errors
+        if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+          throw badRequest({
+            message: error.message,
+          });
+        }
+
+        logger.error('Failed to generate verification code', { error });
+        throw internalError({
+          message: 'Failed to generate verification code',
+        });
+      }
+    }),
+
+  /**
+   * Verify code for phone or email
+   * Validates user-submitted verification code
+   * Fix #3 - SMS verification implementation
+   */
+  verifyVerificationCode: publicProcedure.input(verifyCodeSchema).mutation(async ({ input, ctx }) => {
+    // Import verification service
+    const { createVerificationCodeService } = await import('@platform/auth');
+
+    // Get Redis from context
+    if (!ctx.redis) {
+      throw internalError({
+        message: 'Redis not configured',
+      });
+    }
+
+    // Create verification code service
+    const verificationService = createVerificationCodeService(ctx.redis);
+
+    try {
+      // Verify code
+      const result = await verificationService.verifyCode(
+        input.identifier,
+        input.type,
+        input.code
+      );
+
+      if (!result.valid) {
+        // Map error codes to user-friendly messages
+        const errorMessages: Record<string, string> = {
+          EXPIRED: 'Verification code has expired. Please request a new code.',
+          INVALID: `Invalid verification code. ${result.attemptsRemaining} attempts remaining.`,
+          MAX_ATTEMPTS: 'Maximum verification attempts exceeded. Please request a new code.',
+          NOT_FOUND: 'No verification code found. Please request a code first.',
+        };
+
+        throw badRequest({
+          message: result.error ? errorMessages[result.error] : 'Verification failed',
+        });
+      }
+
+      logger.info('Verification code verified successfully', {
+        identifier: input.identifier.substring(0, 3) + '***',
+        type: input.type,
+      });
+
+      return {
+        success: true,
+        message: 'Verification successful',
+      };
+    } catch (error) {
+      // Re-throw TRPCErrors as-is
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+
+      logger.error('Failed to verify code', { error });
+      throw internalError({
+        message: 'Failed to verify code',
+      });
+    }
   }),
 });

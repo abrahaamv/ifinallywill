@@ -23,8 +23,16 @@
  * @see https://authjs.dev/
  */
 
-// Export configuration and Auth.js functions
-export { authConfig, auth, handlers, signIn, signOut } from './lib/auth';
+// Export Auth.js initialization and utilities
+export { initializeAuth, createAuthConfig } from './lib/auth';
+export { createCachedSessionAdapter } from './lib/cached-session-adapter';
+
+// Export session rotation utilities (Phase 8 - Session Fixation Fix)
+export {
+  rotateUserSessions,
+  invalidateSession,
+  invalidateOtherSessions,
+} from './lib/session-rotation';
 
 // Export helper functions
 export {
@@ -61,3 +69,12 @@ export { CSRFService } from './services/csrf.service';
 export type { CSRFToken } from './services/csrf.service';
 export { useCSRF, useAuthenticatedFetch } from './hooks/useCSRF';
 export type { UseCSRFResult } from './hooks/useCSRF';
+
+// Export verification code service (Fix #3)
+export { VerificationCodeService, createVerificationCodeService } from './services/verification-code.service';
+export type {
+  VerificationCodeConfig,
+  VerificationCodeResult,
+  VerificationAttemptResult,
+  RateLimitResult,
+} from './services/verification-code.service';
