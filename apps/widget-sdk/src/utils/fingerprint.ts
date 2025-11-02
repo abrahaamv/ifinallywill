@@ -56,6 +56,7 @@ export async function getDeviceFingerprint(): Promise<{
       result: result as FingerprintResult,
     };
   } catch (error) {
+    // Log error (browser console is acceptable for frontend components)
     console.error('Failed to get device fingerprint:', error);
 
     // Return fallback fingerprint in case of error
@@ -102,6 +103,7 @@ export function isFingerprintingEnabled(): boolean {
 export function preloadFingerprint(): void {
   if (isFingerprintingEnabled()) {
     initFingerprint().catch((error) => {
+      // Log warning (browser console is acceptable for frontend components)
       console.warn('Failed to preload fingerprint:', error);
     });
   }

@@ -9,6 +9,9 @@ import { sql, eq, and } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { unresolvedProblems, unresolvedProblemUsers } from '@platform/db';
 import { createVoyageProvider } from './embeddings';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('problem-deduplication');
 
 interface SimilarProblemResult {
   exists: boolean;
@@ -100,7 +103,10 @@ export async function createOrUpdateUnresolvedProblem<T extends Record<string, u
       endUserId,
     }).onConflictDoNothing();
 
-    console.log(`Updated existing problem ${similar.problemId} (similarity: ${similar.similarity})`);
+    logger.info('Updated existing problem', {
+      problemId: similar.problemId,
+      similarity: similar.similarity
+    });
     return similar.problemId;
   }
 
@@ -133,7 +139,7 @@ export async function createOrUpdateUnresolvedProblem<T extends Record<string, u
     endUserId,
   });
 
-  console.log(`Created new unresolved problem ${newProblem.id}`);
+  logger.info('Created new unresolved problem', { problemId: newProblem.id });
 
   // Queue AI solution generation (background job)
   // This will be implemented in a separate worker process
@@ -195,7 +201,7 @@ export async function checkIfUserBlocked<T extends Record<string, unknown>>(
 async function queueSolutionGeneration(problemId: string): Promise<void> {
   // TODO: Implement background job queue (BullMQ, Redis Queue, etc.)
   // For now, just log
-  console.log(`[Background Job] Generate AI solution for problem ${problemId}`);
+  logger.info('[Background Job] Generate AI solution for problem', { problemId });
 
   // In production, this would:
   // 1. Fetch problem description
@@ -244,7 +250,9 @@ async function notifyAffectedUsers<T extends Record<string, unknown>>(
     .from(unresolvedProblemUsers)
     .where(eq(unresolvedProblemUsers.problemId, problemId));
 
-  console.log(`Notifying ${affectedUsers.length} users about problem resolution`);
+  logger.info('Notifying users about problem resolution', {
+    userCount: affectedUsers.length
+  });
 
   // TODO: Send notifications via email/SMS
   // Implementation will depend on Phase 11 Week 3 notification services

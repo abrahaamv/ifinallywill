@@ -17,6 +17,9 @@
 import type { AIProviderInterface, AICompletionRequest, AICompletionResponse } from '@platform/ai-core';
 import { ComplexityScorer, type ComplexityScore, type ComplexityAnalysisInput } from './complexity-scorer';
 import { IntentClassifier, type IntentClassificationResult } from './intent-classifier';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('intelligent-router');
 
 // ==================== TYPES ====================
 
@@ -223,7 +226,11 @@ export class IntelligentRouter {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
         fallbackAttempts++;
-        console.warn(`Model ${model} failed (attempt ${fallbackAttempts}):`, lastError.message);
+        logger.warn('Model failed, attempting fallback', {
+          model,
+          attempt: fallbackAttempts,
+          error: lastError.message
+        });
 
         // Don't try fallbacks if explicitly disabled
         if (!this.config.enableFallbacks) {

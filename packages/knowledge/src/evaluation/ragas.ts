@@ -11,6 +11,9 @@
  */
 
 import type { AIProviderInterface } from '@platform/ai-core';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('ragas-evaluation');
 
 // ==================== TYPES ====================
 
@@ -396,7 +399,7 @@ Return format: {
       const parsed = JSON.parse(cleaned);
       return key ? parsed[key] : parsed;
     } catch (error) {
-      console.error('Failed to parse JSON response:', content);
+      logger.error('Failed to parse JSON response', { content, error });
       throw new Error(`Invalid JSON response from evaluator: ${error instanceof Error ? error.message : 'unknown'}`);
     }
   }
