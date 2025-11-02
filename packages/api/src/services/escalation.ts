@@ -8,6 +8,9 @@ import { randomBytes } from 'crypto';
 import { addHours } from 'date-fns';
 import { eq, and, desc, isNull, escalations, sessions, endUsers, type DrizzleClient } from '@platform/db';
 import type { Redis } from 'ioredis';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('escalation-service');
 
 interface CreateEscalationParams {
   sessionId: string;
@@ -89,7 +92,10 @@ export async function createEscalation(
     throw new Error('Failed to create escalation');
   }
 
-  console.log(`Created escalation ${escalation.id} for session ${sessionId}`);
+  logger.info('Created escalation', {
+    escalationId: escalation.id,
+    sessionId
+  });
 
   // Notify human agents if within service hours
   if (withinServiceHours) {
@@ -123,11 +129,14 @@ async function notifyAvailableAgents(
   const onlineAgents = await redis.smembers(`tenant:${tenantId}:online_agents`);
 
   if (onlineAgents.length === 0) {
-    console.warn(`No online agents found for tenant ${tenantId}`);
+    logger.warn('No online agents found', { tenantId });
     return;
   }
 
-  console.log(`Notifying ${onlineAgents.length} online agents for tenant ${tenantId}`);
+  logger.info('Notifying online agents', {
+    agentCount: onlineAgents.length,
+    tenantId
+  });
 
   // Publish notification to each agent's stream
   for (const agentId of onlineAgents) {
@@ -164,7 +173,10 @@ export async function joinEscalation(
     })
     .where(eq(escalations.id, escalationId));
 
-  console.log(`Agent ${humanAgentId} joined escalation ${escalationId}`);
+  logger.info('Agent joined escalation', {
+    agentId: humanAgentId,
+    escalationId
+  });
 }
 
 /**
@@ -184,7 +196,7 @@ export async function completeEscalation(
     })
     .where(eq(escalations.id, escalationId));
 
-  console.log(`Escalation ${escalationId} completed`);
+  logger.info('Escalation completed', { escalationId });
 }
 
 /**
@@ -217,7 +229,7 @@ export async function markAgentOnline(
   agentId: string
 ): Promise<void> {
   await redis.sadd(`tenant:${tenantId}:online_agents`, agentId);
-  console.log(`Agent ${agentId} marked online for tenant ${tenantId}`);
+  logger.info('Agent marked online', { agentId, tenantId });
 }
 
 /**
@@ -229,5 +241,5 @@ export async function markAgentOffline(
   agentId: string
 ): Promise<void> {
   await redis.srem(`tenant:${tenantId}:online_agents`, agentId);
-  console.log(`Agent ${agentId} marked offline for tenant ${tenantId}`);
+  logger.info('Agent marked offline', { agentId, tenantId });
 }

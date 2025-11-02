@@ -6,6 +6,9 @@
 
 import type { Redis } from 'ioredis';
 import { type DrizzleClient, sessions, eq, and, gte } from '@platform/db';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('session-validation');
 
 interface SessionValidationResult {
   valid: boolean;
@@ -157,7 +160,7 @@ export async function trackVideoSessionStart(
   // Track active sessions per tenant
   await redis.sadd(`active_video_sessions:${tenantId}`, sessionId);
 
-  console.log(`Video session ${sessionId} started in room ${roomName}`);
+  logger.info('Video session started', { sessionId, roomName });
 }
 
 /**
@@ -195,7 +198,11 @@ export async function trackVideoSessionEnd(
     1
   );
 
-  console.log(`Video session ${sessionId} ended (${reason}, ${durationMs}ms)`);
+  logger.info('Video session ended', {
+    sessionId,
+    reason,
+    durationMs
+  });
 }
 
 /**
@@ -223,7 +230,11 @@ export async function blockUserFromVideo(
   );
 
   // Log blocking event
-  console.warn(`User ${endUserId} blocked until ${blockUntil.toISOString()}: ${reason}`);
+  logger.warn('User blocked from video', {
+    userId: endUserId,
+    blockedUntil: blockUntil.toISOString(),
+    reason
+  });
 }
 
 /**
@@ -364,7 +375,10 @@ export async function cleanupExpiredSessions(
     }
   }
 
-  console.log(`Cleaned up ${cleaned} expired sessions for tenant ${tenantId}`);
+  logger.info('Cleaned up expired sessions', {
+    cleaned,
+    tenantId
+  });
 
   return { cleaned };
 }

@@ -5,6 +5,9 @@
  */
 
 import sendgrid from '@sendgrid/mail';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('email-service');
 
 interface EmailConfig {
   apiKey: string;
@@ -43,14 +46,56 @@ export class EmailService {
         html: this._generateSurveyEmailHTML(surveyUrl, sessionId),
       });
 
-      console.log(`Email survey sent to ${toEmail}, ID: ${response.headers['x-message-id']}`);
+      logger.info('Email survey sent', {
+        toEmail,
+        messageId: response.headers['x-message-id'],
+        sessionId
+      });
 
       return {
         success: true,
         messageId: response.headers['x-message-id'] as string,
       };
     } catch (error) {
-      console.error(`Failed to send email survey to ${toEmail}:`, error);
+      logger.error('Failed to send email survey', { toEmail, error });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Send verification code via email
+   * Fix #4 - Email verification implementation
+   */
+  async sendVerificationCode(
+    toEmail: string,
+    code: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      const [response] = await sendgrid.send({
+        to: toEmail,
+        from: {
+          email: this.fromEmail,
+          name: this.fromName,
+        },
+        subject: 'Your Verification Code',
+        text: `Your verification code is: ${code}. This code expires in 10 minutes.`,
+        html: this._generateVerificationCodeHTML(code),
+      });
+
+      logger.info('Verification code sent via email', {
+        toEmail,
+        messageId: response.headers['x-message-id']
+      });
+
+      return {
+        success: true,
+        messageId: response.headers['x-message-id'] as string,
+      };
+    } catch (error) {
+      logger.error('Failed to send verification code via email', { toEmail, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -78,14 +123,17 @@ export class EmailService {
         html: this._generateVerificationEmailHTML(verificationUrl),
       });
 
-      console.log(`Verification email sent to ${toEmail}, ID: ${response.headers['x-message-id']}`);
+      logger.info('Verification email sent', {
+        toEmail,
+        messageId: response.headers['x-message-id']
+      });
 
       return {
         success: true,
         messageId: response.headers['x-message-id'] as string,
       };
     } catch (error) {
-      console.error(`Failed to send verification email to ${toEmail}:`, error);
+      logger.error('Failed to send verification email', { toEmail, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -115,14 +163,18 @@ export class EmailService {
         html: this._generateEscalationEmailHTML(meetingUrl, sessionId, problemDescription),
       });
 
-      console.log(`Escalation email sent to ${toEmail}, ID: ${response.headers['x-message-id']}`);
+      logger.info('Escalation email sent', {
+        toEmail,
+        messageId: response.headers['x-message-id'],
+        sessionId
+      });
 
       return {
         success: true,
         messageId: response.headers['x-message-id'] as string,
       };
     } catch (error) {
-      console.error(`Failed to send escalation email to ${toEmail}:`, error);
+      logger.error('Failed to send escalation email', { toEmail, sessionId, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -158,6 +210,39 @@ export class EmailService {
   <div style="font-size: 12px; color: #9ca3af; text-align: center;">
     <p>Session ID: ${sessionId.substring(0, 8)}... | ${this.fromName}</p>
     <p>If you have questions, please reply to this email.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+  }
+
+  /**
+   * Generate HTML for verification code email
+   */
+  private _generateVerificationCodeHTML(code: string): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Verification Code</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
+    <h2 style="color: #4f46e5; margin-top: 0;">Your Verification Code</h2>
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      Please use the following code to verify your email address:
+    </p>
+    <div style="background-color: white; border: 2px solid #4f46e5; border-radius: 8px; padding: 20px; text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #4f46e5; font-family: 'Courier New', monospace; margin: 20px 0;">
+      ${code}
+    </div>
+    <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+      This code expires in 10 minutes. If you didn't request this code, please ignore this email.
+    </p>
+  </div>
+  <div style="font-size: 12px; color: #9ca3af; text-align: center;">
+    <p>${this.fromName} | Secure Email Verification</p>
   </div>
 </body>
 </html>

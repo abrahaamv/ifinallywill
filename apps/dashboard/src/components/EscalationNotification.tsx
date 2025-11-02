@@ -36,6 +36,7 @@ export function EscalationNotification({ escalation, onDismiss }: EscalationNoti
       onDismiss?.();
     },
     onError: (error: unknown) => {
+      // Log error (browser console is acceptable for frontend components)
       console.error('Failed to join escalation:', error);
       alert('Failed to join meeting. Please try again.');
       setIsJoining(false);

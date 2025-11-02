@@ -16,6 +16,9 @@
 import * as schema from '@platform/db';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('crm-salesforce');
 
 type Database = NodePgDatabase<typeof schema>;
 const { crmConnections } = schema;
@@ -311,7 +314,10 @@ export class SalesforceClient {
     // Process event based on type
     // Update local database with CRM changes
 
-    console.log(`Processing Salesforce webhook event: ${event.type}`, event.data);
+    logger.info('Processing Salesforce webhook event', {
+      eventType: event.type,
+      data: event.data
+    });
 
     // Implementation depends on specific Platform Event structure
     // This is a placeholder for the webhook processing logic

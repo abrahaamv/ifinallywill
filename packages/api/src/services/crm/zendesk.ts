@@ -16,6 +16,9 @@
 import * as schema from '@platform/db';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('crm-zendesk');
 
 type Database = NodePgDatabase<typeof schema>;
 const { crmConnections } = schema;
@@ -394,7 +397,10 @@ export class ZendeskClient {
       data: Record<string, unknown>;
     }
   ): Promise<void> {
-    console.log(`Processing Zendesk webhook event: ${event.type}`, event.data);
+    logger.info('Processing Zendesk webhook event', {
+      eventType: event.type,
+      data: event.data
+    });
 
     // Implementation depends on specific event structure
     // This is a placeholder for the webhook processing logic

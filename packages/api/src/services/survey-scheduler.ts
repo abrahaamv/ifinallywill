@@ -13,6 +13,9 @@
 import type { Redis } from 'ioredis';
 import { createEmailService, EmailService } from './email';
 import { createSMSService, SMSService } from './sms';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('survey-scheduler');
 
 interface SurveyJob {
   id: string;
@@ -81,7 +84,10 @@ export class SurveyScheduler {
       JSON.stringify(job)
     );
 
-    console.log(`Scheduled AI call survey for session ${sessionId} at ${new Date(scheduledAt).toISOString()}`);
+    logger.info('Scheduled AI call survey', {
+      sessionId,
+      scheduledAt: new Date(scheduledAt).toISOString()
+    });
   }
 
   /**
@@ -117,7 +123,10 @@ export class SurveyScheduler {
       JSON.stringify(job)
     );
 
-    console.log(`Scheduled SMS survey for session ${sessionId} at ${new Date(scheduledAt).toISOString()}`);
+    logger.info('Scheduled SMS survey', {
+      sessionId,
+      scheduledAt: new Date(scheduledAt).toISOString()
+    });
   }
 
   /**
@@ -151,7 +160,10 @@ export class SurveyScheduler {
       JSON.stringify(job)
     );
 
-    console.log(`Scheduled email survey for session ${sessionId} at ${new Date(scheduledAt).toISOString()}`);
+    logger.info('Scheduled email survey', {
+      sessionId,
+      scheduledAt: new Date(scheduledAt).toISOString()
+    });
   }
 
   /**
@@ -160,12 +172,12 @@ export class SurveyScheduler {
    */
   start(): void {
     if (this.isRunning) {
-      console.log('Survey scheduler already running');
+      logger.info('Survey scheduler already running');
       return;
     }
 
     this.isRunning = true;
-    console.log('Survey scheduler started');
+    logger.info('Survey scheduler started');
 
     this._processLoop();
   }
@@ -175,7 +187,7 @@ export class SurveyScheduler {
    */
   stop(): void {
     this.isRunning = false;
-    console.log('Survey scheduler stopped');
+    logger.info('Survey scheduler stopped');
   }
 
   /**
@@ -186,7 +198,7 @@ export class SurveyScheduler {
       try {
         await this._processJobs();
       } catch (error) {
-        console.error('Survey scheduler error:', error);
+        logger.error('Survey scheduler error', { error });
       }
 
       // Wait 30 seconds before next iteration
@@ -214,7 +226,7 @@ export class SurveyScheduler {
       return;
     }
 
-    console.log(`Processing ${jobs.length} survey jobs`);
+    logger.info('Processing survey jobs', { count: jobs.length });
 
     for (const jobData of jobs) {
       const job: SurveyJob = JSON.parse(jobData);
@@ -225,7 +237,7 @@ export class SurveyScheduler {
         // Remove job from queue
         await this.redis.zrem('survey:scheduled', jobData);
       } catch (error) {
-        console.error(`Failed to execute job ${job.id}:`, error);
+        logger.error('Failed to execute job', { jobId: job.id, error });
 
         // Retry logic
         if (job.attempts < job.maxAttempts) {
@@ -240,11 +252,18 @@ export class SurveyScheduler {
             JSON.stringify(job)
           );
 
-          console.log(`Rescheduled job ${job.id}, attempt ${job.attempts}/${job.maxAttempts}`);
+          logger.info('Rescheduled job', {
+            jobId: job.id,
+            attempt: job.attempts,
+            maxAttempts: job.maxAttempts
+          });
         } else {
           // Max attempts reached, remove job
           await this.redis.zrem('survey:scheduled', jobData);
-          console.error(`Job ${job.id} failed after ${job.maxAttempts} attempts`);
+          logger.error('Job failed after max attempts', {
+            jobId: job.id,
+            maxAttempts: job.maxAttempts
+          });
         }
       }
     }
@@ -254,7 +273,10 @@ export class SurveyScheduler {
    * Execute a survey job
    */
   private async _executeJob(job: SurveyJob): Promise<void> {
-    console.log(`Executing ${job.currentTier} survey for session ${job.sessionId}`);
+    logger.info('Executing survey job', {
+      tier: job.currentTier,
+      sessionId: job.sessionId
+    });
 
     switch (job.currentTier) {
       case 'ai_call':
@@ -285,7 +307,10 @@ export class SurveyScheduler {
 
     // In production, this would trigger the LiveKit survey agent
     // For now, we'll simulate and schedule SMS fallback
-    console.log(`[AI CALL] Would call ${job.endUserPhone} for session ${job.sessionId}`);
+    logger.info('[AI CALL] Would trigger LiveKit agent', {
+      phone: job.endUserPhone,
+      sessionId: job.sessionId
+    });
 
     // Simulate AI call not answered -> schedule SMS
     await this.scheduleSMS(
@@ -316,7 +341,7 @@ export class SurveyScheduler {
       throw new Error(`SMS failed: ${result.error}`);
     }
 
-    console.log(`[SMS] Survey link sent to ${job.endUserPhone}`);
+    logger.info('[SMS] Survey link sent', { phone: job.endUserPhone });
 
     // Schedule email fallback if we have email
     if (job.endUserEmail) {
@@ -349,7 +374,7 @@ export class SurveyScheduler {
       throw new Error(`Email failed: ${result.error}`);
     }
 
-    console.log(`[EMAIL] Survey link sent to ${job.endUserEmail}`);
+    logger.info('[EMAIL] Survey link sent', { email: job.endUserEmail });
   }
 
   /**
@@ -363,7 +388,10 @@ export class SurveyScheduler {
       const job: SurveyJob = JSON.parse(jobData);
       if (job.sessionId === sessionId) {
         await this.redis.zrem('survey:scheduled', jobData);
-        console.log(`Cancelled ${job.currentTier} survey for session ${sessionId}`);
+        logger.info('Cancelled survey', {
+          tier: job.currentTier,
+          sessionId
+        });
       }
     }
   }

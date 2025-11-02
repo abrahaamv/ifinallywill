@@ -16,6 +16,9 @@
 import * as schema from '@platform/db';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('crm-hubspot');
 
 type Database = NodePgDatabase<typeof schema>;
 const { crmConnections } = schema;
@@ -421,7 +424,11 @@ export class HubSpotClient {
       occurredAt: number;
     }
   ): Promise<void> {
-    console.log(`Processing HubSpot webhook event: ${event.subscriptionType}`, event);
+    logger.info('Processing HubSpot webhook event', {
+      subscriptionType: event.subscriptionType,
+      objectId: event.objectId,
+      eventId: event.eventId
+    });
 
     // Implementation depends on specific event structure
     // This is a placeholder for the webhook processing logic

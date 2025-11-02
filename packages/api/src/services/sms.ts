@@ -5,6 +5,9 @@
  */
 
 import twilio from 'twilio';
+import { createModuleLogger } from '@platform/shared';
+
+const logger = createModuleLogger('sms-service');
 
 interface SMSConfig {
   accountSid: string;
@@ -36,14 +39,14 @@ export class SMSService {
         to: toNumber,
       });
 
-      console.log(`SMS survey sent to ${toNumber}, SID: ${message.sid}`);
+      logger.info('SMS survey sent', { toNumber, messageSid: message.sid });
 
       return {
         success: true,
         messageSid: message.sid,
       };
     } catch (error) {
-      console.error(`Failed to send SMS survey to ${toNumber}:`, error);
+      logger.error('Failed to send SMS survey', { toNumber, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -66,14 +69,14 @@ export class SMSService {
         to: toNumber,
       });
 
-      console.log(`Verification code sent to ${toNumber}, SID: ${message.sid}`);
+      logger.info('Verification code sent', { toNumber, messageSid: message.sid });
 
       return {
         success: true,
         messageSid: message.sid,
       };
     } catch (error) {
-      console.error(`Failed to send verification code to ${toNumber}:`, error);
+      logger.error('Failed to send verification code', { toNumber, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -97,14 +100,18 @@ export class SMSService {
         to: toNumber,
       });
 
-      console.log(`Escalation notification sent to ${toNumber}, SID: ${message.sid}`);
+      logger.info('Escalation notification sent', {
+        toNumber,
+        messageSid: message.sid,
+        sessionId
+      });
 
       return {
         success: true,
         messageSid: message.sid,
       };
     } catch (error) {
-      console.error(`Failed to send escalation notification to ${toNumber}:`, error);
+      logger.error('Failed to send escalation notification', { toNumber, sessionId, error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
