@@ -101,7 +101,9 @@ Then open:
 >
 > **Shared Components**: `packages/ui` with 16 components (Radix UI + shadcn/ui)
 >
-> **Security Features**: Auth.js OAuth, Argon2id passwords, TOTP MFA, PostgreSQL RLS (FORCE enabled on 18 tables), Redis rate limiting, API key auth, CSRF protection, Helmet.js security headers (11 headers), tRPC rate limiting, session rotation utilities, environment validation, 30+ critical database indexes, Brotli/gzip compression, Redis session caching (85% faster)
+> **Security Features**: Auth.js OAuth, Argon2id passwords, TOTP MFA, PostgreSQL RLS (FORCE enabled on 18 tables), Redis rate limiting, API key auth, CSRF protection, Helmet.js security headers (11 headers), tRPC rate limiting, session rotation utilities, environment validation, 30+ critical database indexes, Redis session caching (85% faster)
+>
+> **Note**: Compression (Brotli/gzip) temporarily disabled due to tRPC Response object incompatibility. See Known Issues section below.
 >
 > **PostgreSQL RLS**: ✅ COMPLETE - FORCE RLS enabled, 56 policies active, production-ready tenant isolation
 >
@@ -299,6 +301,45 @@ GitHub Actions workflows (`.github/workflows/`):
 - **Code Quality**: Biome for linting and formatting
 - **Type Checking**: TypeScript strict mode
 - **Containerization**: Docker for local development
+
+---
+
+## ⚠️ Known Issues & Workarounds
+
+### HTTP Compression Disabled (Temporary)
+
+**Issue**: Fastify `@fastify/compress` plugin incompatible with tRPC Response objects
+
+**Error**:
+```
+TypeError: The "string" argument must be of type string or an instance of Buffer or ArrayBuffer.
+Received an instance of Response
+```
+
+**Root Cause**:
+- tRPC returns modern Fetch API `Response` objects
+- Fastify compress plugin's `onSend` hook uses `Buffer.byteLength()`
+- `Buffer.byteLength()` cannot measure `Response` objects → crash
+
+**Current Workaround**: Compression temporarily disabled (`packages/api/src/server.ts:171-186`)
+
+**Impact**:
+- ✅ System fully functional (no crashes)
+- ⚠️ API responses 60-70% larger than compressed
+- ⚠️ Slightly slower on slow networks (3G: ~1.5-2x longer)
+- ⚠️ Higher bandwidth costs at scale
+
+**Resolution Options**:
+1. **Wait for tRPC fetch adapter** (RECOMMENDED - easy, no code changes)
+   - tRPC migrating to fetch adapter that returns compressible formats
+   - Timeline: TBD (watch tRPC releases)
+2. **Custom compression middleware** (100-200 lines, moderate complexity)
+   - Handle Response objects separately with stream reading
+3. **Alternative compression library** (research + testing required)
+
+**Priority**: Low - optimize after core features complete
+
+**Reference**: See `packages/api/src/server.ts` lines 171-186 for detailed comments
 
 ---
 
