@@ -12,10 +12,10 @@
  * - Account lockout protection (5 attempts = 15 minutes)
  */
 
-import compress from '@fastify/compress';
+// import compress from '@fastify/compress'; // TEMP: Disabled due to tRPC Response object incompatibility
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import { constants as zlibConstants } from 'node:zlib';
+// import { constants as zlibConstants } from 'node:zlib'; // TEMP: Disabled with compress plugin
 import { appRouter, createContext } from '@platform/api-contract';
 import {
   VoyageEmbeddingProvider,
@@ -168,21 +168,22 @@ async function main() {
     xssFilter: true,
   });
 
-  // Register compression plugin for response size optimization
-  // Provides 60-70% size reduction for text responses
-  await fastify.register(compress, {
-    global: true,
-    threshold: 1024, // Only compress responses > 1KB
-    encodings: ['br', 'gzip', 'deflate'], // Brotli preferred (best compression)
-    zlibOptions: {
-      level: 6, // Balanced compression level (1-9, higher = better compression but slower)
-    },
-    brotliOptions: {
-      params: {
-        [zlibConstants.BROTLI_PARAM_QUALITY]: 4, // Balanced quality (0-11)
-      },
-    },
-  });
+  // CRITICAL: Skip compression entirely to avoid tRPC Response object incompatibility
+  // The compress plugin's onSend hook tries to calculate byte length of Response objects
+  // which causes TypeError. Compression can be re-enabled after tRPC migration to fetch adapter.
+  // await fastify.register(compress, {
+  //   global: true,
+  //   threshold: 1024, // Only compress responses > 1KB
+  //   encodings: ['br', 'gzip', 'deflate'], // Brotli preferred (best compression)
+  //   zlibOptions: {
+  //     level: 6, // Balanced compression level (1-9, higher = better compression but slower)
+  //   },
+  //   brotliOptions: {
+  //     params: {
+  //       [zlibConstants.BROTLI_PARAM_QUALITY]: 4, // Balanced quality (0-11)
+  //     },
+  //   },
+  // });
 
   // Register CORS with production security
   await fastify.register(cors, {

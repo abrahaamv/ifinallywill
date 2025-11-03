@@ -20,7 +20,7 @@ import { verificationRouter } from './routers/verification';
 import { surveysRouter } from './routers/surveys';
 import { escalationsRouter } from './routers/escalations';
 import { problemsRouter } from './routers/problems';
-import { crmRouter } from './routers/crm';
+// import { crmRouter } from './routers/crm'; // TEMP: Disabled due to missing CRM service modules
 import { router } from './trpc';
 
 /**
@@ -43,7 +43,7 @@ export const appRouter = router({
   surveys: surveysRouter, // Phase 11 Week 2 (In-widget feedback)
   escalations: escalationsRouter, // Phase 11 Week 4 (Human agent handoff)
   problems: problemsRouter, // Phase 11 Week 4 (Semantic deduplication)
-  crm: crmRouter, // Phase 12 Week 5 (CRM integrations)
+  // crm: crmRouter, // TEMP: Disabled due to missing CRM service modules (Phase 12 Week 5)
 });
 
 /**

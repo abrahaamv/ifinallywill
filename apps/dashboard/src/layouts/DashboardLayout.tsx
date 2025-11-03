@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChatWidget } from '../components/ChatWidget';
+import { useAuth } from '../providers/AuthProvider';
 
 const logger = createModuleLogger('DashboardLayout');
 
@@ -53,16 +54,29 @@ const routeTitles: Record<string, string> = {
 export function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: authUser, signOut } = useAuth();
 
   // Derive title from current route
   const title = routeTitles[location.pathname] || 'Dashboard';
 
-  // Mock user data - will be replaced with real auth
-  const user = {
-    name: 'John Doe',
-    email: 'john@platform.com',
-    initials: 'JD',
-  };
+  // Use authenticated user or fallback to mock data
+  const user = authUser
+    ? {
+        name: authUser.name || authUser.email.split('@')[0] || 'User',
+        email: authUser.email,
+        initials:
+          (authUser.name || authUser.email || 'U')
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2) || 'U',
+      }
+    : {
+        name: 'Guest User',
+        email: 'guest@platform.com',
+        initials: 'GU',
+      };
 
   // Navigation sections with active state based on current route
   const sidebarSections: SidebarSection[] = [
@@ -158,9 +172,17 @@ export function DashboardLayout() {
     navigate(href);
   };
 
-  const handleUserMenuClick = (action: string) => {
-    if (action === 'settings') navigate('/settings');
-    if (action === 'logout') logger.info('User logout triggered');
+  const handleUserMenuClick = async (action: string) => {
+    if (action === 'settings') {
+      navigate('/settings');
+    } else if (action === 'logout') {
+      logger.info('User logout triggered');
+      try {
+        await signOut();
+      } catch (error) {
+        logger.error('Logout failed', { error });
+      }
+    }
     // Add other actions as needed
   };
 

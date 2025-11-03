@@ -4,8 +4,6 @@
  * Provides authentication state and tenant context for tRPC procedures.
  */
 
-import { Auth } from '@auth/core';
-import { createAuthConfig } from '@platform/auth';
 import { db } from '@platform/db';
 import type * as schema from '@platform/db/src/schema';
 import type { VoyageEmbeddingProvider } from '@platform/knowledge';
@@ -70,20 +68,25 @@ export type TRPCContext = Context;
 /**
  * Helper: Get session from Fastify request
  *
- * Calls Auth.js internal session API to retrieve current session from cookies
+ * Makes internal HTTP fetch to /api/auth/session endpoint instead of calling Auth.js directly.
+ * This ensures proper routing through Fastify's auth plugin handler.
  */
 async function getSession(request: FastifyRequest): Promise<Session | null> {
   try {
-    const url = new URL('/api/auth/session', `http://${request.headers.host}`);
+    // Construct internal fetch URL using host header
+    const host = request.headers.host || 'localhost:3001';
+    const protocol = request.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+    const url = `${protocol}://${host}/api/auth/session`;
 
-    const authRequest = new Request(url, {
+    // Make internal fetch with cookies from original request
+    const response = await fetch(url, {
       method: 'GET',
-      headers: request.headers as HeadersInit,
+      headers: {
+        cookie: request.headers.cookie || '',
+        // Forward other relevant headers
+        'user-agent': request.headers['user-agent'] || 'Internal',
+      },
     });
-
-    // Create auth config without Redis for session checks (lightweight)
-    const authConfig = createAuthConfig();
-    const response = await Auth(authRequest, authConfig);
 
     if (response.status === 200) {
       const session = await response.json();
@@ -94,7 +97,7 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
     return null;
   } catch (error) {
     // Only log errors that aren't simply unauthenticated requests
-    if (error instanceof Error && !error.message.includes('null')) {
+    if (error instanceof Error && !error.message.includes('null') && !error.message.includes('ECONNREFUSED')) {
       logger.error('Failed to get session', { error });
     }
     return null;

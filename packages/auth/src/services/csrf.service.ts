@@ -33,7 +33,31 @@ export interface CSRFToken {
  * CSRF Service for frontend CSRF token management
  */
 export class CSRFService {
-  private static readonly API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  private static apiBaseUrl: string | null = null;
+
+  /**
+   * Configure the API base URL for CSRF token requests
+   * Must be called before using getToken()
+   *
+   * @param url - API base URL (e.g., 'http://localhost:3001')
+   */
+  static configure(url: string): void {
+    CSRFService.apiBaseUrl = url;
+  }
+
+  /**
+   * Get the configured API base URL
+   * Falls back to localhost:3001 if not configured
+   */
+  private static getApiUrl(): string {
+    if (CSRFService.apiBaseUrl) {
+      return CSRFService.apiBaseUrl;
+    }
+
+    // Fallback to localhost
+    logger.warn('CSRF API URL not configured, using default localhost:3001');
+    return 'http://localhost:3001';
+  }
 
   /**
    * Fetch CSRF token from Auth.js /api/auth/csrf endpoint
@@ -52,7 +76,8 @@ export class CSRFService {
    */
   static async getToken(): Promise<CSRFToken> {
     try {
-      const response = await fetch(`${CSRFService.API_BASE_URL}/api/auth/csrf`, {
+      const apiUrl = CSRFService.getApiUrl();
+      const response = await fetch(`${apiUrl}/api/auth/csrf`, {
         credentials: 'include', // Include cookies for session
       });
 

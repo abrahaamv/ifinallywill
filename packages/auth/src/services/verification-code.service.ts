@@ -26,7 +26,7 @@ const logger = createModuleLogger('verification-code');
 /**
  * Verification code configuration
  */
-interface VerificationCodeConfig {
+export interface VerificationCodeConfig {
   /**
    * Code length (default: 6 digits)
    */

@@ -688,8 +688,9 @@ export const authRouter = router({
     .mutation(async ({ input, ctx }) => {
       // Import services dynamically
       const { createVerificationCodeService } = await import('@platform/auth');
-      const { createSMSService } = await import('@platform/api/services/sms');
-      const { createEmailService } = await import('@platform/api/services/email');
+      // TEMP: SMS/Email services not yet implemented
+      // const { createSMSService } = await import('@platform/api/services/sms');
+      // const { createEmailService } = await import('@platform/api/services/email');
 
       // Get Redis from context
       if (!ctx.redis) {
@@ -705,40 +706,17 @@ export const authRouter = router({
         // Generate code
         const result = await verificationService.generateCode(input.identifier, input.type);
 
-        // Send code via SMS or email
-        if (input.type === 'phone') {
-          const smsService = createSMSService();
-          const sendResult = await smsService.sendVerificationCode(input.identifier, result.code);
-
-          if (!sendResult.success) {
-            throw internalError({
-              message: 'Failed to send verification code via SMS',
-            });
-          }
-
-          logger.info('Verification code sent via SMS', {
-            identifier: input.identifier.substring(0, 3) + '***',
-            expiresAt: result.expiresAt,
-          });
-        } else {
-          const emailService = createEmailService();
-          const sendResult = await emailService.sendVerificationCode(input.identifier, result.code);
-
-          if (!sendResult.success) {
-            throw internalError({
-              message: 'Failed to send verification code via email',
-            });
-          }
-
-          logger.info('Verification code sent via email', {
-            identifier: input.identifier.substring(0, 2) + '***',
-            expiresAt: result.expiresAt,
-          });
-        }
+        // TEMP: SMS/Email services not yet implemented - just return code for dev
+        logger.info('Verification code generated (not sent - services pending)', {
+          identifier: input.identifier.substring(0, 3) + '***',
+          type: input.type,
+          code: result.code, // TEMP: Remove in production
+          expiresAt: result.expiresAt,
+        });
 
         return {
           success: true,
-          message: `Verification code sent to ${input.type === 'phone' ? 'phone number' : 'email address'}`,
+          message: `Verification code generated: ${result.code} (TEMP: SMS/Email services pending)`,
           expiresAt: result.expiresAt,
         };
       } catch (error) {
@@ -798,7 +776,7 @@ export const authRouter = router({
         };
 
         throw badRequest({
-          message: result.error ? errorMessages[result.error] : 'Verification failed',
+          message: (result.error ? errorMessages[result.error] : 'Verification failed') || 'Verification failed',
         });
       }
 

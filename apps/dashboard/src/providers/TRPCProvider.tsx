@@ -26,6 +26,9 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
+        // Configure CSRFService with API URL
+        CSRFService.configure(API_URL);
+
         const { token } = await CSRFService.getToken();
         csrfTokenRef.current = token;
         setIsReady(true);
