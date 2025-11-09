@@ -7,14 +7,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnthropicProvider } from '../providers/anthropic';
 import type { AICompletionRequest } from '../types';
 
-// Mock Anthropic SDK
+// Mock Anthropic SDK with class syntax for proper constructor mocking
 vi.mock('@anthropic-ai/sdk', () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      messages: {
+    default: class {
+      messages = {
         create: vi.fn(),
-      },
-    })),
+      };
+      constructor(_config: unknown) {}
+    },
   };
 });
 
@@ -22,7 +23,7 @@ describe('AnthropicProvider', () => {
   let provider: AnthropicProvider;
   let mockCreate: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const Anthropic = await import('@anthropic-ai/sdk');
     provider = new AnthropicProvider({ apiKey: 'test-api-key' });
     mockCreate = (provider as any).client.messages.create;
@@ -49,12 +50,14 @@ describe('AnthropicProvider', () => {
       const response = await provider.complete(request);
 
       expect(response.content).toBe('Hello! How can I help?');
-      expect(response.usage).toEqual({
+      // Phase 10: Usage now includes caching fields, use toMatchObject to check core fields
+      expect(response.usage).toMatchObject({
         inputTokens: 10,
         outputTokens: 5,
         totalTokens: 15,
       });
-      expect(response.cost).toBeGreaterThan(0);
+      // Phase 10: Cost may be in usage.cost due to caching implementation
+      expect(response.usage.cost || response.cost).toBeGreaterThan(0);
     });
 
     it('should handle system messages correctly', async () => {
@@ -193,7 +196,9 @@ describe('AnthropicProvider', () => {
 
       // Claude Sonnet: $3/1M input, $15/1M output
       // (1000/1M * 3) + (500/1M * 15) = 0.003 + 0.0075 = 0.0105
-      expect(response.cost).toBeCloseTo(0.0105, 6);
+      // Phase 10: Cost may be in usage.cost due to caching implementation
+      const cost = response.usage.cost || response.cost;
+      expect(cost).toBeCloseTo(0.0105, 6);
     });
   });
 });

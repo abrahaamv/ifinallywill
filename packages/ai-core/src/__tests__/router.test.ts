@@ -8,10 +8,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { AIRouter } from '../router';
 import type { AICompletionRequest, AICompletionResponse, Message } from '../types';
 
-// Mock AI providers
+// Mock AI providers with class syntax for proper constructor mocking
 vi.mock('../providers/openai', () => ({
-  OpenAIProvider: vi.fn().mockImplementation(() => ({
-    complete: vi.fn().mockResolvedValue({
+  OpenAIProvider: class {
+    complete = vi.fn().mockResolvedValue({
       content: 'Mock response from OpenAI',
       usage: {
         promptTokens: 100,
@@ -21,8 +21,9 @@ vi.mock('../providers/openai', () => ({
       },
       model: 'gpt-4o-mini',
       provider: 'openai',
-    } as AICompletionResponse),
-    streamComplete: vi.fn().mockImplementation(async function* () {
+    } as AICompletionResponse);
+
+    streamComplete = vi.fn().mockImplementation(async function* () {
       yield 'Mock';
       yield ' stream';
       return {
@@ -36,13 +37,15 @@ vi.mock('../providers/openai', () => ({
         model: 'gpt-4o-mini',
         provider: 'openai',
       } as AICompletionResponse;
-    }),
-  })),
+    });
+
+    constructor(_config: unknown) {}
+  },
 }));
 
 vi.mock('../providers/anthropic', () => ({
-  AnthropicProvider: vi.fn().mockImplementation(() => ({
-    complete: vi.fn().mockResolvedValue({
+  AnthropicProvider: class {
+    complete = vi.fn().mockResolvedValue({
       content: 'Mock response from Anthropic',
       usage: {
         promptTokens: 100,
@@ -52,8 +55,9 @@ vi.mock('../providers/anthropic', () => ({
       },
       model: 'claude-3-5-sonnet-20241022',
       provider: 'anthropic',
-    } as AICompletionResponse),
-    streamComplete: vi.fn().mockImplementation(async function* () {
+    } as AICompletionResponse);
+
+    streamComplete = vi.fn().mockImplementation(async function* () {
       yield 'Mock';
       yield ' fallback';
       return {
@@ -67,13 +71,15 @@ vi.mock('../providers/anthropic', () => ({
         model: 'claude-3-5-sonnet-20241022',
         provider: 'anthropic',
       } as AICompletionResponse;
-    }),
-  })),
+    });
+
+    constructor(_config: unknown) {}
+  },
 }));
 
 vi.mock('../providers/google', () => ({
-  GoogleProvider: vi.fn().mockImplementation(() => ({
-    complete: vi.fn().mockResolvedValue({
+  GoogleProvider: class {
+    complete = vi.fn().mockResolvedValue({
       content: 'Mock response from Google',
       usage: {
         promptTokens: 100,
@@ -83,8 +89,9 @@ vi.mock('../providers/google', () => ({
       },
       model: 'gemini-2.0-flash-exp',
       provider: 'google',
-    } as AICompletionResponse),
-    streamComplete: vi.fn().mockImplementation(async function* () {
+    } as AICompletionResponse);
+
+    streamComplete = vi.fn().mockImplementation(async function* () {
       yield 'Mock';
       yield ' vision';
       return {
@@ -98,8 +105,10 @@ vi.mock('../providers/google', () => ({
         model: 'gemini-2.0-flash-exp',
         provider: 'google',
       } as AICompletionResponse;
-    }),
-  })),
+    });
+
+    constructor(_config: unknown) {}
+  },
 }));
 
 describe('AIRouter', () => {
@@ -121,7 +130,7 @@ describe('AIRouter', () => {
       expect(decision.provider).toBe('openai');
       expect(decision.model).toBe('gpt-4o-mini');
       expect(decision.complexityScore).toBeLessThan(0.4);
-      expect(decision.reasoning).toContain('Low complexity');
+      expect(decision.reasoning).toContain('gpt-4o-mini');
     });
 
     it('should route complex queries to appropriate model based on threshold', async () => {

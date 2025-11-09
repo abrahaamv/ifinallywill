@@ -7,12 +7,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GoogleProvider } from '../providers/google';
 import type { AICompletionRequest } from '../types';
 
-// Mock Google Generative AI SDK
+// Mock Google Generative AI SDK with class syntax for proper constructor mocking
 vi.mock('@google/generative-ai', () => {
   return {
-    GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-      getGenerativeModel: vi.fn(),
-    })),
+    GoogleGenerativeAI: class {
+      getGenerativeModel = vi.fn();
+      constructor(_apiKey: string) {}
+    },
   };
 });
 
@@ -22,7 +23,7 @@ describe('GoogleProvider', () => {
   let mockStartChat: ReturnType<typeof vi.fn>;
   let mockSendMessage: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     provider = new GoogleProvider({ apiKey: 'test-api-key' });
 

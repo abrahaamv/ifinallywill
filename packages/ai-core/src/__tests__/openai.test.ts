@@ -7,16 +7,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAIProvider } from '../providers/openai';
 import type { AICompletionRequest } from '../types';
 
-// Mock OpenAI SDK
+// Mock OpenAI SDK with class syntax for proper constructor mocking
 vi.mock('openai', () => {
   return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
+    default: class {
+      chat = {
         completions: {
           create: vi.fn(),
         },
-      },
-    })),
+      };
+      constructor(_config: unknown) {}
+    },
   };
 });
 
@@ -24,7 +25,7 @@ describe('OpenAIProvider', () => {
   let provider: OpenAIProvider;
   let mockCreate: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const OpenAI = await import('openai');
     provider = new OpenAIProvider({ apiKey: 'test-api-key' });
     mockCreate = (provider as any).client.chat.completions.create;
