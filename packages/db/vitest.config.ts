@@ -5,6 +5,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
+    // Run tests sequentially to avoid database conflicts
+    pool: 'forks',
+    fileParallelism: false, // CRITICAL: Disable parallel test file execution to prevent RLS race conditions
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

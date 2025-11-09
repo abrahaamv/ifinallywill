@@ -2,7 +2,8 @@ import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import type { Config } from 'drizzle-kit';
 
-// Load .env from project root
+// Load .env.local first (development), fallback to .env (production)
+config({ path: resolve(__dirname, '../../.env.local') });
 config({ path: resolve(__dirname, '../../.env') });
 
 if (!process.env.DATABASE_URL) {

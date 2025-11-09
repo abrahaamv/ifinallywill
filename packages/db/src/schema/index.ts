@@ -294,6 +294,47 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+// ==================== CHAT FILES (Phase 11 Week 5 - Secure File Storage) ====================
+
+export const chatFiles = pgTable('chat_files', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id')
+    .notNull()
+    .references(() => sessions.id, { onDelete: 'cascade' }),
+  fileName: text('file_name').notNull(),
+  filePath: text('file_path').notNull().unique(), // Storage path (tenant/session/timestamp-uuid-filename)
+  fileType: text('file_type').notNull(), // MIME type
+  fileSize: integer('file_size').notNull(), // Bytes
+  uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
+  expiresAt: timestamp('expires_at'), // Optional: auto-delete after X days
+  metadata: jsonb('metadata').$type<{
+    originalName?: string;
+    downloadCount?: number;
+    lastAccessedAt?: string;
+  }>(),
+});
+
+export const chatFilesRelations = relations(chatFiles, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [chatFiles.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [chatFiles.userId],
+    references: [users.id],
+  }),
+  session: one(sessions, {
+    fields: [chatFiles.sessionId],
+    references: [sessions.id],
+  }),
+}));
+
 // ==================== KNOWLEDGE BASE ====================
 
 export const knowledgeDocuments = pgTable('knowledge_documents', {

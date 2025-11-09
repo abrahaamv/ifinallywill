@@ -23,27 +23,29 @@ import { messages, sessions, tenants, users } from '../schema';
 import { TenantContext } from '../tenant-context';
 
 // Test tenant IDs (use fixed UUIDs for reproducibility)
-const TENANT_A_ID = '00000000-0000-0000-0000-000000000001';
-const TENANT_B_ID = '00000000-0000-0000-0000-000000000002';
-const TENANT_C_ID = '00000000-0000-0000-0000-000000000003';
+// Use different UUIDs than rls-policies.test.ts to avoid conflicts
+const TENANT_A_ID = '11111111-1111-1111-1111-111111111111';
+const TENANT_B_ID = '22222222-2222-2222-2222-222222222222';
+const TENANT_C_ID = '33333333-3333-3333-3333-333333333333';
 
 // Test user IDs
-const USER_A1_ID = '10000000-0000-0000-0000-000000000001';
-const USER_A2_ID = '10000000-0000-0000-0000-000000000002';
-const USER_B1_ID = '20000000-0000-0000-0000-000000000001';
+const USER_A1_ID = '10000000-1111-1111-1111-111111111111';
+const USER_A2_ID = '10000000-2222-2222-2222-222222222222';
+const USER_B1_ID = '20000000-1111-1111-1111-111111111111';
 
 // Test session IDs
-const SESSION_A1_ID = '30000000-0000-0000-0000-000000000001';
-const SESSION_A2_ID = '30000000-0000-0000-0000-000000000002';
-const SESSION_B1_ID = '40000000-0000-0000-0000-000000000001';
+const SESSION_A1_ID = '30000000-1111-1111-1111-111111111111';
+const SESSION_A2_ID = '30000000-2222-2222-2222-222222222222';
+const SESSION_B1_ID = '40000000-1111-1111-1111-111111111111';
 
 describe('PostgreSQL RLS Tenant Isolation', () => {
   beforeAll(async () => {
-    // Temporarily disable FORCE RLS to create test data
-    await sql`ALTER TABLE tenants NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE users NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE sessions NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE messages NO FORCE ROW LEVEL SECURITY`;
+    // Temporarily disable RLS completely to create test data
+    // Use .unsafe() for DDL commands to execute as simple queries
+    await sql.unsafe('ALTER TABLE tenants DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages DISABLE ROW LEVEL SECURITY');
 
     // Clean up any existing test data first (ensures deterministic state)
     await sql`DELETE FROM tenants WHERE id IN (${TENANT_A_ID}, ${TENANT_B_ID}, ${TENANT_C_ID})`;
@@ -85,29 +87,38 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
         (${SESSION_B1_ID}, 'user', 'Message from Tenant B - User 1')
     `;
 
-    // Re-enable FORCE RLS
-    await sql`ALTER TABLE tenants FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE users FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE sessions FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE messages FORCE ROW LEVEL SECURITY`;
+    // Re-enable RLS with FORCE
+    await sql.unsafe('ALTER TABLE tenants ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE tenants FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages FORCE ROW LEVEL SECURITY');
   });
 
   afterAll(async () => {
-    // Temporarily disable FORCE RLS for cleanup
-    await sql`ALTER TABLE tenants NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE users NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE sessions NO FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE messages NO FORCE ROW LEVEL SECURITY`;
+    // Temporarily disable RLS completely for cleanup
+    // Use .unsafe() for DDL commands to execute as simple queries
+    await sql.unsafe('ALTER TABLE tenants DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions DISABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages DISABLE ROW LEVEL SECURITY');
 
     // Cleanup test data (cascading deletes will handle users, sessions, and messages)
     // Use raw SQL for reliable cleanup
     await sql`DELETE FROM tenants WHERE id IN (${TENANT_A_ID}, ${TENANT_B_ID}, ${TENANT_C_ID})`;
 
-    // Re-enable FORCE RLS
-    await sql`ALTER TABLE tenants FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE users FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE sessions FORCE ROW LEVEL SECURITY`;
-    await sql`ALTER TABLE messages FORCE ROW LEVEL SECURITY`;
+    // Re-enable RLS with FORCE
+    await sql.unsafe('ALTER TABLE tenants ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages ENABLE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE tenants FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE users FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE sessions FORCE ROW LEVEL SECURITY');
+    await sql.unsafe('ALTER TABLE messages FORCE ROW LEVEL SECURITY');
   });
 
   describe('SELECT Isolation', () => {
@@ -120,9 +131,11 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
       // Should only see 2 messages from Tenant A
       expect(messagesA.length).toBe(2);
       // Verify isolation via session IDs (messages uses JOIN-based RLS, no tenant_id column)
-      expect(messagesA.every((m) => [SESSION_A1_ID, SESSION_A2_ID].includes(m.sessionId))).toBe(
-        true
-      );
+      expect(
+        messagesA.every((m: { sessionId: string }) =>
+          [SESSION_A1_ID, SESSION_A2_ID].includes(m.sessionId)
+        )
+      ).toBe(true);
 
       // Query as Tenant B
       const messagesB = await TenantContext.withTenant(TENANT_B_ID, async (tx) => {
@@ -132,7 +145,9 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
       // Should only see 1 message from Tenant B
       expect(messagesB.length).toBe(1);
       // Verify isolation via session ID (messages uses JOIN-based RLS, no tenant_id column)
-      expect(messagesB.every((m) => m.sessionId === SESSION_B1_ID)).toBe(true);
+      expect(messagesB.every((m: { sessionId: string }) => m.sessionId === SESSION_B1_ID)).toBe(
+        true
+      );
     });
 
     it('should return empty array for tenant with no data', async () => {
@@ -152,7 +167,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
 
       // Should see 2 users from Tenant A
       expect(usersA.length).toBe(2);
-      expect(usersA.every((u) => u.tenantId === TENANT_A_ID)).toBe(true);
+      expect(usersA.every((u: { tenantId: string }) => u.tenantId === TENANT_A_ID)).toBe(true);
 
       // Query users as Tenant B
       const usersB = await TenantContext.withTenant(TENANT_B_ID, async (tx) => {
@@ -161,7 +176,7 @@ describe('PostgreSQL RLS Tenant Isolation', () => {
 
       // Should see 1 user from Tenant B
       expect(usersB.length).toBe(1);
-      expect(usersB.every((u) => u.tenantId === TENANT_B_ID)).toBe(true);
+      expect(usersB.every((u: { tenantId: string }) => u.tenantId === TENANT_B_ID)).toBe(true);
     });
   });
 
