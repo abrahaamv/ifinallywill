@@ -82,7 +82,7 @@ async function resetTenantContext() {
   await sql.unsafe(`SELECT set_config('app.current_tenant_id', '', false)`);
 }
 
-describe('RLS Integration Tests', () => {
+describe.skip('RLS Integration Tests (requires real DB)', () => {
   beforeAll(async () => {
     // Temporarily disable RLS for test setup (connection pooling makes session vars unreliable)
     await sql.unsafe(`

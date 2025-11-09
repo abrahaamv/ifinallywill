@@ -174,22 +174,26 @@ export const knowledgeRouter = router({
       // Apply pagination
       const results = await query.limit(input.limit).offset(input.offset);
 
-      // Get chunk counts for all documents
-      const chunkCounts = await ctx.db
-        .select({
-          documentId: knowledgeChunks.documentId,
-          count: count(),
-        })
-        .from(knowledgeChunks)
-        .where(
-          sql`${knowledgeChunks.documentId} IN (${sql.join(
-            results.map((r) => r.id),
-            sql`, `
-          )})`
-        )
-        .groupBy(knowledgeChunks.documentId);
+      // Get chunk counts for all documents (only if results exist)
+      let chunkCountMap = new Map<string, number>();
 
-      const chunkCountMap = new Map(chunkCounts.map((c) => [c.documentId, Number(c.count)]));
+      if (results.length > 0) {
+        const chunkCounts = await ctx.db
+          .select({
+            documentId: knowledgeChunks.documentId,
+            count: count(),
+          })
+          .from(knowledgeChunks)
+          .where(
+            sql`${knowledgeChunks.documentId} IN (${sql.join(
+              results.map((r) => r.id),
+              sql`, `
+            )})`
+          )
+          .groupBy(knowledgeChunks.documentId);
+
+        chunkCountMap = new Map(chunkCounts.map((c) => [c.documentId, Number(c.count)]));
+      }
 
       // Get total count
       const countResult = await ctx.db.select({ count: count() }).from(knowledgeDocuments);

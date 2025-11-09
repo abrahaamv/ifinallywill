@@ -81,6 +81,12 @@ vi.mock('@platform/shared', () => ({
   notFound: (opts: { message: string }) => {
     throw new TRPCError({ code: 'NOT_FOUND', message: opts.message });
   },
+  createModuleLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  })),
 }));
 
 /**

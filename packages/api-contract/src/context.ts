@@ -11,6 +11,7 @@ import { createModuleLogger } from '@platform/shared';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type Redis from 'ioredis';
+import type { StorageService } from './services/storage';
 
 const logger = createModuleLogger('trpc-context');
 
@@ -48,6 +49,7 @@ export interface Session {
  * - db: Database instance (for tenant-scoped queries)
  * - redis: Redis client for caching (Phase 12 Week 2-3)
  * - embeddingProvider: Voyage embedding provider for semantic search (Phase 12 Week 2-3)
+ * - storage: S3 storage service for file uploads (Phase 11 Week 5)
  */
 export interface Context {
   req: FastifyRequest;
@@ -58,6 +60,7 @@ export interface Context {
   db: PostgresJsDatabase<typeof schema>;
   redis?: Redis;
   embeddingProvider?: VoyageEmbeddingProvider;
+  storage?: StorageService;
 }
 
 /**
@@ -111,16 +114,19 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
  * Called on every tRPC request via Fastify adapter.
  *
  * Phase 12 Week 3: Enhanced with Redis and Voyage embedding provider for RAG caching
+ * Phase 11 Week 5: Enhanced with S3 storage service for file uploads
  */
 export async function createContext({
   req,
   redis,
   embeddingProvider,
+  storage,
 }: {
   req: FastifyRequest;
   res: FastifyReply;
   redis?: Redis;
   embeddingProvider?: VoyageEmbeddingProvider;
+  storage?: StorageService;
 }): Promise<Context> {
   // Get Auth.js session from request cookies
   const session = await getSession(req);
@@ -139,5 +145,6 @@ export async function createContext({
     db,
     redis,
     embeddingProvider,
+    storage,
   };
 }

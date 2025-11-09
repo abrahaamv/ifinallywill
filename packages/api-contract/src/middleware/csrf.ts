@@ -18,7 +18,7 @@
  * @see https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
  */
 
-import { TRPCError } from '@trpc/server';
+import { tooManyRequests, forbidden } from '@platform/shared';
 import type { FastifyRequest } from 'fastify';
 import { createModuleLogger } from '@platform/shared';
 
@@ -207,8 +207,7 @@ export async function validateCSRF(req: FastifyRequest): Promise<void> {
 
   // Check rate limit
   if (!checkRateLimit(clientIp)) {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
+    throw tooManyRequests({
       message: 'Too many CSRF validation attempts. Please try again later.',
     });
   }
@@ -217,8 +216,7 @@ export async function validateCSRF(req: FastifyRequest): Promise<void> {
   const token = extractCSRFToken(req);
 
   if (!token) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
+    throw forbidden({
       message: 'CSRF token missing. Include X-CSRF-Token header in your request.',
     });
   }
@@ -228,8 +226,7 @@ export async function validateCSRF(req: FastifyRequest): Promise<void> {
 
   if (!isValid) {
     logger.warn('Invalid CSRF token attempt', { clientIp });
-    throw new TRPCError({
-      code: 'FORBIDDEN',
+    throw forbidden({
       message: 'Invalid CSRF token. Please refresh and try again.',
     });
   }

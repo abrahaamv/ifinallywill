@@ -7,8 +7,8 @@ import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { unresolvedProblems, unresolvedProblemUsers } from '@platform/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { TRPCError } from '@trpc/server';
 import { createHash } from 'node:crypto';
+import { internalError, notFound } from '@platform/shared';
 
 export const problemsRouter = router({
   /**
@@ -91,8 +91,7 @@ export const problemsRouter = router({
       }
 
       if (!newProblem) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+        throw internalError({
           message: 'Failed to create problem',
         });
       }
@@ -188,8 +187,7 @@ export const problemsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Problem not found',
         });
       }
@@ -224,8 +222,7 @@ export const problemsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Problem not found',
         });
       }

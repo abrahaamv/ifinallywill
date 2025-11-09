@@ -26,6 +26,7 @@
  */
 
 import { TRPCError } from '@trpc/server';
+import { tooManyRequests } from '@platform/shared';
 import type { Context } from '../context';
 import { createModuleLogger } from '@platform/shared';
 
@@ -114,8 +115,7 @@ async function applyRateLimit(ctx: Context, config: RateLimitConfig): Promise<vo
       const ttl = config.timeWindow;
       const retryAfterSeconds = Math.ceil(ttl / 1000);
 
-      throw new TRPCError({
-        code: 'TOO_MANY_REQUESTS',
+      throw tooManyRequests({
         message: `Rate limit exceeded. Maximum ${config.max} requests per hour. Retry after ${retryAfterSeconds}s`,
       });
     }

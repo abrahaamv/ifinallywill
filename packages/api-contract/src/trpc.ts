@@ -6,7 +6,8 @@
  * Phase 8: CSRF protection for mutations (Week 1 Critical Fix #8)
  */
 
-import { TRPCError, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import { unauthorized, forbidden } from '@platform/shared';
 import { sql } from 'drizzle-orm';
 import type { Context } from './context';
 import { logError, sanitizeErrorMessage } from './errors';
@@ -71,8 +72,7 @@ export const publicProcedure = t.procedure;
  */
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session || !ctx.tenantId || !ctx.userId || !ctx.role) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
+    throw unauthorized({
       message: 'Authentication required - please sign in',
     });
   }
@@ -117,8 +117,7 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   };
 
   if (roleHierarchy[ctx.role] < roleHierarchy.admin) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
+    throw forbidden({
       message: 'Admin role required - insufficient permissions',
     });
   }
@@ -131,8 +130,7 @@ export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
  */
 export const ownerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   if (ctx.role !== 'owner') {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
+    throw forbidden({
       message: 'Owner role required - insufficient permissions',
     });
   }

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { endUsers } from '@platform/db';
 import { eq, and, or } from 'drizzle-orm';
-import { TRPCError } from '@trpc/server';
+import { badRequest, forbidden, notFound } from '@platform/shared';
 
 export const endUsersRouter = router({
   /**
@@ -31,10 +31,7 @@ export const endUsersRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Validate at least one contact method provided
       if (!input.phone && !input.email) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Either phone or email is required',
-        });
+        throw badRequest({ message: 'Either phone or email is required' });
       }
 
       // Check if end user already exists (by phone OR email)
@@ -53,10 +50,7 @@ export const endUsersRouter = router({
       if (existing) {
         // Check if user is blocked
         if (existing.isBlocked) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: existing.blockedReason || 'User is blocked',
-          });
+          throw forbidden({ message: existing.blockedReason || 'User is blocked' });
         }
         return existing;
       }
@@ -74,8 +68,7 @@ export const endUsersRouter = router({
           );
 
         if (deviceCount.length >= 5) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
+          throw forbidden({
             message: 'Too many accounts from this device. Please contact support.',
           });
         }
@@ -113,8 +106,7 @@ export const endUsersRouter = router({
       });
 
       if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -168,8 +160,7 @@ export const endUsersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -197,8 +188,7 @@ export const endUsersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -226,8 +216,7 @@ export const endUsersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -262,8 +251,7 @@ export const endUsersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -297,8 +285,7 @@ export const endUsersRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }

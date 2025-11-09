@@ -1,6 +1,8 @@
 /**
  * Auth Router Tests (Audit Remediation Week 3)
  *
+ * Fixed to work without database by properly mocking serviceDb
+ *
  * Comprehensive tests for authentication endpoints:
  * - Registration (validation, duplicate handling, tenant creation)
  * - Login (credentials, account lockout, MFA)
@@ -14,9 +16,6 @@
 import crypto from 'node:crypto';
 import { hash } from '@node-rs/argon2';
 import type { ServiceDatabase } from '@platform/db';
-import { serviceDb, tenants, users, verificationTokens } from '@platform/db';
-import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { authRouter } from '../src/routers/auth';
 
@@ -29,12 +28,30 @@ import {
   mockUUIDs,
 } from './utils/fixtures';
 
+// Mock the entire @platform/db module
+vi.mock('@platform/db', () => {
+  const mockDb = {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+
+  return {
+    serviceDb: mockDb,
+    tenants: {},
+    users: {},
+    verificationTokens: {},
+  };
+});
+
 // Mock user data
 const mockUser = createMockUser({
   id: mockUUIDs.user.default,
   tenantId: mockUUIDs.tenant.default,
   email: 'test@example.com',
   name: 'Test User',
+  emailVerified: new Date(), // Email verified for login tests
 });
 
 // Mock tenant data
@@ -67,14 +84,19 @@ const createCaller = () => {
 
 describe('Auth Router', () => {
   let caller: ReturnType<typeof createCaller>;
+  let serviceDb: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Get the mocked serviceDb
+    const dbModule = await import('@platform/db');
+    serviceDb = dbModule.serviceDb;
+
     caller = createCaller();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Registration', () => {
@@ -171,13 +193,13 @@ describe('Auth Router', () => {
     describe('Duplicate Prevention', () => {
       it('should reject registration with existing email', async () => {
         // Mock existing user lookup
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([mockUser]),
             }),
           }),
-        } as any);
+        });
 
         await expect(
           caller.register({
@@ -191,23 +213,23 @@ describe('Auth Router', () => {
 
       it('should handle database unique constraint violation', async () => {
         // Mock no existing user (first check passes)
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
             }),
           }),
-        } as any);
+        });
 
         // Mock tenant creation success
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockTenant]),
           }),
-        } as any);
+        });
 
         // Mock user creation with unique constraint violation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockRejectedValue({
               cause: {
@@ -216,7 +238,7 @@ describe('Auth Router', () => {
               },
             }),
           }),
-        } as any);
+        });
 
         await expect(
           caller.register({
@@ -232,34 +254,34 @@ describe('Auth Router', () => {
     describe('Successful Registration', () => {
       it('should create new user and tenant with valid input', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
             }),
           }),
-        } as any);
+        });
 
         // Mock tenant creation
         const insertTenantMock = vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([mockTenant]),
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertTenantMock,
-        } as any);
+        });
 
         // Mock user creation
         const insertUserMock = vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([mockUser]),
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertUserMock,
-        } as any);
+        });
 
         // Mock verification token creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
-        } as any);
+        });
 
         const result = await caller.register({
           email: 'new@example.com',
@@ -291,7 +313,7 @@ describe('Auth Router', () => {
 
       it('should create tenant with starter plan', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -306,19 +328,19 @@ describe('Auth Router', () => {
           expect(values.settings.features).toContain('chat');
           return { returning: vi.fn().mockResolvedValue([mockTenant]) };
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertTenantMock,
         } as any);
 
         // Mock user creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockUser]),
           }),
         } as any);
 
         // Mock verification token creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -334,7 +356,7 @@ describe('Auth Router', () => {
 
       it('should create user as owner role', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -343,7 +365,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock tenant creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockTenant]),
           }),
@@ -356,12 +378,12 @@ describe('Auth Router', () => {
           expect(values.passwordAlgorithm).toBe('argon2id');
           return { returning: vi.fn().mockResolvedValue([mockUser]) };
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertUserMock,
         } as any);
 
         // Mock verification token creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -377,7 +399,7 @@ describe('Auth Router', () => {
 
       it('should generate verification token with 24h expiry', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -386,14 +408,14 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock tenant creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockTenant]),
           }),
         } as any);
 
         // Mock user creation
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockUser]),
           }),
@@ -409,7 +431,7 @@ describe('Auth Router', () => {
           expect(values.token.length).toBeGreaterThan(50);
           return undefined;
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertTokenMock,
         } as any);
 
@@ -433,7 +455,7 @@ describe('Auth Router', () => {
 
       it('should handle tenant creation failure', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -442,7 +464,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock tenant creation failure
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([]),
           }),
@@ -460,7 +482,7 @@ describe('Auth Router', () => {
 
       it('should handle user creation failure', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -469,14 +491,14 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock tenant creation success
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([mockTenant]),
           }),
         } as any);
 
         // Mock user creation failure
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockReturnValue({
             returning: vi.fn().mockResolvedValue([]),
           }),
@@ -494,7 +516,7 @@ describe('Auth Router', () => {
 
       it('should handle unexpected database errors', async () => {
         // Mock no existing user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -503,7 +525,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock unexpected error
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: vi.fn().mockRejectedValue(new Error('Database connection lost')),
         } as any);
 
@@ -543,7 +565,7 @@ describe('Auth Router', () => {
     describe('Authentication', () => {
       it('should reject login with non-existent email', async () => {
         // Mock no user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -568,7 +590,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, passwordHash }]),
@@ -577,7 +599,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock failed attempt update
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: vi.fn().mockReturnValue({
             where: vi.fn().mockResolvedValue(undefined),
           }),
@@ -600,7 +622,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with unverified email
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi
@@ -624,7 +646,7 @@ describe('Auth Router', () => {
         const lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
         // Mock locked user
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, lockedUntil }]),
@@ -650,7 +672,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with expired lock
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, passwordHash, lockedUntil }]),
@@ -659,7 +681,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock successful login update
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: vi.fn().mockReturnValue({
             where: vi.fn().mockResolvedValue(undefined),
           }),
@@ -682,7 +704,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with 2 failed attempts
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi
@@ -697,7 +719,7 @@ describe('Auth Router', () => {
           expect(values.failedLoginAttempts).toBe(3);
           return { where: vi.fn().mockResolvedValue(undefined) };
         });
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: updateMock,
         } as any);
 
@@ -720,7 +742,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with 4 failed attempts (this will be 5th)
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi
@@ -740,7 +762,7 @@ describe('Auth Router', () => {
           expect(lockMinutes).toBeLessThanOrEqual(16);
           return { where: vi.fn().mockResolvedValue(undefined) };
         });
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: updateMock,
         } as any);
 
@@ -763,7 +785,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with failed attempts
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi
@@ -780,7 +802,7 @@ describe('Auth Router', () => {
           expect(values.lastLoginAt).toBeInstanceOf(Date);
           return { where: vi.fn().mockResolvedValue(undefined) };
         });
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: updateMock,
         } as any);
 
@@ -804,7 +826,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with MFA enabled
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([
@@ -836,7 +858,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user with MFA enabled
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([
@@ -873,7 +895,7 @@ describe('Auth Router', () => {
         });
 
         // Mock user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, passwordHash }]),
@@ -882,7 +904,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock successful login update
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: vi.fn().mockReturnValue({
             where: vi.fn().mockResolvedValue(undefined),
           }),
@@ -909,7 +931,7 @@ describe('Auth Router', () => {
     describe('Token Validation', () => {
       it('should reject invalid token', async () => {
         // Mock no token found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -931,7 +953,7 @@ describe('Auth Router', () => {
         };
 
         // Mock expired token found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([expiredToken]),
@@ -940,7 +962,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock token deletion
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -953,7 +975,7 @@ describe('Auth Router', () => {
 
       it('should reject verification for non-existent user', async () => {
         // Mock valid token found
-        vi.spyOn(serviceDb, 'select')
+        serviceDb.select
           .mockReturnValueOnce({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -981,7 +1003,7 @@ describe('Auth Router', () => {
     describe('Successful Verification', () => {
       it('should verify email and delete token', async () => {
         // Mock valid token found
-        vi.spyOn(serviceDb, 'select')
+        serviceDb.select
           .mockReturnValueOnce({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1004,12 +1026,12 @@ describe('Auth Router', () => {
           expect(values.updatedAt).toBeInstanceOf(Date);
           return { where: vi.fn().mockResolvedValue(undefined) };
         });
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: updateMock,
         } as any);
 
         // Mock token deletion
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -1026,7 +1048,7 @@ describe('Auth Router', () => {
     describe('Resend Verification', () => {
       it('should not reveal if email does not exist', async () => {
         // Mock no user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -1044,7 +1066,7 @@ describe('Auth Router', () => {
 
       it('should return success if email already verified', async () => {
         // Mock user with verified email
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, emailVerified: new Date() }]),
@@ -1062,7 +1084,7 @@ describe('Auth Router', () => {
 
       it('should delete old tokens and create new one', async () => {
         // Mock user with unverified email
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([{ ...mockUser, emailVerified: null }]),
@@ -1072,7 +1094,7 @@ describe('Auth Router', () => {
 
         // Mock old token deletion
         const deleteMock = vi.fn();
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(deleteMock),
         } as any);
 
@@ -1087,7 +1109,7 @@ describe('Auth Router', () => {
           expect(hoursDiff).toBeLessThanOrEqual(24);
           return undefined;
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertMock,
         } as any);
 
@@ -1106,7 +1128,7 @@ describe('Auth Router', () => {
     describe('Request Password Reset', () => {
       it('should not reveal if email does not exist', async () => {
         // Mock no user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -1124,7 +1146,7 @@ describe('Auth Router', () => {
 
       it('should delete old reset tokens and create new one', async () => {
         // Mock user found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([mockUser]),
@@ -1133,7 +1155,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock old token deletion
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -1148,7 +1170,7 @@ describe('Auth Router', () => {
           expect(hoursDiff).toBeLessThanOrEqual(1.1);
           return undefined;
         });
-        vi.spyOn(serviceDb, 'insert').mockReturnValueOnce({
+        serviceDb.insert.mockReturnValueOnce({
           values: insertMock,
         } as any);
 
@@ -1165,7 +1187,7 @@ describe('Auth Router', () => {
     describe('Reset Password with Token', () => {
       it('should reject invalid reset token', async () => {
         // Mock no token found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([]),
@@ -1188,7 +1210,7 @@ describe('Auth Router', () => {
         };
 
         // Mock expired token found
-        vi.spyOn(serviceDb, 'select').mockReturnValueOnce({
+        serviceDb.select.mockReturnValueOnce({
           from: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
               limit: vi.fn().mockResolvedValue([expiredToken]),
@@ -1197,7 +1219,7 @@ describe('Auth Router', () => {
         } as any);
 
         // Mock token deletion
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(undefined),
         } as any);
 
@@ -1211,7 +1233,7 @@ describe('Auth Router', () => {
 
       it('should reject password reset for non-existent user', async () => {
         // Mock valid token found
-        vi.spyOn(serviceDb, 'select')
+        serviceDb.select
           .mockReturnValueOnce({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1247,7 +1269,7 @@ describe('Auth Router', () => {
 
       it('should reset password and clear account lockout', async () => {
         // Mock valid token found
-        vi.spyOn(serviceDb, 'select')
+        serviceDb.select
           .mockReturnValueOnce({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1280,12 +1302,12 @@ describe('Auth Router', () => {
           expect(values.updatedAt).toBeInstanceOf(Date);
           return { where: vi.fn().mockResolvedValue(undefined) };
         });
-        vi.spyOn(serviceDb, 'update').mockReturnValueOnce({
+        serviceDb.update.mockReturnValueOnce({
           set: updateMock,
         } as any);
 
         // Mock token deletion
-        vi.spyOn(serviceDb, 'delete').mockReturnValueOnce({
+        serviceDb.delete.mockReturnValueOnce({
           where: vi.fn().mockResolvedValue(undefined),
         } as any);
 

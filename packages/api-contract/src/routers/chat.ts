@@ -11,12 +11,14 @@
  * - Multi-tenant isolation via RLS
  */
 
-import { messages, sessions } from '@platform/db';
+import { chatFiles, messages, sessions } from '@platform/db';
 import { badRequest, createModuleLogger, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
+import { createStorageService } from '../services/storage';
 
 const logger = createModuleLogger('chat-router');
 
@@ -578,7 +580,7 @@ export const chatRouter = router({
 
   /**
    * Upload chat file during conversation
-   * Week 5: File upload support
+   * Week 5: Secure file upload with Supabase Storage + signed URLs
    */
   uploadChatFile: protectedProcedure
     .input(
@@ -590,30 +592,130 @@ export const chatRouter = router({
         fileContent: z.string(), // base64 encoded
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
-        // TODO: Upload to storage (S3, Supabase Storage, etc.)
-        // For now, just return a mock URL
-        const fileUrl = `https://storage.platform.com/chat-files/${input.sessionId}/${input.fileName}`;
+        const storage = createStorageService();
 
-        // TODO: Save file metadata to database
-        // await ctx.db.insert(chatFiles).values({
-        //   sessionId: input.sessionId,
-        //   fileName: input.fileName,
-        //   fileType: input.fileType,
-        //   fileSize: input.fileSize,
-        //   fileUrl,
-        //   uploadedAt: new Date(),
-        // });
+        // Get tenant ID from session - protected procedure ensures it exists
+        const tenantId = ctx.session.user.tenantId;
+        if (!tenantId) {
+          throw new Error('Tenant ID not found in session');
+        }
+
+        const userId = ctx.session.user.id;
+        const timestamp = Date.now();
+        const randomSuffix = randomUUID().split('-')[0]; // Extra entropy to prevent guessing
+        const filePath = `${tenantId}/${input.sessionId}/${timestamp}-${randomSuffix}-${input.fileName}`;
+
+        // Upload file to Supabase Storage (private bucket)
+        const uploadResult = await storage.uploadFile(
+          filePath,
+          input.fileContent,
+          input.fileType
+        );
+
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Failed to upload file to storage');
+        }
+
+        // Get temporary signed URL (1 hour expiry)
+        const signedUrlResult = await storage.getSignedUrl(filePath, 3600);
+
+        if (!signedUrlResult.success || !signedUrlResult.signedUrl) {
+          // Cleanup: delete uploaded file if we can't generate signed URL
+          await storage.deleteFile(filePath);
+          throw new Error('Failed to generate access URL');
+        }
+
+        // Save file metadata to database with ownership tracking
+        const [fileRecord] = await ctx.db
+          .insert(chatFiles)
+          .values({
+            tenantId,
+            userId,
+            sessionId: input.sessionId,
+            fileName: input.fileName,
+            filePath, // Store path for future signed URL generation
+            fileType: input.fileType,
+            fileSize: input.fileSize,
+            uploadedAt: new Date(),
+            metadata: {
+              originalName: input.fileName,
+              downloadCount: 0,
+            },
+          })
+          .returning();
+
+        if (!fileRecord) {
+          throw new Error('Failed to save file metadata');
+        }
+
+        logger.info('Chat file uploaded successfully', {
+          fileId: fileRecord.id,
+          sessionId: input.sessionId,
+          fileName: input.fileName,
+          fileSize: input.fileSize,
+          tenantId,
+          userId,
+        });
 
         return {
-          fileUrl,
+          fileId: fileRecord.id,
+          fileUrl: signedUrlResult.signedUrl, // Temporary signed URL
           fileName: input.fileName,
         };
       } catch (error) {
         logger.error('Failed to upload chat file', { error });
         throw internalError({
           message: 'Failed to upload chat file',
+          cause: error as Error,
+        });
+      }
+    }),
+
+  /**
+   * Get chat file with fresh signed URL
+   * Week 5: Secure file retrieval with access control
+   */
+  getChatFile: protectedProcedure
+    .input(z.object({ fileId: z.string().uuid() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        // Get file metadata (RLS ensures tenant isolation)
+        const file = await ctx.db.query.chatFiles.findFirst({
+          where: eq(chatFiles.id, input.fileId),
+        });
+
+        if (!file) {
+          throw notFound({ message: 'File not found or access denied' });
+        }
+
+        // Generate fresh signed URL (1 hour expiry)
+        const storage = createStorageService();
+        const result = await storage.getSignedUrl(file.filePath, 3600);
+
+        if (!result.success || !result.signedUrl) {
+          throw internalError({ message: 'Failed to generate file access URL' });
+        }
+
+        logger.info('Generated signed URL for chat file', {
+          fileId: file.id,
+          tenantId: file.tenantId,
+          userId: ctx.session.user.id,
+        });
+
+        return {
+          fileId: file.id,
+          fileName: file.fileName,
+          fileUrl: result.signedUrl, // Fresh temporary URL
+          fileSize: file.fileSize,
+          fileType: file.fileType,
+          uploadedAt: file.uploadedAt,
+        };
+      } catch (error) {
+        logger.error('Failed to get chat file', { error });
+        throw internalError({
+          message: 'Failed to retrieve chat file',
           cause: error as Error,
         });
       }

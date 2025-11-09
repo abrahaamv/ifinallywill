@@ -5,9 +5,9 @@
 
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
-import { TRPCError } from '@trpc/server';
 import { endUsers } from '@platform/db';
 import { eq } from 'drizzle-orm';
+import { badRequest, notFound } from '@platform/shared';
 
 export const verificationRouter = router({
   /**
@@ -46,8 +46,7 @@ export const verificationRouter = router({
       const isValid = input.code.length === 6;
 
       if (!isValid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Invalid or expired verification code',
         });
       }
@@ -63,8 +62,7 @@ export const verificationRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }
@@ -104,8 +102,7 @@ export const verificationRouter = router({
       const isValid = input.token.length >= 20;
 
       if (!isValid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw badRequest({
           message: 'Invalid or expired verification token',
         });
       }
@@ -121,8 +118,7 @@ export const verificationRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'End user not found',
         });
       }

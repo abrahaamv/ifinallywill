@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { publicProcedure, protectedProcedure, router } from '../trpc';
 import { escalations } from '@platform/db';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { TRPCError } from '@trpc/server';
+import { notFound } from '@platform/shared';
 
 export const escalationsRouter = router({
   /**
@@ -93,8 +93,7 @@ export const escalationsRouter = router({
       });
 
       if (!escalation) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Escalation not found',
         });
       }
@@ -128,8 +127,7 @@ export const escalationsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Escalation not found',
         });
       }
@@ -161,8 +159,7 @@ export const escalationsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Escalation not found',
         });
       }
@@ -198,8 +195,7 @@ export const escalationsRouter = router({
         .returning();
 
       if (!updated) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw notFound({
           message: 'Escalation not found',
         });
       }

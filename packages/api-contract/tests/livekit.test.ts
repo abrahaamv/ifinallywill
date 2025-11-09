@@ -59,6 +59,12 @@ vi.mock('@platform/shared', () => ({
     });
     return error;
   }),
+  createModuleLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  })),
 }));
 
 /**

@@ -11,6 +11,10 @@ export { appRouter, type AppRouter } from './router';
 export { createContext } from './context';
 export type { Context, TRPCContext } from './context';
 
+// Export storage service (Phase 11 Week 5)
+export { createStorageService } from './services/storage';
+export type { StorageService } from './services/storage';
+
 // Export tRPC helpers (for backend use)
 export {
   router,
