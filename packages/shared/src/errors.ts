@@ -131,6 +131,24 @@ export function conflict(options: ErrorOptions): TRPCError {
 }
 
 /**
+ * Create a standardized TOO_MANY_REQUESTS error (429)
+ * Use for: Rate limiting violations
+ */
+export function tooManyRequests(options: ErrorOptions): TRPCError {
+  const { message, cause, meta, logLevel = 'warn' } = options;
+
+  if (logLevel === 'warn') {
+    logger.warn(message, { cause, meta });
+  }
+
+  return new TRPCError({
+    code: 'TOO_MANY_REQUESTS',
+    message,
+    cause,
+  });
+}
+
+/**
  * Create a standardized INTERNAL_SERVER_ERROR (500)
  * Use for: Database errors, unexpected failures
  */

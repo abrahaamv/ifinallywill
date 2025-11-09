@@ -26,6 +26,7 @@ export {
   forbidden,
   notFound,
   conflict,
+  tooManyRequests,
   internalError,
   wrapError,
   assertExists,
@@ -69,3 +70,30 @@ export {
   isTest,
   type ValidatedEnv,
 } from './env-validation';
+
+// OpenTelemetry APM integration (Security Audit Remediation)
+export {
+  initTelemetry,
+  shutdownTelemetry,
+  getTracer,
+  withSpan,
+  metrics as telemetryMetrics,
+  trace,
+  metricsApi,
+  type TelemetryConfig,
+  type Span,
+  type Tracer,
+} from './telemetry';
+
+// Alerting and monitoring (Security Audit Remediation)
+export {
+  AlertSeverity,
+  AlertType,
+  AlertChecks,
+  checkAlertConditions,
+  getAlertCondition,
+  getEnabledAlerts,
+  ALERT_CONDITIONS,
+  type AlertCondition,
+  type Alert,
+} from './alerting';
