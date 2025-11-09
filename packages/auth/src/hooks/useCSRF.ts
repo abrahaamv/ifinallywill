@@ -36,7 +36,7 @@
  * ```
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useCallback, useEffect, useState } from 'react';
 import { CSRFService, type CSRFToken } from '../services/csrf.service';
 

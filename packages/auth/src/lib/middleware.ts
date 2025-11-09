@@ -13,7 +13,7 @@
  */
 
 import { sql } from '@platform/db';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import type { Session } from 'next-auth';
 import { auth } from './auth';
 import {

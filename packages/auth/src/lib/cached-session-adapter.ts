@@ -18,7 +18,7 @@
 
 import type { Adapter, AdapterSession, AdapterUser } from '@auth/core/adapters';
 import type { Redis } from 'ioredis';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 
 const logger = createModuleLogger('cached-session-adapter');
 

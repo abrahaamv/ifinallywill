@@ -19,7 +19,7 @@
 
 import { serviceDb as db } from '@platform/db';
 import { authSessions } from '@platform/db/src/schema';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { eq } from 'drizzle-orm';
 
 const logger = createModuleLogger('session-rotation');

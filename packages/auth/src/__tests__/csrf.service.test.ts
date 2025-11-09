@@ -37,8 +37,8 @@ describe('CSRFService', () => {
     });
 
     it('should use configured API base URL', async () => {
-      const originalEnv = process.env.NEXT_PUBLIC_API_URL;
-      process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com';
+      const originalEnv = process.env.API_URL;
+      process.env.API_URL = 'https://api.example.com';
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -51,7 +51,7 @@ describe('CSRFService', () => {
         credentials: 'include',
       });
 
-      process.env.NEXT_PUBLIC_API_URL = originalEnv;
+      process.env.API_URL = originalEnv;
     });
 
     it('should throw error on HTTP error', async () => {

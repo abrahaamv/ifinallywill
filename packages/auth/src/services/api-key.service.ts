@@ -170,6 +170,44 @@ export class ApiKeyService {
   }
 
   /**
+   * Extract key prefix (first 14 characters)
+   *
+   * Used for logging and display purposes without exposing full key.
+   *
+   * @param apiKey - API key
+   * @returns First 14 characters of the key
+   *
+   * @example
+   * ```typescript
+   * ApiKeyService.extractKeyPrefix('pk_live_abcdefghijklmnopqrstuvwxyz')
+   * // Returns: "pk_live_abcdef"
+   * ```
+   */
+  static extractKeyPrefix(apiKey: string): string {
+    return apiKey.substring(0, 14);
+  }
+
+  /**
+   * Check if API key is a publishable key
+   *
+   * @param apiKey - API key to check
+   * @returns True if key is publishable (pk_) and has valid format
+   */
+  static isPublishableKey(apiKey: string): boolean {
+    return apiKey.startsWith('pk_') && ApiKeyService.isValidFormat(apiKey);
+  }
+
+  /**
+   * Check if API key is a secret key
+   *
+   * @param apiKey - API key to check
+   * @returns True if key is secret (sk_) and has valid format
+   */
+  static isSecretKey(apiKey: string): boolean {
+    return apiKey.startsWith('sk_') && ApiKeyService.isValidFormat(apiKey);
+  }
+
+  /**
    * Generate scoped permissions array
    *
    * @param scope - Permission scope (read, write, admin)

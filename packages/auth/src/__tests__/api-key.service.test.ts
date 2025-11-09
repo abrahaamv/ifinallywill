@@ -157,37 +157,55 @@ describe('ApiKeyService', () => {
 
   describe('isPublishableKey', () => {
     it('should identify publishable keys', () => {
-      expect(ApiKeyService.isPublishableKey('pk_live_abc123')).toBe(true);
-      expect(ApiKeyService.isPublishableKey('pk_test_xyz789')).toBe(true);
+      expect(
+        ApiKeyService.isPublishableKey('pk_live_abcdefghijklmnopqrstuvwxyz123456')
+      ).toBe(true);
+      expect(
+        ApiKeyService.isPublishableKey('pk_test_abcdefghijklmnopqrstuvwxyz123456')
+      ).toBe(true);
     });
 
     it('should reject secret keys', () => {
-      expect(ApiKeyService.isPublishableKey('sk_live_abc123')).toBe(false);
-      expect(ApiKeyService.isPublishableKey('sk_test_xyz789')).toBe(false);
+      expect(
+        ApiKeyService.isPublishableKey('sk_live_abcdefghijklmnopqrstuvwxyz123456')
+      ).toBe(false);
+      expect(
+        ApiKeyService.isPublishableKey('sk_test_abcdefghijklmnopqrstuvwxyz123456')
+      ).toBe(false);
     });
 
     it('should reject invalid format', () => {
       expect(ApiKeyService.isPublishableKey('invalid_key')).toBe(false);
       expect(ApiKeyService.isPublishableKey('')).toBe(false);
       expect(ApiKeyService.isPublishableKey('pk_')).toBe(false);
+      expect(ApiKeyService.isPublishableKey('pk_live_short')).toBe(false);
     });
   });
 
   describe('isSecretKey', () => {
     it('should identify secret keys', () => {
-      expect(ApiKeyService.isSecretKey('sk_live_abc123')).toBe(true);
-      expect(ApiKeyService.isSecretKey('sk_test_xyz789')).toBe(true);
+      expect(ApiKeyService.isSecretKey('sk_live_abcdefghijklmnopqrstuvwxyz123456')).toBe(
+        true
+      );
+      expect(ApiKeyService.isSecretKey('sk_test_abcdefghijklmnopqrstuvwxyz123456')).toBe(
+        true
+      );
     });
 
     it('should reject publishable keys', () => {
-      expect(ApiKeyService.isSecretKey('pk_live_abc123')).toBe(false);
-      expect(ApiKeyService.isSecretKey('pk_test_xyz789')).toBe(false);
+      expect(ApiKeyService.isSecretKey('pk_live_abcdefghijklmnopqrstuvwxyz123456')).toBe(
+        false
+      );
+      expect(ApiKeyService.isSecretKey('pk_test_abcdefghijklmnopqrstuvwxyz123456')).toBe(
+        false
+      );
     });
 
     it('should reject invalid format', () => {
       expect(ApiKeyService.isSecretKey('invalid_key')).toBe(false);
       expect(ApiKeyService.isSecretKey('')).toBe(false);
       expect(ApiKeyService.isSecretKey('sk_')).toBe(false);
+      expect(ApiKeyService.isSecretKey('sk_live_short')).toBe(false);
     });
   });
 
@@ -224,11 +242,11 @@ describe('ApiKeyService', () => {
       // Key prefix should not reveal too much information
       const key = ApiKeyService.generateApiKey('publishable');
 
-      // Prefix is 14 chars, full key is ~40+ chars
-      // This leaves ~26+ chars secret
-      expect(key.apiKey.length).toBeGreaterThan(40);
+      // Prefix is 14 chars, full key is 40 chars (pk_test_ = 8 + random 32)
+      // This leaves 26 chars secret
+      expect(key.apiKey.length).toBeGreaterThanOrEqual(40);
       expect(key.keyPrefix.length).toBe(14);
-      expect(key.apiKey.length - key.keyPrefix.length).toBeGreaterThan(26);
+      expect(key.apiKey.length - key.keyPrefix.length).toBeGreaterThanOrEqual(26);
     });
   });
 });

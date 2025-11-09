@@ -19,7 +19,7 @@
 import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import type { Redis } from 'ioredis';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 
 const logger = createModuleLogger('verification-code');
 

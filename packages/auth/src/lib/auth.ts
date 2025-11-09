@@ -13,7 +13,7 @@ import {
   users,
   verificationTokens,
 } from '@platform/db';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { eq } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import NextAuth from 'next-auth';
@@ -457,7 +457,18 @@ export function createAuthConfig(redis?: Redis): NextAuthConfig {
  * @param redis - Redis client for session caching (70-85% latency reduction)
  * @returns Auth.js handlers and utilities
  */
-export function initializeAuth(redis?: Redis) {
+export function initializeAuth(redis?: Redis): {
+  config: NextAuthConfig;
+  handlers: {
+    GET: (req: Request) => Promise<Response>;
+    POST: (req: Request) => Promise<Response>;
+  };
+  auth: () => Promise<Session | null>;
+  // biome-ignore lint/suspicious/noExplicitAny: NextAuth signIn/signOut have complex provider-dependent types
+  signIn: any;
+  // biome-ignore lint/suspicious/noExplicitAny: NextAuth signIn/signOut have complex provider-dependent types
+  signOut: any;
+} {
   const config = createAuthConfig(redis);
   const nextAuth = NextAuth(config);
 
@@ -485,5 +496,7 @@ const defaultAuth = initializeAuth();
  */
 export const auth = defaultAuth.auth;
 export const handlers = defaultAuth.handlers;
-export const signIn = defaultAuth.signIn;
-export const signOut = defaultAuth.signOut;
+// biome-ignore lint/suspicious/noExplicitAny: NextAuth types are complex and inferred
+export const signIn: any = defaultAuth.signIn;
+// biome-ignore lint/suspicious/noExplicitAny: NextAuth types are complex and inferred
+export const signOut: any = defaultAuth.signOut;

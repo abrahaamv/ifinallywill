@@ -24,7 +24,7 @@
  */
 
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import * as bcrypt from 'bcryptjs';
 import { Secret, TOTP } from 'otpauth';
 import QRCode from 'qrcode';

@@ -20,7 +20,7 @@
  * @see https://authjs.dev/concepts/security#csrf-protection
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 
 const logger = createModuleLogger('CSRFService');
 
@@ -47,11 +47,22 @@ export class CSRFService {
 
   /**
    * Get the configured API base URL
-   * Falls back to localhost:3001 if not configured
+   * Falls back to environment variable or localhost:3001 if not configured
    */
   private static getApiUrl(): string {
     if (CSRFService.apiBaseUrl) {
       return CSRFService.apiBaseUrl;
+    }
+
+    // Check environment variables (framework-agnostic)
+    // Vite: VITE_API_URL, Generic: API_URL or PUBLIC_API_URL
+    const envUrl =
+      (typeof process !== 'undefined' && process.env?.VITE_API_URL) ||
+      (typeof process !== 'undefined' && process.env?.API_URL) ||
+      (typeof process !== 'undefined' && process.env?.PUBLIC_API_URL);
+
+    if (envUrl) {
+      return envUrl;
     }
 
     // Fallback to localhost
