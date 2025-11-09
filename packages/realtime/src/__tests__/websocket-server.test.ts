@@ -68,12 +68,12 @@ vi.mock('postgres', () => ({
 }));
 
 vi.mock('ioredis', () => {
-  const RedisMock = vi.fn().mockImplementation(() => ({
-    subscribe: vi.fn().mockResolvedValue(undefined),
-    publish: vi.fn().mockResolvedValue(1),
-    on: vi.fn(),
-    quit: vi.fn().mockResolvedValue('OK'),
-  }));
+  class RedisMock {
+    subscribe = vi.fn().mockResolvedValue(undefined);
+    publish = vi.fn().mockResolvedValue(1);
+    on = vi.fn();
+    quit = vi.fn().mockResolvedValue('OK');
+  }
   return { default: RedisMock };
 });
 
@@ -82,12 +82,14 @@ vi.mock('ws', () => {
   WebSocketMock.OPEN = 1;
   WebSocketMock.CLOSED = 3;
 
+  class WebSocketServerMock {
+    on = vi.fn();
+    close = vi.fn((cb) => cb && cb());
+  }
+
   return {
     WebSocket: WebSocketMock,
-    WebSocketServer: vi.fn().mockImplementation(() => ({
-      on: vi.fn(),
-      close: vi.fn((cb) => cb && cb()),
-    })),
+    WebSocketServer: WebSocketServerMock,
   };
 });
 
