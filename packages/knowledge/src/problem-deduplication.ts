@@ -6,7 +6,7 @@
 
 import { createHash } from 'crypto';
 import { sql, eq, and } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { unresolvedProblems, unresolvedProblemUsers } from '@platform/db';
 import { createVoyageProvider } from './embeddings';
 import { createModuleLogger } from '@platform/shared';
@@ -28,12 +28,20 @@ interface UnresolvedProblemData {
   problemDescription: string;
 }
 
+interface ProblemQueryResult {
+  id: string;
+  problem_description: string;
+  affected_user_count: number;
+  status: string;
+  similarity: number;
+}
+
 /**
  * Check if a similar problem already exists
  * Uses vector cosine similarity with pgvector
  */
 export async function checkForSimilarProblem<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   tenantId: string,
   problemDescription: string,
   threshold: number = 0.85
@@ -59,8 +67,10 @@ export async function checkForSimilarProblem<T extends Record<string, unknown>>(
     LIMIT 1
   `);
 
-  if (results.rows.length > 0) {
-    const problem = results.rows[0];
+  // postgres.js returns results directly as array, not wrapped in .rows
+  const rows = results as unknown as ProblemQueryResult[];
+  if (rows.length > 0 && rows[0]) {
+    const problem = rows[0];
     return {
       exists: true,
       problemId: problem.id,
@@ -78,7 +88,7 @@ export async function checkForSimilarProblem<T extends Record<string, unknown>>(
  * Deduplicates based on semantic similarity
  */
 export async function createOrUpdateUnresolvedProblem<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   data: UnresolvedProblemData
 ): Promise<string> {
   const { tenantId, endUserId, sessionId, problemDescription } = data;
@@ -152,7 +162,7 @@ export async function createOrUpdateUnresolvedProblem<T extends Record<string, u
  * Check if end user is blocked for a specific problem
  */
 export async function checkIfUserBlocked<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   tenantId: string,
   endUserId: string,
   problemDescription: string
@@ -215,7 +225,7 @@ async function queueSolutionGeneration(problemId: string): Promise<void> {
  * Approve AI-generated solution and add to knowledge base
  */
 export async function approveSolutionDraft<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   problemId: string,
   approvedBy: string
 ): Promise<void> {
@@ -240,7 +250,7 @@ export async function approveSolutionDraft<T extends Record<string, unknown>>(
  * Notify all users blocked by this problem
  */
 async function notifyAffectedUsers<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   problemId: string
 ): Promise<void> {
   // TODO: Implement join with endUsers table to get user contact info

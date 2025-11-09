@@ -6,7 +6,7 @@
 import { knowledgeChunks, knowledgeDocuments } from '@platform/db';
 import { createModuleLogger } from '@platform/shared';
 import { sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { createVoyageProvider } from './embeddings';
 import { cohereReranker, isCohereRerankingEnabled } from './reranker';
 import type { RAGQueryOptions, RAGResult, SearchResult } from './types';
@@ -50,7 +50,7 @@ interface KeywordSearchRow {
  * @returns RAG result with context and chunks
  */
 export async function executeRAGQuery<T extends Record<string, unknown>>(
-  db: NodePgDatabase<T>,
+  db: PostgresJsDatabase<T>,
   options: RAGQueryOptions
 ): Promise<RAGResult> {
   const startTime = Date.now();

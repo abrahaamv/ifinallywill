@@ -6,11 +6,11 @@
 
 import * as schema from '@platform/db';
 import { eq } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { RAGASEvaluator, RAGASEvaluationInput } from './ragas';
 import { detectRegression, calculateQualityScore } from './ragas';
 
-type Database = NodePgDatabase<typeof schema>;
+type Database = PostgresJsDatabase<typeof schema>;
 
 // ==================== TYPES ====================
 
