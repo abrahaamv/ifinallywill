@@ -16,7 +16,7 @@
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 // import { constants as zlibConstants } from 'node:zlib'; // TEMP: Disabled with compress plugin
-import { appRouter, createContext } from '@platform/api-contract';
+import { appRouter, createContext, createStorageService } from '@platform/api-contract';
 import {
   VoyageEmbeddingProvider,
   warmEmbeddingCache,
@@ -59,6 +59,16 @@ async function main() {
   } catch (error) {
     logger.warn('Redis initialization failed, RAG caching disabled', { error });
     redis = undefined;
+  }
+
+  // Phase 11 Week 5: Initialize S3 storage service
+  let storage: ReturnType<typeof createStorageService> | undefined;
+  try {
+    storage = createStorageService();
+    logger.info('S3 storage service initialized');
+  } catch (error) {
+    logger.warn('Storage service initialization failed, file uploads disabled', { error });
+    storage = undefined;
   }
 
   // Phase 12 Week 3: Initialize Voyage embedding provider
@@ -249,6 +259,7 @@ async function main() {
           ...opts,
           redis,
           embeddingProvider,
+          storage,
         });
       },
       onError({ path, error }: { path?: string; error: unknown }) {

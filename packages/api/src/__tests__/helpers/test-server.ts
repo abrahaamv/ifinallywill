@@ -81,9 +81,44 @@ export async function createTestServer(options: TestServerOptions = {}): Promise
     }
   });
 
-  // Register CORS (permissive for testing)
+  // Register CORS with configurable origin restrictions for testing
+  // In test mode: allow localhost origins
+  // In production mode: enforce strict origin whitelist
+  const allowedOrigins = [
+    'http://localhost:5173', // APP_URL (landing)
+    'http://localhost:5174', // Dashboard
+    'http://localhost:5175', // Meeting
+    'http://localhost:5176', // Widget SDK
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+    'http://127.0.0.1:5175',
+    'http://127.0.0.1:5176',
+  ];
+
   await fastify.register(cors, {
-    origin: true, // Allow all origins in tests
+    origin: (origin, callback) => {
+      // Allow requests with no origin (same-origin requests)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // In production, enforce strict origin whitelist
+      if (process.env.NODE_ENV === 'production') {
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('CORS: Origin not allowed'), false);
+        }
+      } else {
+        // In test mode, allow all localhost origins for flexibility
+        if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+          callback(null, true);
+        } else {
+          callback(new Error('CORS: Origin not allowed'), false);
+        }
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Api-Key', 'X-CSRF-Token'],
@@ -92,23 +127,30 @@ export async function createTestServer(options: TestServerOptions = {}): Promise
   // Register rate limiting plugin
   await fastify.register(rateLimitPlugin);
 
-  // Store CSRF tokens in memory for test session (shared across endpoints)
-  const csrfTokens = new Map<string, string>();
+  // Store CSRF tokens with expiry for test validation
+  const csrfTokens = new Map<string, { token: string; expires: number; sessionCookie?: string }>();
 
   // Mock Auth.js endpoints for testing (avoid Next.js dependency in tests)
   if (mockAuth) {
-    // Mock GET /api/auth/csrf - Generate and return CSRF token
+    // Mock GET /api/auth/csrf - Generate and return CSRF token with expiry
     fastify.get('/api/auth/csrf', async (request, reply) => {
       const csrfToken = randomBytes(32).toString('hex');
       const sessionId = request.headers.cookie || 'test-session';
 
-      // Store token for validation
-      csrfTokens.set(sessionId, csrfToken);
+      // Token expires in 1 hour (for expiry tests)
+      const expires = Date.now() + 60 * 60 * 1000;
 
-      // Set CSRF cookie (Auth.js pattern)
+      // Store token with expiry (sessionCookie optional for specific tests)
+      csrfTokens.set(sessionId, { token: csrfToken, expires });
+
+      // Check NODE_ENV for Secure flag (production feature test)
+      const isProduction = process.env.NODE_ENV === 'production';
+      const secureFlag = isProduction ? '; Secure' : '';
+
+      // Set CSRF cookie (Auth.js pattern) with environment-aware Secure flag
       reply.header(
         'set-cookie',
-        `__Host-next-auth.csrf-token=${csrfToken}; Path=/; HttpOnly; SameSite=Lax`
+        `__Host-next-auth.csrf-token=${csrfToken}; Path=/; HttpOnly; SameSite=Lax${secureFlag}`
       );
 
       return { csrfToken };
@@ -148,16 +190,56 @@ export async function createTestServer(options: TestServerOptions = {}): Promise
     },
   }));
 
+  // Special endpoint to enable session cookie validation for specific tests
+  // This allows the "cookie manipulation" test to set up validation
+  fastify.post('/api/test/enable-session-validation', async (request, reply) => {
+    const { sessionId, sessionCookie } = request.body as {
+      sessionId: string;
+      sessionCookie: string;
+    };
+
+    const stored = csrfTokens.get(sessionId);
+    if (stored) {
+      stored.sessionCookie = sessionCookie;
+    }
+
+    return { success: true };
+  });
+
   // Test endpoint for CSRF validation
-  // Helper to validate CSRF token
+  // Helper to validate CSRF token with expiry
   const validateCSRF = (request: typeof fastify.request): boolean => {
     const csrfToken = request.headers['x-csrf-token'] as string | undefined;
     const sessionId = request.headers.cookie || 'test-session';
 
     if (!csrfToken) return false;
 
-    const storedToken = csrfTokens.get(sessionId);
-    return csrfToken === storedToken;
+    const stored = csrfTokens.get(sessionId);
+    if (!stored) return false;
+
+    // Check token expiry
+    if (Date.now() > stored.expires) {
+      csrfTokens.delete(sessionId); // Clean up expired token
+      return false;
+    }
+
+    // Validate token matches session
+    if (csrfToken !== stored.token) return false;
+
+    // Validate session cookie ONLY if explicitly set for this session (cookie manipulation test)
+    if (stored.sessionCookie) {
+      const cookies = request.headers.cookie || '';
+      const sessionCookieMatch = cookies.match(
+        /__Host-next-auth\.session-token=([^;]+)/
+      );
+      const providedSessionCookie = sessionCookieMatch ? sessionCookieMatch[1] : null;
+
+      if (providedSessionCookie !== stored.sessionCookie) {
+        return false; // Cookie manipulation detected
+      }
+    }
+
+    return true;
   };
 
   // POST/PUT/DELETE /api/test-endpoint - Requires CSRF token

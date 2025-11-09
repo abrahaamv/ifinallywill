@@ -113,10 +113,34 @@ describe('CSRF Security Tests', () => {
       expect(error.error).toContain('Invalid CSRF token');
     });
 
-    it.skip('should reject requests with expired CSRF token', async () => {
-      // NOTE: Skipped in test environment - token expiry requires time mocking
-      // Real Auth.js implementation handles token expiry automatically
-      // This test would require mocking Date.now() or using fake timers
+    it('should reject requests with expired CSRF token', async () => {
+      // Arrange: Get valid CSRF token
+      const csrfResponse = await fetch(`${baseUrl}/api/auth/csrf`, {
+        credentials: 'include',
+      });
+      const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
+
+      // Mock token expiry by manipulating Date (advance time by 2 hours)
+      const originalDateNow = Date.now;
+      Date.now = () => originalDateNow() + 2 * 60 * 60 * 1000;
+
+      // Act: Try to use expired token
+      const response = await fetch(`${baseUrl}/api/test-endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ test: 'data' }),
+      });
+
+      // Cleanup: Restore original Date.now
+      Date.now = originalDateNow;
+
+      // Assert: Request should be rejected (token expired)
+      expect(response.ok).toBe(false);
+      expect(response.status).toBe(403);
     });
   });
 
@@ -167,10 +191,20 @@ describe('CSRF Security Tests', () => {
   });
 
   describe('Cross-Origin Request Protection', () => {
-    it.skip('should reject CSRF token requests from unauthorized origins', async () => {
-      // NOTE: Skipped in test environment - CORS is permissive for testing
-      // Real Fastify CORS configuration would enforce origin restrictions
-      // Test server uses `origin: true` to allow all origins in tests
+    it('should reject CSRF token requests from unauthorized origins', async () => {
+      // Arrange & Act: Request CSRF token from unauthorized origin
+      const response = await fetch(`${baseUrl}/api/auth/csrf`, {
+        headers: {
+          Origin: 'https://evil-site.com', // Unauthorized origin
+        },
+        credentials: 'include',
+      });
+
+      // Assert: Request should be rejected by CORS
+      // In test mode with unauthorized non-localhost origin, CORS will reject
+      // Note: Response may vary by environment, but should not succeed
+      const isRejected = !response.ok || response.type === 'opaqueredirect';
+      expect(isRejected).toBe(true);
     });
 
     it('should allow CSRF token requests from authorized origins', async () => {
@@ -216,10 +250,38 @@ describe('CSRF Security Tests', () => {
       expect(response.status).toBeLessThan(500);
     });
 
-    it.skip('should detect and reject CSRF bypass via cookie manipulation', async () => {
-      // NOTE: Skipped in test environment - session cookie validation not implemented in mock
-      // Real Auth.js implementation validates session cookies automatically
-      // Mock test server focuses on CSRF token validation only
+    it('should detect and reject CSRF bypass via cookie manipulation', async () => {
+      // Arrange: Get valid CSRF token
+      const sessionId = 'test-session';
+      const realSessionCookie = 'real-session-cookie-12345';
+
+      const csrfResponse = await fetch(`${baseUrl}/api/auth/csrf`, {
+        credentials: 'include',
+      });
+      const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
+
+      // Enable session validation for this test (sets expected session cookie)
+      await fetch(`${baseUrl}/api/test/enable-session-validation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, sessionCookie: realSessionCookie }),
+      });
+
+      // Act: Attempt to use token with manipulated session cookie
+      const response = await fetch(`${baseUrl}/api/test-endpoint`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          // Manually set manipulated session cookie (different from real one)
+          Cookie: '__Host-next-auth.session-token=manipulated-cookie-67890',
+        },
+        body: JSON.stringify({ test: 'data' }),
+      });
+
+      // Assert: Request should be rejected (session cookie mismatch)
+      expect(response.ok).toBe(false);
+      expect(response.status).toBe(403);
     });
 
     it('should detect and reject CSRF bypass via token replay', async () => {
@@ -337,10 +399,30 @@ describe('CSRF Security Tests', () => {
       expect(cookies).toContain('SameSite=Lax');
     });
 
-    it.skip('should set Secure flag on CSRF cookies in production', async () => {
-      // NOTE: Skipped in test environment - requires HTTPS server
-      // Real Auth.js implementation sets Secure flag in production automatically
-      // Test server runs on HTTP for testing purposes
+    it('should set Secure flag on CSRF cookies in production', async () => {
+      // Arrange: Set NODE_ENV to production temporarily
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      // Recreate test server to pick up production environment
+      await testServer.close();
+      testServer = await createTestServer();
+      baseUrl = testServer.url;
+
+      // Act: Get CSRF token in production mode
+      const response = await fetch(`${baseUrl}/api/auth/csrf`, {
+        credentials: 'include',
+      });
+
+      // Restore environment
+      process.env.NODE_ENV = originalEnv;
+
+      // Assert: Check Secure flag in Set-Cookie header
+      const cookies = response.headers.get('set-cookie');
+      expect(cookies).toBeDefined();
+      expect(cookies).toContain('Secure');
+      expect(cookies).toContain('HttpOnly');
+      expect(cookies).toContain('SameSite=Lax');
     });
   });
 });
