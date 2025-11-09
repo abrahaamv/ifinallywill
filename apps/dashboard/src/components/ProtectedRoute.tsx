@@ -13,7 +13,7 @@
  * ```
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useEffect } from 'react';
 import { useSession } from '../hooks/useSession';
 

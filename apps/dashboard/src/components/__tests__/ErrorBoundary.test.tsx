@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ErrorBoundary, withErrorBoundary } from '../ErrorBoundary';
 
 // Mock logger
-vi.mock('@platform/shared', () => ({
+vi.mock('../../utils/logger', () => ({
   createModuleLogger: () => ({
     error: vi.fn(),
     warn: vi.fn(),

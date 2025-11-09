@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import '@livekit/components-styles';
 import { Button, Input } from '@platform/ui';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { trpc } from '../utils/trpc';
 
 const logger = createModuleLogger('MeetingRoom');

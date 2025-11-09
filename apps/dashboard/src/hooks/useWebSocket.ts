@@ -5,7 +5,7 @@
  * message handling, typing indicators, and presence tracking.
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const logger = createModuleLogger('useWebSocket');

@@ -3,7 +3,7 @@
  * Publishable and secret keys with rate limiting and security best practices
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import {
   Alert,
   AlertDescription,

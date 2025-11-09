@@ -9,7 +9,7 @@
  * 4. Support MFA (TOTP) when enabled
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { Button } from '@platform/ui';
 import { useState } from 'react';
 

@@ -8,7 +8,7 @@
 
 import { createElement } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from './utils/logger';
 import { Widget } from './Widget';
 import type { WidgetConfig } from './types';
 

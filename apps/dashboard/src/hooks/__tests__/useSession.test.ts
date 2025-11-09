@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type Session, useSession } from '../useSession';
 
 // Mock logger
-vi.mock('@platform/shared', () => ({
+vi.mock('../../utils/logger', () => ({
   createModuleLogger: () => ({
     info: vi.fn(),
     error: vi.fn(),

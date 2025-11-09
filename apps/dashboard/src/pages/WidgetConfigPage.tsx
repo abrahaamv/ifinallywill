@@ -40,7 +40,7 @@ import {
   Smartphone,
   Zap,
 } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 

@@ -3,13 +3,14 @@
  * Bottom-right chatbot with three-tier AI routing and RAG integration
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { Badge, Button, Card, CardContent, Input } from '@platform/ui';
 import {
   Bot,
   Loader2,
   MessageCircle,
   Minimize2,
+  Paperclip,
   Send,
   Sparkles,
   User,
@@ -29,13 +30,19 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Create session mutation
   const createSession = trpc.sessions.create.useMutation();
 
   // Send chat message mutation
   const sendMessage = trpc.chat.sendMessage.useMutation();
+
+  // Upload file mutation
+  const uploadFile = trpc.chat.uploadChatFile.useMutation();
 
   // Load messages query
   const { data: messagesData, refetch: refetchMessages } = trpc.sessions.listMessages.useQuery(
@@ -83,20 +90,82 @@ export function ChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!input.trim() || !sessionId || isLoading) return;
+    if ((!input.trim() && !selectedFile) || !sessionId || isLoading) return;
 
     const userMessage = input.trim();
+    let fileName: string | null = null;
+
     setInput('');
     setIsLoading(true);
 
     try {
-      // Send message and get AI response
+      // Upload file first if selected
+      if (selectedFile) {
+        setIsUploadingFile(true);
+
+        // Read file as base64
+        const reader = new FileReader();
+        const fileData = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            // Remove data URL prefix (data:image/png;base64,)
+            const base64 = result.split(',')[1] || '';
+            if (!base64) {
+              reject(new Error('Failed to read file data'));
+              return;
+            }
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
+
+        const uploadResult = await uploadFile.mutateAsync({
+          sessionId,
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          fileSize: selectedFile.size,
+          fileContent: fileData,
+        });
+
+        fileName = uploadResult.fileName;
+        setIsUploadingFile(false);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+
+      // Send message with optional file attachment
+      const messageContent = fileName
+        ? `${userMessage}\n\n[Attached: ${fileName}]`
+        : userMessage;
+
       const result = await sendMessage.mutateAsync({
         sessionId,
-        content: userMessage,
+        content: messageContent,
       });
 
       // Add both user and assistant messages
@@ -132,6 +201,7 @@ export function ChatWidget() {
       ]);
     } finally {
       setIsLoading(false);
+      setIsUploadingFile(false);
     }
   };
 
@@ -269,7 +339,45 @@ export function ChatWidget() {
 
               {/* Input */}
               <div className="border-t border-border p-3">
+                {/* File attachment preview */}
+                {selectedFile && (
+                  <div className="mb-2 flex items-center gap-2 rounded-md bg-muted p-2 text-sm">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 truncate">{selectedFile.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRemoveFile}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+
                 <form onSubmit={handleSendMessage} className="flex gap-2">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx,.txt,.md"
+                  />
+
+                  {/* File attach button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || !sessionId}
+                    className="px-2"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
+
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -279,11 +387,11 @@ export function ChatWidget() {
                   />
                   <Button
                     type="submit"
-                    disabled={isLoading || !sessionId || !input.trim()}
+                    disabled={isLoading || !sessionId || (!input.trim() && !selectedFile)}
                     size="sm"
                     className="px-3"
                   >
-                    {isLoading ? (
+                    {isLoading || isUploadingFile ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Send className="w-4 h-4" />

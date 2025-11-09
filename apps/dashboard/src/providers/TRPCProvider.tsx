@@ -6,7 +6,7 @@
  */
 
 import { CSRFService } from '@platform/auth/client';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 import { httpBatchLink } from '@trpc/client';

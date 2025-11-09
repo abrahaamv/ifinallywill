@@ -23,7 +23,7 @@ import {
   Skeleton,
 } from '@platform/ui';
 import { Activity, AlertCircle, Clock, Copy, Info, Plus, Trash2, Users, Video } from 'lucide-react';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 

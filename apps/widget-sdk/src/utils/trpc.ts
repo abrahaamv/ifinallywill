@@ -8,7 +8,7 @@
 
 import type { AppRouter } from '@platform/api-contract';
 import { CSRFService } from '@platform/auth/client';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from './logger';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 
 const logger = createModuleLogger('WidgetTRPC');

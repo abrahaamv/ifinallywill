@@ -4,7 +4,7 @@
  * Provides user session data globally
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 

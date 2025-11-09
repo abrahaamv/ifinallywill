@@ -4,7 +4,7 @@
  */
 
 import { CSRFService } from '@platform/auth/client';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from './logger';
 
 const logger = createModuleLogger('WidgetCSRF');
 

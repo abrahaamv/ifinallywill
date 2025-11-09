@@ -4,7 +4,7 @@
  */
 
 // import FingerprintJS from '@fingerprintjs/fingerprintjs-pro'; // TODO: Add dependency when implementing Phase 11
-import type { FingerprintResult } from '@platform/shared';
+import type { FingerprintResult } from './fingerprint-types';
 
 let fpPromise: Promise<any> | null = null;
 

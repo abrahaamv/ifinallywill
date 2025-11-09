@@ -9,7 +9,7 @@
  */
 
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@platform/ui';
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from './utils/logger';
 import { useEffect, useRef, useState } from 'react';
 import { createWidgetTRPCClient } from './utils/trpc';
 

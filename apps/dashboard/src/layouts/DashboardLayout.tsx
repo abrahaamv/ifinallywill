@@ -3,7 +3,7 @@
  * Provides consistent sidebar, header, and navigation
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import {
   AppHeader,
   AppShell,

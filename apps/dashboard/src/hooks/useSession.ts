@@ -10,7 +10,7 @@
  * - error: error message if session fetch failed
  */
 
-import { createModuleLogger } from '@platform/shared';
+import { createModuleLogger } from '../utils/logger';
 import { useEffect, useState } from 'react';
 
 const logger = createModuleLogger('useSession');

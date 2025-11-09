@@ -9,6 +9,7 @@ import { Button } from '@platform/ui/components/button';
 import { Card } from '@platform/ui/components/card';
 import { Label } from '@platform/ui/components/label';
 import { Switch } from '@platform/ui/components/switch';
+import { logger } from '@platform/shared';
 
 interface DaySchedule {
   enabled: boolean;
@@ -89,7 +90,7 @@ export function ServiceHoursSettings() {
     //   serviceHours,
     // });
 
-    console.log('Service hours (not yet implemented):', serviceHours);
+    logger.info('Service hours save attempted (not yet implemented)', { serviceHours });
     alert('Service hours functionality not yet implemented. See Phase 11 Week 4 TODO.');
   };
 
