@@ -1,102 +1,133 @@
 /**
  * AI Assistant Widget
- * Embeddable chat widget with Shadow DOM isolation
- * Supports customizable theming and position
+ *
+ * Embeddable chat + screen share widget with Shadow DOM isolation.
+ * Supports customizable theming, position, and LiveKit integration.
  *
  * IMPORTANT: apiUrl must be explicitly provided by the customer.
  * This should point to your deployed tRPC API endpoint.
  * Example: https://api.yourdomain.com/trpc
  */
 
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@platform/ui';
+import { useState, useCallback, useEffect } from 'react';
+import { Button, Card, CardContent, CardHeader } from '@platform/ui';
 import { createModuleLogger } from './utils/logger';
-import { useEffect, useRef, useState } from 'react';
 import { createWidgetTRPCClient } from './utils/trpc';
+import {
+  WidgetProvider,
+  type WidgetContextValue,
+  type WidgetConfig,
+  type AIPersonality,
+  type WidgetMode,
+} from './components/WidgetContext';
+import { ChatMode } from './components/ChatMode';
+import { VideoMode } from './components/VideoMode';
+import { TransitionOverlay } from './components/TransitionOverlay';
 
 const logger = createModuleLogger('Widget');
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
 
 interface WidgetProps {
   /** API key for authentication (required) */
   apiKey: string;
   /** Backend API URL - must be explicitly provided (required) */
   apiUrl: string;
+  /** Widget ID to load configuration (optional - for fetching server config) */
+  widgetId?: string;
   /** Widget position on the page */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   /** Color theme */
   theme?: 'light' | 'dark' | 'auto';
-  /** Primary color for branding */
+  /** Start minimized */
+  defaultMinimized?: boolean;
+  /** Primary color for branding (override) */
   primaryColor?: string;
-  /** Widget title */
+  /** Widget title (override) */
   title?: string;
-  /** Input placeholder text */
+  /** Input placeholder text (override) */
   placeholder?: string;
-  /** Initial greeting message */
+  /** Initial greeting message (override) */
   greeting?: string;
 }
 
 export function Widget({
   apiKey,
   apiUrl,
+  widgetId,
   position = 'bottom-right',
   theme = 'auto',
-  primaryColor = '#6366f1',
-  title = 'AI Assistant',
-  placeholder = 'Type your message...',
-  greeting = 'Hello! How can I help you today?',
+  defaultMinimized = true,
+  primaryColor: propPrimaryColor,
+  title: propTitle,
+  placeholder: _propPlaceholder,
+  greeting: propGreeting,
 }: WidgetProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<WidgetMode>('chat');
+  const [isMinimized, setIsMinimized] = useState(defaultMinimized);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [livekitToken, setLivekitToken] = useState<string | null>(null);
+  const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
+  const [roomName, setRoomName] = useState<string | null>(null);
+
+  // Widget and personality state
+  const [widget, setWidget] = useState<WidgetConfig | null>(null);
+  const [personality, setPersonality] = useState<AIPersonality | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Create tRPC client
   const trpcClient = createWidgetTRPCClient(apiKey, apiUrl);
 
-  // Create session on mount
+  // Fetch widget configuration on mount (only if widgetId is provided)
   useEffect(() => {
-    const createSession = async () => {
+    if (!widgetId) {
+      // No widgetId - use props directly, create a minimal widget config
+      setWidget({
+        id: 'prop-based-widget',
+        name: propTitle || 'AI Assistant',
+        domainWhitelist: [],
+        settings: {
+          theme: theme as 'light' | 'dark' | 'auto',
+          position: position as 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left',
+          greeting: propGreeting,
+          primaryColor: propPrimaryColor,
+          enableScreenShare: false,
+        },
+        aiPersonalityId: null,
+        isActive: true,
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchConfig = async () => {
       try {
-        const session = await trpcClient.sessions.create.mutate({
-          mode: 'text',
-        });
-        setSessionId(session.id);
+        setIsLoading(true);
+        const result = await trpcClient.widgets.getWithPersonality.query({ widgetId });
+
+        if (result.widget) {
+          setWidget({
+            id: result.widget.id,
+            name: result.widget.name,
+            domainWhitelist: result.widget.domainWhitelist || [],
+            settings: result.widget.settings,
+            aiPersonalityId: result.widget.aiPersonalityId,
+            isActive: result.widget.isActive,
+          });
+        }
+
+        if (result.personality) {
+          setPersonality(result.personality);
+        }
       } catch (err) {
-        logger.error('Failed to create session', { error: err });
-        setError('Failed to initialize chat. Please check your API key.');
+        logger.error('Failed to fetch widget config', { error: err });
+        setError('Failed to load widget configuration');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    createSession();
-  }, [trpcClient]);
-
-  // Initialize with greeting message
-  useEffect(() => {
-    if (messages.length === 0 && greeting) {
-      setMessages([
-        {
-          id: '1',
-          role: 'assistant',
-          content: greeting,
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [greeting, messages.length]);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    fetchConfig();
+  }, [widgetId, trpcClient, propTitle, propGreeting, propPrimaryColor, theme, position]);
 
   // Apply theme
   useEffect(() => {
@@ -111,189 +142,193 @@ export function Widget({
     }
   }, [theme]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading || !sessionId) return;
+  // Handle screen share transition
+  const handleShareScreen = useCallback(async () => {
+    if (!sessionId) {
+      logger.error('No active session for screen share');
+      return;
+    }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
-    setError(null);
+    setMode('transitioning');
 
     try {
-      // Real API call to sessions.sendMessage endpoint with RAG
-      const response = await trpcClient.sessions.sendMessage.mutate({
-        sessionId,
-        role: 'user',
-        content: userMessage.content,
-      });
-
-      // Response includes userMessage (echo) and assistantMessage (AI response)
-      if ('assistantMessage' in response && response.assistantMessage) {
-        const assistantMessage: Message = {
-          id: response.assistantMessage.id,
-          role: 'assistant',
-          content: response.assistantMessage.content,
-          timestamp: new Date(response.assistantMessage.timestamp),
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      }
+      const result = await trpcClient.sessions.transitionToVideo.mutate({ sessionId });
+      setLivekitUrl(result.livekitUrl);
+      setRoomName(result.roomName);
+      // Token would come from the backend in production
+      setLivekitToken('placeholder-token');
+      setMode('video');
     } catch (err) {
-      logger.error('Failed to send message', { error: err });
-      setError('Failed to send message. Please try again.');
-
-      // Add error message to chat
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+      logger.error('Failed to transition to video', { error: err });
+      setMode('chat');
     }
+  }, [sessionId, trpcClient]);
+
+  // Handle end screen share
+  const handleEndScreenShare = useCallback(() => {
+    setLivekitToken(null);
+    setLivekitUrl(null);
+    setRoomName(null);
+    setMode('chat');
+  }, []);
+
+  // Build context value
+  const contextValue: WidgetContextValue = {
+    widget,
+    personality,
+    isLoading,
+    sessionId,
+    setSessionId,
+    mode,
+    setMode,
+    livekitToken,
+    setLivekitToken,
+    livekitUrl,
+    roomName,
+    apiUrl,
+    apiKey,
+    transitionToVideo: handleShareScreen,
+    endScreenShare: handleEndScreenShare,
   };
 
-  const positionClasses = {
+  // Get styling from widget settings (prop overrides take precedence)
+  const primaryColor = propPrimaryColor || widget?.settings?.primaryColor || '#6366f1';
+  const widgetPosition = position || widget?.settings?.position || 'bottom-right';
+  const displayTitle = propTitle || personality?.name || widget?.name || 'AI Assistant';
+
+  const positionClasses: Record<string, string> = {
     'bottom-right': 'bottom-4 right-4',
     'bottom-left': 'bottom-4 left-4',
     'top-right': 'top-4 right-4',
     'top-left': 'top-4 left-4',
   };
 
+  // Minimized state - show toggle button
+  if (isMinimized) {
+    return (
+      <Button
+        onClick={() => setIsMinimized(false)}
+        className="fixed z-50 w-14 h-14 rounded-full shadow-2xl"
+        style={{
+          backgroundColor: primaryColor,
+          ...(widgetPosition === 'bottom-right'
+            ? { bottom: '1rem', right: '1rem' }
+            : { bottom: '1rem', left: '1rem' }),
+        }}
+      >
+        <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+      </Button>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card
+        className={`fixed z-50 w-80 ${positionClasses[widgetPosition]}`}
+      >
+        <CardContent className="p-4">
+          <p className="text-destructive text-sm">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => setIsMinimized(true)}
+          >
+            Close
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card
+        className={`fixed z-50 w-96 h-[500px] ${positionClasses[widgetPosition]}`}
+      >
+        <CardContent className="flex items-center justify-center h-full">
+          <div
+            className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full"
+            style={{ borderColor: `${primaryColor} transparent ${primaryColor} ${primaryColor}` }}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className={`fixed ${positionClasses[position]} z-50`}>
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="mb-4 animate-slideUp">
-          <Card className="h-[500px] w-[350px] shadow-2xl">
-            {/* Header */}
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-              <div className="flex items-center space-x-2">
-                <div
-                  className="h-3 w-3 rounded-full bg-green-500"
-                  style={{ backgroundColor: primaryColor }}
-                />
-                <CardTitle className="text-lg">{title}</CardTitle>
+    <WidgetProvider value={contextValue}>
+      <Card
+        className={`fixed z-50 w-96 h-[500px] flex flex-col shadow-2xl ${positionClasses[widgetPosition]}`}
+      >
+        {/* Header */}
+        <CardHeader className="flex-none p-4 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {mode === 'video' ? (
+                <svg className="h-5 w-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              )}
+              <div>
+                <h3 className="font-medium text-sm">
+                  {displayTitle}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {mode === 'video' ? 'Screen Share Active' : 'Chat'}
+                </p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsMinimized(true)}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                 </svg>
               </Button>
-            </CardHeader>
-
-            {/* Error Banner */}
-            {error && (
-              <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                {error}
-              </div>
-            )}
-
-            {/* Messages */}
-            <CardContent className="flex h-[350px] flex-col space-y-4 overflow-y-auto p-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      message.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                    }`}
-                    style={
-                      message.role === 'user'
-                        ? { backgroundColor: primaryColor, color: 'white' }
-                        : undefined
-                    }
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <p className="mt-1 text-xs opacity-70">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="flex justify-start">
-                  <Badge variant="secondary">AI is typing...</Badge>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </CardContent>
-
-            {/* Input */}
-            <div className="border-t p-4">
-              <form onSubmit={handleSendMessage} className="flex space-x-2">
-                <Input
-                  placeholder={placeholder}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  disabled={isLoading}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={isLoading || !input.trim()}
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                </Button>
-              </form>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsMinimized(true)}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </Button>
             </div>
-          </Card>
-        </div>
-      )}
+          </div>
+        </CardHeader>
 
-      {/* Toggle Button */}
-      <Button
-        size="icon"
-        className="h-14 w-14 rounded-full shadow-2xl"
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ backgroundColor: primaryColor }}
-      >
-        {isOpen ? (
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
+        {/* Content */}
+        <CardContent className="flex-1 p-0 relative overflow-hidden">
+          {mode === 'transitioning' && <TransitionOverlay />}
+
+          {mode === 'chat' && (
+            <ChatMode
+              onSessionCreated={setSessionId}
+              onShareScreen={handleShareScreen}
+              showShareButton={widget?.settings?.enableScreenShare ?? false}
             />
-          </svg>
-        ) : (
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-            />
-          </svg>
-        )}
-      </Button>
-    </div>
+          )}
+
+          {mode === 'video' && <VideoMode onEnd={handleEndScreenShare} />}
+        </CardContent>
+      </Card>
+    </WidgetProvider>
   );
 }
+
+export default Widget;

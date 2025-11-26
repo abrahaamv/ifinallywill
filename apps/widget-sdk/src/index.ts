@@ -27,6 +27,20 @@ export { PlatformWidget as default } from './PlatformWidget';
 // React component (for React projects)
 export { Widget } from './Widget';
 
+// Component exports
+export { ChatMode } from './components/ChatMode';
+export { VideoMode } from './components/VideoMode';
+export { TransitionOverlay } from './components/TransitionOverlay';
+export {
+  WidgetProvider,
+  useWidgetContext,
+  type WidgetContextValue,
+  type WidgetConfig as WidgetContextConfig,
+  type AIPersonality,
+  type WidgetSettings,
+  type WidgetMode,
+} from './components/WidgetContext';
+
 // TypeScript types
 export type {
   WidgetConfig,
