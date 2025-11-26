@@ -46,6 +46,14 @@ export class CSRFService {
   }
 
   /**
+   * Reset the service configuration (for testing purposes)
+   * Clears any configured API URL, forcing the service to re-read from environment
+   */
+  static reset(): void {
+    CSRFService.apiBaseUrl = null;
+  }
+
+  /**
    * Get the configured API base URL
    * Falls back to environment variable or localhost:3001 if not configured
    */

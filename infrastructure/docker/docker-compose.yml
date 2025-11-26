@@ -1,11 +1,11 @@
 # AI Assistant Platform - Development Environment
 # PostgreSQL + Redis for local development
 
-version: '3.9'
+name: platform
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16.7
+    image: pgvector/pgvector:pg16
     container_name: platform-postgres
     restart: unless-stopped
     environment:

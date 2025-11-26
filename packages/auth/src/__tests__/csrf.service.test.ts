@@ -13,10 +13,12 @@ global.fetch = mockFetch;
 describe('CSRFService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    CSRFService.reset(); // Reset any configured API URL
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    CSRFService.reset(); // Clean up after each test
   });
 
   describe('getToken', () => {
@@ -37,8 +39,8 @@ describe('CSRFService', () => {
     });
 
     it('should use configured API base URL', async () => {
-      const originalEnv = process.env.API_URL;
-      process.env.API_URL = 'https://api.example.com';
+      // Use configure() method for explicit API URL configuration
+      CSRFService.configure('https://api.example.com');
 
       mockFetch.mockResolvedValue({
         ok: true,
@@ -50,8 +52,6 @@ describe('CSRFService', () => {
       expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/api/auth/csrf', {
         credentials: 'include',
       });
-
-      process.env.API_URL = originalEnv;
     });
 
     it('should throw error on HTTP error', async () => {
