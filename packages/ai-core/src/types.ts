@@ -11,6 +11,7 @@ export type AIModel =
   | 'gpt-4o-mini'
   // Anthropic
   | 'claude-3-5-sonnet-20241022'
+  | 'claude-sonnet-4.5'
   // Google
   | 'gemini-1.5-flash'
   | 'gemini-2.0-flash-exp';
@@ -28,6 +29,8 @@ export interface AICompletionRequest {
   model?: AIModel;
   temperature?: number;
   maxTokens?: number;
+  topP?: number;
+  topK?: number;
   userId?: string;
   tenantId?: string;
   sessionId?: string;
@@ -52,6 +55,10 @@ export interface AICompletionResponse {
   provider: AIProvider;
   usage: AIUsage;
   finishReason: 'stop' | 'length' | 'content_filter' | 'tool_calls';
+  metadata?: {
+    cacheName?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface ProviderConfig {

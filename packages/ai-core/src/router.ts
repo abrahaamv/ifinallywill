@@ -15,6 +15,11 @@ import { AnthropicProvider } from './providers/anthropic';
 import { GoogleProvider } from './providers/google';
 import { OpenAIProvider } from './providers/openai';
 import { createComplexityAnalyzer } from './routing/complexity-analyzer';
+import {
+  classifyQueryComplexity,
+  determineTierFromComplexity,
+  getModelConfigForQuery,
+} from './routing/dynamic-config';
 import type {
   AICompletionRequest,
   AICompletionResponse,
@@ -185,15 +190,26 @@ export class AIRouter {
 
   /**
    * Execute AI completion with intelligent routing
+   * Phase 12 Week 3: Enhanced with dynamic configuration
    */
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const decision = this.selectProvider(request.messages);
+
+    // Phase 12 Week 3: Dynamic configuration
+    const tier = determineTierFromComplexity(decision.complexityScore);
+    const lastMessage = request.messages[request.messages.length - 1];
+    const queryComplexity = classifyQueryComplexity(lastMessage?.content || '');
+    const modelConfig = getModelConfigForQuery(tier, queryComplexity);
 
     if (this.config.logRouting) {
       logger.info('Routing decision', {
         provider: decision.provider,
         model: decision.model,
         reasoning: decision.reasoning,
+        tier,
+        queryComplexity,
+        temperature: modelConfig.temperature,
+        maxTokens: modelConfig.maxTokens,
       });
     }
 
@@ -205,16 +221,26 @@ export class AIRouter {
         response = await this.openai.complete({
           ...request,
           model: decision.model,
+          temperature: modelConfig.temperature,
+          maxTokens: modelConfig.maxTokens,
+          topP: modelConfig.topP,
         });
       } else if (decision.provider === 'google') {
         response = await this.google.complete({
           ...request,
           model: decision.model,
+          temperature: modelConfig.temperature,
+          maxTokens: modelConfig.maxTokens,
+          topP: modelConfig.topP,
+          topK: modelConfig.topK,
         });
       } else {
         response = await this.anthropic.complete({
           ...request,
           model: decision.model,
+          temperature: modelConfig.temperature,
+          maxTokens: modelConfig.maxTokens,
+          topP: modelConfig.topP,
         });
       }
 

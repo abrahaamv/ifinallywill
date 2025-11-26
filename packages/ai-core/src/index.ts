@@ -42,6 +42,13 @@ export {
   requiresVisionModel,
 } from './complexity';
 
+// Phase 12 Week 1: Prompt Caching (90% cost reduction)
+export {
+  GeminiProviderWithCaching,
+  ClaudeProviderWithCaching,
+  createCachedProvider,
+} from './caching';
+
 // Phase 12 Week 2: Model Routing Refinement
 export type {
   ComplexityLevel,
@@ -88,6 +95,28 @@ export {
   createModelRouter,
 } from './routing/model-router';
 
+// Phase 12 Week 3 Days 3-7: Dynamic Configuration & Cascading Router
+export type {
+  ModelTier as DynamicModelTier,
+  QueryComplexity,
+  ModelConfig as DynamicModelConfig,
+} from './routing/dynamic-config';
+
+export type {
+  CompletionWithConfidence,
+  CascadingConfig,
+} from './routing/cascading-router';
+
+export {
+  getModelConfigForQuery,
+  classifyQueryComplexity,
+  determineTierFromComplexity,
+} from './routing/dynamic-config';
+
+export {
+  completeWithCascading,
+} from './routing/cascading-router';
+
 // Phase 12 Week 3: Prompt Engineering
 export type {
   QueryType,
@@ -120,6 +149,30 @@ export {
   CitationFormatter,
   createCitationFormatter,
 } from './prompts/citation-formatting';
+
+// Phase 12 Week 3 Days 1-2: Customer Support Prompts & Versioning
+// TODO: Re-enable when prompt system is fully implemented
+// export type {
+//   EscalationTrigger,
+//   EscalationTriggerType,
+//   CustomerSupportPromptConfig,
+//   PromptVersion,
+//   PromptVariant,
+//   PromptRegistry,
+// } from './prompts';
+
+// export {
+//   buildCustomerSupportPrompt,
+//   buildMultiModalPrompt,
+//   buildVoiceInteractionAddendum,
+//   buildScreenShareAddendum,
+//   buildVideoAddendum,
+//   detectEscalationTrigger,
+//   getEscalationTrigger,
+//   buildVersionedPrompt,
+//   promptManager,
+//   ESCALATION_TRIGGERS,
+// } from './prompts';
 
 // Phase 12 Week 4: Monitoring Infrastructure
 export type {

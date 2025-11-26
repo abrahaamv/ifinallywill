@@ -64,6 +64,13 @@ export class OpenAIProvider implements AIProviderInterface {
           (choice.finish_reason as 'stop' | 'length' | 'content_filter' | null) || 'stop',
       };
     } catch (error) {
+      console.error('[OpenAI Provider] Completion failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        stack: error instanceof Error ? error.stack : undefined,
+        model,
+      });
+
       if (error instanceof Error) {
         throw new Error(`OpenAI completion failed: ${error.message}`);
       }

@@ -35,6 +35,12 @@ export const PRICING: Record<AIModel, ModelPricing> = {
     inputPerMillion: 3.0,
     outputPerMillion: 15.0,
   },
+  'claude-sonnet-4.5': {
+    provider: 'anthropic',
+    model: 'claude-sonnet-4.5',
+    inputPerMillion: 3.0,
+    outputPerMillion: 15.0,
+  },
 
   // Google - Three-tier routing
   'gemini-1.5-flash': {
