@@ -54,8 +54,11 @@ Phase 5: AI Integration + LiveKit (Weeks 11-13) ✅ COMPLETE
     ✅ AI Chat API with cost optimization (75-85% savings)
     ✅ RAG system with mock data
     ✅ LiveKit backend + self-hosted option (95-97% savings)
-    ✅ Python multi-modal agent foundation
-    ✅ Completion: 2025-01-07
+    ✅ Python agent with Gemini Live API (2025-11-26 update)
+       - Native voice streaming (sub-500ms latency)
+       - Video input via RoomOptions(video_input=True)
+       - Model: gemini-2.0-flash-live-001
+    ✅ Completion: 2025-01-07 (Updated: 2025-11-26)
     ↓
 Phase 6: Real-time Features (Weeks 14-15) ✅ COMPLETE
     ✅ WebSocket server + Redis Streams

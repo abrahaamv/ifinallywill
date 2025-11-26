@@ -1,21 +1,30 @@
-# LiveKit Multi-Modal Agent - Production Implementation
+# LiveKit Multi-Modal Agent - Gemini Live API
 
-**Cost-Optimized Real-Time AI Agent with 82-85% Cost Reduction**
+**Native Gemini Live API Integration with Sub-500ms Latency**
 
-Python-based LiveKit agent implementing three-tier AI routing and intelligent frame deduplication for enterprise-grade multi-modal interactions.
+Python-based LiveKit agent using Google's native Gemini Live API for real-time voice and video interactions.
 
-## 🎯 Cost Optimization Results
+## 🎯 Architecture Overview
 
-| Optimization | Strategy | Reduction | Annual Savings (1K users) |
-|-------------|----------|-----------|---------------------------|
-| **Text Routing** | 60% Flash-Lite / 25% Flash / 15% Claude | **85%** | **$765K/year** |
-| **Vision Deduplication** | Perceptual hashing (pHash, threshold=10) | **70%** | **$420K/year** |
-| **Combined** | Multi-tier routing + frame skipping | **82-85%** | **~$1.1M/year** |
+| Aspect | Implementation | Benefit |
+|--------|---------------|---------|
+| **Audio** | Native Gemini streaming | Sub-500ms latency (vs 2-5s manual) |
+| **Voice** | Puck (built-in) | No separate TTS service |
+| **Video** | RoomOptions(video_input=True) | 1 FPS screen share processing |
+| **Code** | ~200 lines | 85% reduction from manual pipeline |
 
-**Baseline**: All Claude Sonnet 4.5 = $3.00/1M tokens (text) + $0.002/image (vision)
-**Optimized**: $0.45/1M tokens + $0.0006/image = **$1.35M saved annually at 1,000 concurrent users**
+**Model**: `gemini-2.0-flash-live-001` (stable Live API model)
 
-Validated through comprehensive test suite (`tests/test_integration.py`).
+---
+
+## 💰 Cost Structure
+
+| Component | Cost | Notes |
+|-----------|------|-------|
+| **Input tokens** | $0.075/1M | Audio + video context |
+| **Output tokens** | $0.30/1M | Generated responses |
+| **Video streaming** | ~$0.50/hour | Screen share at 1 FPS |
+| **Audio** | Included | No separate STT/TTS costs |
 
 ---
 
@@ -24,58 +33,40 @@ Validated through comprehensive test suite (`tests/test_integration.py`).
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
-- [Cost Optimization Deep Dive](#cost-optimization-deep-dive)
-- [Multi-Tenant Architecture](#multi-tenant-architecture)
-- [Knowledge Base (RAG)](#knowledge-base-rag)
-- [Testing](#testing)
-- [Deployment](#deployment)
 - [Configuration](#configuration)
-- [Monitoring & Observability](#monitoring--observability)
+- [Multi-Tenant Support](#multi-tenant-support)
+- [Knowledge Base (RAG)](#knowledge-base-rag)
+- [Legacy Architecture](#legacy-architecture)
 - [Troubleshooting](#troubleshooting)
-- [Project Structure](#project-structure)
-- [Performance Tuning](#performance-tuning)
 
 ---
 
 ## Features
 
-### 🧠 **Three-Tier AI Escalation** (Attempt-Based)
-- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash ($0.06/resolution)
-- **Attempt 2** (25% of resolutions): Gemini Flash + pHash ($0.08/resolution)
-- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash ($0.40/resolution)
-- **Philosophy**: "Upgrade the brain, not the eyes" - pHash optimization maintained across all attempts
-- **Worst-case**: All 3 attempts = $0.54/resolution (still under $0.70 overage price)
-- **Result**: 85% cost reduction through smart escalation + frame deduplication
+### 🎙️ **Native Gemini Live API**
+- **Model**: `gemini-2.0-flash-live-001` (stable production model)
+- **Voice**: Built-in Puck voice with natural intonation
+- **Latency**: Sub-500ms audio response time
+- **Interruption**: Natural conversation flow with built-in support
+- **Streaming**: Direct audio streaming to/from Gemini servers
 
-### 🖼️ **Intelligent Frame Deduplication**
-- **Perceptual Hashing**: pHash algorithm (imagehash library) with Hamming distance threshold
-- **Adaptive FPS**: 30 FPS (speaking) → 5 FPS (idle) dynamic switching
-- **60-75% Reduction**: Skip visually similar frames, process only meaningful changes
-- **Temporal Context**: Track last 5 unique frames for vision analysis
-
-### 📚 **Knowledge Base (RAG)**
-- **Hybrid Retrieval**: Semantic search (cosine) + keyword (BM25) + reranking
-- **Voyage AI Embeddings**: multimodal-3 model (1024 dimensions)
-- **PostgreSQL + pgvector**: Vector similarity with Row-Level Security (RLS)
-- **Redis Caching**: 24-hour TTL, 95% cache hit rate target
+### 📹 **Video Input Support**
+- **Screen Share**: Process user's screen at 1 FPS
+- **Configuration**: `RoomOptions(video_input=True)`
+- **Cost**: ~$0.50/hour for continuous screen sharing
+- **Use Cases**: Gaming assistance, document review, visual Q&A
 
 ### 🔐 **Multi-Tenant Architecture**
 - **PostgreSQL RLS**: Session-based tenant isolation (`app.current_tenant_id`)
-- **Room Naming**: `tenant_{tenantId}_{roomName}` convention
-- **Context Manager**: `acquire_tenant_connection()` for secure queries
-- **Tenant Config**: Per-tenant AI instructions, knowledge base, cost tracking
+- **Room Naming**: `tenant_{tenantId}_session_{sessionId}` convention
+- **Context Loading**: Per-session AI personality and conversation history
+- **Tenant Config**: Custom instructions, knowledge base access
 
-### 🚀 **Production-Ready Infrastructure**
-- **Docker**: Multi-stage build, non-root user, read-only filesystem (500MB image)
-- **Kubernetes**: HPA auto-scaling (3-20 replicas), RollingUpdate strategy
-- **Monitoring**: Prometheus metrics, Grafana dashboards, alerting
-- **Security**: Seccomp, capabilities drop, 1000:1000 UID/GID
-
-### 🎙️ **Real-Time Processing**
-- **Voice**: Deepgram Nova-2 STT + Cartesia Sonic TTS (cost-effective)
-- **Screen Share**: 1 FPS capture (96% cost reduction vs 30 FPS)
-- **Video**: Optional camera feed (disabled by default for cost)
-- **Chat**: Bidirectional text messaging
+### 📚 **Knowledge Base (RAG)**
+- **Backend Integration**: Fetch context via tRPC API
+- **Hybrid Retrieval**: Semantic + keyword search with reranking
+- **PostgreSQL + pgvector**: Vector similarity with RLS
+- **Context Injection**: Loaded into system instructions
 
 ---
 
@@ -84,10 +75,8 @@ Validated through comprehensive test suite (`tests/test_integration.py`).
 ### Prerequisites
 
 - Python 3.11+
-- PostgreSQL 16+ with pgvector extension
-- Redis 7.4.2+
-- LiveKit Cloud account
-- AI provider API keys (OpenAI, Anthropic, Google, Deepgram, ElevenLabs, Voyage AI)
+- LiveKit Cloud account (or self-hosted)
+- Google AI API key (for Gemini)
 
 ### Local Development
 
@@ -121,10 +110,15 @@ python agent.py dev
 
 **Expected Output**:
 ```
-INFO     | Connecting to LiveKit: wss://your-project.livekit.cloud
-INFO     | Worker started. Listening for rooms...
-INFO     | Connected to room: tenant_org_abc123_meeting-room
-INFO     | Processing tracks: audio=True, screen=True, camera=False
+INFO     livekit.agents   starting worker
+INFO     __mp_main__      Agent connecting to room: tenant_abc123_session_xyz
+INFO     __mp_main__      Creating Agent with Gemini Live API...
+INFO     __mp_main__      Model: gemini-2.0-flash-live-001
+INFO     __mp_main__      Voice: Puck
+INFO     __mp_main__      📹 Enabling video input (1 FPS, ~$0.50/hour screen sharing)
+INFO     __mp_main__      🎤 Audio streaming with <500ms latency expected
+INFO     __mp_main__      ✅ Session started - Gemini Live API active
+INFO     __mp_main__      🎬 Agent ready!
 ```
 
 ### Docker Deployment
@@ -176,6 +170,11 @@ kubectl apply -k k8s/
 ---
 
 ## Architecture
+
+> **📌 Note (2025-11-26)**: The current implementation uses native Gemini Live API (`agent.py`).
+> The architecture diagrams below document the **legacy three-tier routing system** which is
+> preserved in `_backup_*.py` files for reference. The legacy system offers more control over
+> model selection but requires manual STT→LLM→TTS orchestration.
 
 ### System Overview
 

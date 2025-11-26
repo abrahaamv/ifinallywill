@@ -100,25 +100,26 @@ pnpm clean                             # Clean build artifacts
 
 ### Python LiveKit Agent (Phase 5 - COMPLETE)
 
-**Status**: ✅ Production implementation complete (1000+ lines)
+**Status**: ✅ Native Gemini Live API integration (200 lines, 85% code reduction)
 
-**Three-Tier AI Escalation** (Attempt-Based):
-- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
-- **Attempt 2** (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
-- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
-- **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
-- **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
-- **Result**: 85% cost reduction through smart escalation + frame deduplication
+**Current Architecture: Gemini Live API** (2025-11-26):
+- **Model**: `gemini-2.0-flash-live-001` (stable Live API model)
+- **Voice**: Native Puck voice (no separate TTS)
+- **Audio**: Sub-500ms latency (vs 2-5s with manual STT→LLM→TTS)
+- **Video**: Screen share at 1 FPS via `RoomOptions(video_input=True)`
+- **Interruption**: Built-in support for natural conversation flow
 
-**Frame Deduplication**:
-- Perceptual hashing (pHash) with threshold=10
-- 1 FPS screen capture (96% cost reduction vs 30 FPS)
-- 60-75% frame reduction with pHash deduplication
+**Cost Breakdown**:
+- **Input tokens**: $0.075/1M tokens
+- **Output tokens**: $0.30/1M tokens
+- **Video streaming**: ~$0.50/hour for screen sharing
+- **Audio**: Native (no separate STT/TTS costs)
 
-**VisionAwareAgent Pattern**:
-- Extends LiveKit voice.Agent
-- Overrides llm_node() and tts_node() for vision context injection
-- Adds vision items to existing chat_ctx (critical pattern)
+**Key Benefits**:
+- 85% less code than manual STT→LLM→TTS pipeline
+- Direct audio streaming to/from Gemini servers
+- Built-in voice activity detection
+- Natural conversation with interruption support
 
 ```bash
 cd livekit-agent
@@ -132,13 +133,13 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with LiveKit and AI provider credentials
+# Edit .env with LiveKit and Google AI credentials
 
 # Run agent
-python agent.py
+python agent.py dev
 ```
 
-**Implementation Guide**: See `livekit-agent/README.md` (2365 lines) for complete production documentation
+**Legacy Architecture**: Backup files (`_backup_*.py`) contain the three-tier routing with pHash deduplication if manual control is needed.
 
 ## Architecture Highlights
 
@@ -181,27 +182,25 @@ platform/
 - Tenant wrapper or Nile integration mandatory for all queries
 - LiveKit room names encode tenant information
 
-**3. Cost-Optimized AI Routing (82-85% Combined Reduction)**
+**3. Cost-Optimized AI Architecture**
 
-**LiveKit Agent Three-Tier Escalation** (Attempt-Based):
-- **Attempt 1** (60% of resolutions): Gemini Flash-Lite 8B + pHash → $0.06/resolution
-- **Attempt 2** (25% of resolutions): Gemini Flash + pHash → $0.08/resolution
-- **Attempt 3** (15% of resolutions): Claude Sonnet 4.5 + pHash → $0.40/resolution
-- **Philosophy**: "Upgrade the brain, not the eyes" - pHash maintained across all attempts
-- **Worst-case**: All 3 attempts = $0.54/resolution (under $0.70 overage)
-- **Result**: 85% cost reduction through smart escalation + frame deduplication
+**LiveKit Agent - Gemini Live API** (Current):
+- **Model**: `gemini-2.0-flash-live-001` with native voice
+- **Input**: $0.075/1M tokens
+- **Output**: $0.30/1M tokens
+- **Video**: ~$0.50/hour for screen sharing (1 FPS)
+- **Audio**: Native streaming (no separate STT/TTS costs)
+- **Latency**: Sub-500ms (vs 2-5s with manual pipeline)
 
 **Dashboard Chat API Two-Tier Routing**:
 - **GPT-4o-mini**: Simple queries (70%, $0.15/1M tokens)
 - **GPT-4o**: Complex queries (30%, $5.00/1M tokens)
 - **Result**: 75% cost reduction for text
 
-**Frame Deduplication**:
-- **pHash Algorithm**: Perceptual hashing with Hamming distance threshold=10
-- **1 FPS Screen Capture**: 96% cost reduction vs 30 FPS
-- **Result**: 60-75% frame reduction with pHash deduplication
-
-**Combined Savings**: ~$1.1M/year at 1K users (82-85% total reduction)
+**Legacy Three-Tier Routing** (Available in `_backup_*.py`):
+- Three-tier escalation: Gemini Flash-Lite → Flash → Claude Sonnet
+- pHash frame deduplication (60-75% reduction)
+- Use if manual control over model selection is needed
 
 **4. Real-time Communication Stack**
 - **WebSocket**: Bidirectional chat messages via `packages/realtime`
