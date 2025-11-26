@@ -52,15 +52,25 @@ class Settings(BaseSettings):
     max_concurrent_rooms: int = 15
 
     # Frame Processing
-    frame_similarity_threshold: int = 10
+    # pHash threshold: Higher = more frames processed, Lower = more deduplication
+    # 10 was too aggressive (missed tab switches), 25 is more lenient
+    frame_similarity_threshold: int = 25
     active_fps: float = 30.0
-    idle_fps: float = 5.0
+    # Increased idle_fps from 5 to 10 for better responsiveness
+    idle_fps: float = 10.0
 
     # Vision
     proactive_vision_analysis: bool = True  # Enable screen share vision analysis
     frame_resize_width: int = 1024
     frame_resize_height: int = 1024
     frame_jpeg_quality: int = 85
+
+    # Real-time Vision Mode (for gaming, chess, live assistance)
+    # When enabled, captures frames more frequently for faster response
+    realtime_vision_mode: bool = True  # HARDCODED for testing
+    realtime_capture_interval: float = 1.0  # Capture every 1s in realtime mode (0.5s causes API rate limits)
+    normal_capture_interval: float = 2.0  # Capture every 2s in normal mode
+    vision_on_speech: bool = True  # Capture fresh frame when user speaks
 
     # Cost Optimization
     enable_prompt_caching: bool = True
@@ -73,6 +83,14 @@ settings = Settings()
 
 
 @dataclass
+class ConversationMessage:
+    """A single message from conversation history"""
+    role: str
+    content: str
+    timestamp: Optional[str] = None
+
+
+@dataclass
 class TenantConfig:
     """Per-tenant configuration loaded from backend API"""
 
@@ -81,6 +99,13 @@ class TenantConfig:
     # Agent Personality
     system_prompt: Optional[str] = None
     greeting_message: Optional[str] = None
+
+    # Session Context (for video transitions)
+    session_id: Optional[str] = None
+    conversation_history: list[ConversationMessage] = field(default_factory=list)
+    personality_id: Optional[str] = None
+    personality_name: Optional[str] = None
+    preferred_model: Optional[str] = None
 
     # TTS Settings (Cartesia defaults)
     tts_voice_id: str = "a0e99841-438c-4a64-b679-ae501e7d6091"  # Barbershop Man (American)
@@ -105,6 +130,10 @@ class TenantConfig:
     max_cost_per_session: float = 10.0
     cost_alert_threshold: float = 8.0
 
+    # Model settings from personality
+    temperature: float = 0.7
+    max_tokens: int = 2048
+
 
 class Config:
     """Configuration manager with backend integration"""
@@ -125,7 +154,7 @@ class Config:
         try:
             with httpx.Client(timeout=5.0) as client:
                 response = client.get(
-                    f"{settings.backend_url}/api/trpc/tenants.getAgentConfig",
+                    f"{settings.backend_url}/trpc/tenants.getAgentConfig",
                     params={"input": {"json": {"tenantId": tenant_id}}},
                     headers={
                         "Authorization": f"Bearer {settings.backend_api_key}",
@@ -171,7 +200,7 @@ class Config:
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(
-                    f"{settings.backend_url}/api/trpc/tenants.getAgentConfig",
+                    f"{settings.backend_url}/trpc/tenants.getAgentConfig",
                     params={"input": {"json": {"tenantId": tenant_id}}},
                     headers={
                         "Authorization": f"Bearer {settings.backend_api_key}",
@@ -213,6 +242,87 @@ class Config:
         else:
             cls._cache.clear()
 
+    @classmethod
+    async def load_for_session(cls, session_id: str) -> TenantConfig:
+        """
+        Load configuration from backend API using session context.
+
+        This method is used when transitioning from chat to video mode,
+        where we need to load the session's AI personality and conversation history.
+
+        The backend endpoint returns:
+        - tenantId: The tenant owning this session
+        - personality: AI personality settings (systemPrompt, temperature, etc.)
+        - conversationHistory: Prior messages for context continuity
+        """
+        try:
+            import json
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    f"{settings.backend_url}/trpc/sessions.getAgentContext",
+                    params={"input": json.dumps({"sessionId": session_id})},
+                    headers={
+                        "Authorization": f"Bearer {settings.backend_api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    result = data.get("result", {}).get("data", {})
+
+                    if result:
+                        tenant_id = result.get("tenantId", "unknown")
+                        personality = result.get("personality") or {}
+                        history = result.get("conversationHistory", [])
+
+                        # Convert conversation history
+                        conversation_history = [
+                            ConversationMessage(
+                                role=msg.get("role", "user"),
+                                content=msg.get("content", ""),
+                                timestamp=msg.get("timestamp")
+                            )
+                            for msg in history
+                        ]
+
+                        config = TenantConfig(
+                            tenant_id=tenant_id,
+                            session_id=session_id,
+                            system_prompt=personality.get("systemPrompt"),
+                            personality_id=personality.get("id"),
+                            personality_name=personality.get("name"),
+                            temperature=personality.get("temperature", 0.7),
+                            max_tokens=personality.get("maxTokens") or 2048,
+                            preferred_model=personality.get("preferredModel"),
+                            conversation_history=conversation_history,
+                            enable_vision=True,
+                            enable_knowledge_base=True,
+                        )
+
+                        logger.info(
+                            f"Loaded session config for {session_id}: "
+                            f"tenant={tenant_id}, personality={personality.get('name')}, "
+                            f"history_messages={len(conversation_history)}"
+                        )
+                        return config
+
+                else:
+                    logger.warning(
+                        f"Failed to fetch session config: status={response.status_code}"
+                    )
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch session config from backend: {e}")
+
+        # Fallback to default config with session_id
+        logger.info(f"Using fallback config for session {session_id}")
+        return TenantConfig(
+            tenant_id="unknown",
+            session_id=session_id,
+            system_prompt="You are a helpful AI assistant. Continue the conversation naturally."
+        )
+
 
 # Export commonly used items
-__all__ = ["settings", "Config", "TenantConfig"]
+__all__ = ["settings", "Config", "TenantConfig", "ConversationMessage"]
