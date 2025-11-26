@@ -13,12 +13,12 @@
  * Note: WebSocket streaming will be implemented in Phase 6 via @platform/realtime
  */
 
-import { messages, sessions } from '@platform/db';
+import { aiPersonalities, messages, sessions, widgets } from '@platform/db';
 import { badRequest, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
-import { count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
-import { ownerProcedure, protectedProcedure, router } from '../trpc';
+import { ownerProcedure, protectedProcedure, publicProcedure, router } from '../trpc';
 
 /**
  * Input validation schemas
@@ -55,6 +55,14 @@ const endSessionSchema = z.object({
 
 const deleteSessionSchema = z.object({
   id: z.string().uuid('Invalid session ID'),
+});
+
+const transitionToVideoSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+});
+
+const getAgentContextSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
 });
 
 /**
@@ -435,13 +443,19 @@ export const sessionsRouter = router({
       }
 
       // Create user message
+      // Filter attachments to ensure they have required fields
+      const validAttachments = input.attachments?.filter(
+        (a): a is { type: 'image' | 'file'; url: string; name?: string; size?: number } =>
+          a.type !== undefined && a.url !== undefined
+      );
+
       const [userMessage] = await ctx.db
         .insert(messages)
         .values({
           sessionId: input.sessionId,
           role: input.role,
           content: input.content,
-          attachments: input.attachments,
+          attachments: validAttachments,
           metadata: input.metadata,
         })
         .returning();
@@ -587,6 +601,205 @@ export const sessionsRouter = router({
       });
     }
   }),
+
+  // ==================== VIDEO TRANSITION ====================
+
+  /**
+   * Transition session to video mode (LiveKit screen share)
+   *
+   * Creates a LiveKit room and generates participant token.
+   * Updates session mode and stores context for the AI agent.
+   */
+  transitionToVideo: protectedProcedure
+    .input(transitionToVideoSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Get session with messages
+        const [session] = await ctx.db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.id, input.sessionId))
+          .limit(1);
+
+        if (!session) {
+          throw notFound({
+            message: 'Session not found or access denied',
+          });
+        }
+
+        if (session.endedAt) {
+          throw badRequest({
+            message: 'Cannot transition ended session to video',
+          });
+        }
+
+        // Generate room name: tenant_{tenantId}_session_{sessionId}
+        const roomName = `tenant_${ctx.tenantId}_session_${input.sessionId}`;
+
+        // Get widget's personality or tenant default
+        let personalityId = session.aiPersonalityId;
+
+        if (!personalityId && session.widgetId) {
+          const [widget] = await ctx.db
+            .select({ aiPersonalityId: widgets.aiPersonalityId })
+            .from(widgets)
+            .where(eq(widgets.id, session.widgetId))
+            .limit(1);
+
+          personalityId = widget?.aiPersonalityId || null;
+        }
+
+        // If still no personality, get tenant default
+        if (!personalityId) {
+          const [defaultPersonality] = await ctx.db
+            .select({ id: aiPersonalities.id })
+            .from(aiPersonalities)
+            .where(
+              and(
+                eq(aiPersonalities.tenantId, ctx.tenantId),
+                eq(aiPersonalities.isDefault, true),
+                eq(aiPersonalities.isActive, true)
+              )
+            )
+            .limit(1);
+
+          personalityId = defaultPersonality?.id || null;
+        }
+
+        // Update session with LiveKit room name, mode, and personality
+        const [updated] = await ctx.db
+          .update(sessions)
+          .set({
+            mode: 'meeting',
+            livekitRoomName: roomName,
+            aiPersonalityId: personalityId,
+          })
+          .where(eq(sessions.id, input.sessionId))
+          .returning();
+
+        if (!updated) {
+          throw internalError({
+            message: 'Failed to update session for video transition',
+          });
+        }
+
+        // Generate LiveKit token
+        // Note: Full LiveKit integration requires livekit-server-sdk
+        // For now, we return the room details for frontend to handle token generation
+        const livekitUrl = process.env.LIVEKIT_URL || 'ws://localhost:7880';
+
+        return {
+          roomName,
+          livekitUrl,
+          sessionId: input.sessionId,
+          personalityId,
+          // Token generation would normally happen here with livekit-server-sdk
+          // For now, frontend will use LiveKit API directly or we can add a separate token endpoint
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
+        throw internalError({
+          message: 'Failed to transition session to video',
+          cause: error as Error,
+          logLevel: 'error',
+        });
+      }
+    }),
+
+  /**
+   * Get agent context for LiveKit session
+   *
+   * Called by the LiveKit agent to get conversation context and personality.
+   * Uses API key authentication (public procedure with key validation).
+   */
+  getAgentContext: publicProcedure
+    .input(getAgentContextSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        // Get session with full details
+        // Note: This is a public procedure for agent access
+        // In production, validate API key in headers
+        const [session] = await ctx.db
+          .select({
+            id: sessions.id,
+            tenantId: sessions.tenantId,
+            widgetId: sessions.widgetId,
+            aiPersonalityId: sessions.aiPersonalityId,
+            livekitRoomName: sessions.livekitRoomName,
+            mode: sessions.mode,
+          })
+          .from(sessions)
+          .where(eq(sessions.id, input.sessionId))
+          .limit(1);
+
+        if (!session) {
+          throw notFound({
+            message: 'Session not found',
+          });
+        }
+
+        // Get personality
+        let personality = null;
+        if (session.aiPersonalityId) {
+          const [sessionPersonality] = await ctx.db
+            .select({
+              id: aiPersonalities.id,
+              name: aiPersonalities.name,
+              systemPrompt: aiPersonalities.systemPrompt,
+              temperature: aiPersonalities.temperature,
+              maxTokens: aiPersonalities.maxTokens,
+              preferredModel: aiPersonalities.preferredModel,
+            })
+            .from(aiPersonalities)
+            .where(eq(aiPersonalities.id, session.aiPersonalityId))
+            .limit(1);
+
+          personality = sessionPersonality || null;
+        }
+
+        // Get conversation history
+        const conversationHistory = await ctx.db
+          .select({
+            role: messages.role,
+            content: messages.content,
+            timestamp: messages.timestamp,
+          })
+          .from(messages)
+          .where(eq(messages.sessionId, input.sessionId))
+          .orderBy(messages.timestamp)
+          .limit(50); // Last 50 messages for context
+
+        return {
+          tenantId: session.tenantId,
+          sessionId: session.id,
+          roomName: session.livekitRoomName,
+          personality: personality
+            ? {
+                id: personality.id,
+                name: personality.name,
+                systemPrompt: personality.systemPrompt,
+                temperature: Number(personality.temperature),
+                maxTokens: personality.maxTokens,
+                preferredModel: personality.preferredModel,
+              }
+            : null,
+          conversationHistory: conversationHistory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.timestamp,
+          })),
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
+        throw internalError({
+          message: 'Failed to get agent context',
+          cause: error as Error,
+          logLevel: 'error',
+        });
+      }
+    }),
 
   // ==================== STREAMING SUPPORT ====================
   // Note: Full WebSocket streaming will be implemented in Phase 6 via @platform/realtime

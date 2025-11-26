@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "22.10.5",
+    "@types/nodemailer": "^7.0.4",
     "@vitest/coverage-v8": "4.0.8",
     "dotenv": "16.4.7",
     "typescript": "5.7.2",

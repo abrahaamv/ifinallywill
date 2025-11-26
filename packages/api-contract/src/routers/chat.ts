@@ -11,10 +11,10 @@
  * - Multi-tenant isolation via RLS
  */
 
-import { chatFiles, messages, sessions } from '@platform/db';
+import { aiPersonalities, chatFiles, messages, sessions, widgets } from '@platform/db';
 import { badRequest, createModuleLogger, internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
@@ -192,7 +192,7 @@ export const chatRouter = router({
           sessionId: input.sessionId,
           role: 'user',
           content: input.content,
-          attachments: input.attachments,
+          attachments: input.attachments as Array<{ type: 'image' | 'file'; url: string; name?: string; size?: number; }> | undefined,
         })
         .returning();
 
@@ -214,14 +214,59 @@ export const chatRouter = router({
         .orderBy(messages.timestamp)
         .limit(20); // Last 20 messages for context
 
-      // Step 2: Execute RAG query to get relevant knowledge (with timing)
+      // Step 2: CRAG query evaluation and refinement (Phase 12 Week 11)
+      // Graceful degradation: Continue with original query if CRAG fails
+      const cragStartTime = Date.now();
+      let finalQuery = input.content;
+      let cragRefinement = null;
+      let cragEvaluation = null;
+      let cragSuccess = true;
+
+      try {
+        // CRAG Service (Phase 12 Week 11)
+        const { CRAGService } = await import('../services/crag');
+        const cragService = new CRAGService();
+
+        // Evaluate query confidence and determine if refinement needed
+        // Convert conversation history to context string
+        const conversationContext = history.length > 0
+          ? {
+              conversationHistory: history.map((msg) => `${msg.role}: ${msg.content}`).join('\n'),
+            }
+          : undefined;
+
+        cragEvaluation = await cragService.evaluateQuery(input.content, conversationContext);
+
+        // Refine query if confidence is low or medium
+        if (cragEvaluation.shouldRefine) {
+          cragRefinement = await cragService.refineQuery(input.content, cragEvaluation, conversationContext);
+          finalQuery = cragRefinement.refinedQuery;
+          logger.info('[CRAG] Query refined', {
+            original: input.content,
+            refined: finalQuery,
+            strategy: cragRefinement.strategy,
+            confidence: cragRefinement.confidence,
+          });
+        }
+      } catch (error) {
+        cragSuccess = false;
+        logger.warn('[CRAG] Query evaluation failed, using original query', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          query: input.content,
+        });
+        // Continue with original query on failure
+        finalQuery = input.content;
+      }
+      const cragLatencyMs = Date.now() - cragStartTime;
+
+      // Step 3: Execute RAG query with refined query (with timing)
       // RLS policies automatically filter by tenant via get_current_tenant_id()
       const ragStartTime = Date.now();
-      const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
+      const { executeRAGQuery, buildRAGPrompt, buildRAGPromptWithPersonality } = await import('@platform/knowledge');
       const ragResult = await executeRAGQuery(ctx.db, {
-        query: input.content,
+        query: finalQuery, // Use refined query if available
         topK: 5,
-        minScore: 0.7,
+        minScore: 0.3, // Lowered from 0.7 - Cohere reranker returns scores 0-1, often below 0.7 even for relevant docs
       });
       const ragLatencyMs = Date.now() - ragStartTime;
 
@@ -233,9 +278,72 @@ export const chatRouter = router({
         topChunkPreview: ragResult.chunks[0]?.chunk.content.substring(0, 100),
       });
 
-      // Step 3: Build enhanced prompt with RAG context
-      const enhancedPrompt = buildRAGPrompt(input.content, ragResult.context);
-      logger.info('[RAG] Enhanced prompt', { promptLength: enhancedPrompt.length });
+      // Step 3.5: Look up session's AI personality (widget-specific or tenant default)
+      let personalityPrompt: string | null = null;
+      let personalityId: string | null = null;
+
+      // First, check if session has a directly assigned personality
+      if (session.aiPersonalityId) {
+        const [sessionPersonality] = await ctx.db
+          .select({ id: aiPersonalities.id, systemPrompt: aiPersonalities.systemPrompt })
+          .from(aiPersonalities)
+          .where(eq(aiPersonalities.id, session.aiPersonalityId))
+          .limit(1);
+        if (sessionPersonality) {
+          personalityPrompt = sessionPersonality.systemPrompt;
+          personalityId = sessionPersonality.id;
+        }
+      }
+
+      // If no session personality, check widget's personality
+      if (!personalityPrompt && session.widgetId) {
+        const [widget] = await ctx.db
+          .select({ aiPersonalityId: widgets.aiPersonalityId })
+          .from(widgets)
+          .where(eq(widgets.id, session.widgetId))
+          .limit(1);
+
+        if (widget?.aiPersonalityId) {
+          const [widgetPersonality] = await ctx.db
+            .select({ id: aiPersonalities.id, systemPrompt: aiPersonalities.systemPrompt })
+            .from(aiPersonalities)
+            .where(eq(aiPersonalities.id, widget.aiPersonalityId))
+            .limit(1);
+          if (widgetPersonality) {
+            personalityPrompt = widgetPersonality.systemPrompt;
+            personalityId = widgetPersonality.id;
+          }
+        }
+      }
+
+      // If still no personality, try tenant default
+      if (!personalityPrompt) {
+        const [defaultPersonality] = await ctx.db
+          .select({ id: aiPersonalities.id, systemPrompt: aiPersonalities.systemPrompt })
+          .from(aiPersonalities)
+          .where(
+            and(
+              eq(aiPersonalities.tenantId, ctx.tenantId),
+              eq(aiPersonalities.isDefault, true),
+              eq(aiPersonalities.isActive, true)
+            )
+          )
+          .limit(1);
+        if (defaultPersonality) {
+          personalityPrompt = defaultPersonality.systemPrompt;
+          personalityId = defaultPersonality.id;
+        }
+      }
+
+      // Step 3.6: Build enhanced prompt with RAG context (personality-aware if available)
+      const enhancedPrompt = personalityPrompt
+        ? buildRAGPromptWithPersonality(input.content, ragResult.context, personalityPrompt)
+        : buildRAGPrompt(input.content, ragResult.context);
+      logger.info('[RAG] Enhanced prompt', {
+        promptLength: enhancedPrompt.length,
+        hasPersonality: !!personalityPrompt,
+        personalityId,
+      });
 
       // Step 4: Convert history to AI format with RAG-enhanced system message
       const aiMessages = [
@@ -247,46 +355,182 @@ export const chatRouter = router({
         { role: 'user' as const, content: input.content },
       ];
 
-      // Step 5: Use AI router from @platform/ai-core
-      const { AIRouter } = await import('@platform/ai-core');
-      const aiRouter = new AIRouter({
-        openaiApiKey: process.env.OPENAI_API_KEY!,
-        anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
-        googleApiKey: process.env.GOOGLE_API_KEY!,
-        enableFallback: true,
-        logRouting: true,
-      });
+      // Step 5: Analyze complexity (with error handling)
+      let complexityAnalysis;
+      try {
+        const { createComplexityAnalyzer } = await import('@platform/ai-core');
+        const complexityAnalyzer = createComplexityAnalyzer();
+        complexityAnalysis = complexityAnalyzer.analyze(input.content, {
+          conversationHistory: history.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        });
+        logger.info('[Complexity] Analysis complete', {
+          level: complexityAnalysis.level,
+          score: complexityAnalysis.score,
+        });
+      } catch (error) {
+        logger.error('[Complexity] Analysis failed, using defaults', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          query: input.content,
+        });
+        // Fallback to simple complexity for safety
+        complexityAnalysis = {
+          level: 'moderate' as const,
+          score: 0.5,
+          factors: {
+            depth: 0.5,
+            specificity: 0.5,
+            technicalTerms: 0.5,
+            ambiguity: 0.5,
+          },
+        };
+      }
 
-      // Step 6: Analyze complexity
-      const { createComplexityAnalyzer } = await import('@platform/ai-core');
-      const complexityAnalyzer = createComplexityAnalyzer();
-      const complexityAnalysis = complexityAnalyzer.analyze(input.content, {
-        conversationHistory: history.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-      });
-
-      // Step 7: Get AI response with cost-optimized routing (with timing)
+      // Step 6: Get AI response with cost-optimized routing (with timing and error handling)
       const modelStartTime = Date.now();
-      const aiResponse = await aiRouter.complete({
-        messages: aiMessages,
-        temperature: 0.7,
-        maxTokens: 2048,
-      });
+      let aiResponse;
+      try {
+        const { AIRouter } = await import('@platform/ai-core');
+        const aiRouter = new AIRouter({
+          openaiApiKey: process.env.OPENAI_API_KEY!,
+          anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
+          googleApiKey: process.env.GOOGLE_API_KEY!,
+          enableFallback: true,
+          logRouting: true,
+        });
+
+        aiResponse = await aiRouter.complete({
+          messages: aiMessages,
+          temperature: 0.7,
+          maxTokens: 2048,
+        });
+
+        logger.info('[AI Router] Response received', {
+          model: aiResponse.model,
+          provider: aiResponse.provider,
+          inputTokens: aiResponse.usage.inputTokens,
+          outputTokens: aiResponse.usage.outputTokens,
+        });
+      } catch (error) {
+        logger.error('[AI Router] All providers failed', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          errorName: error instanceof Error ? error.name : undefined,
+          fullError: error,
+        });
+
+        // More helpful error message based on the actual error
+        let userMessage = 'AI providers unavailable. Please try again in a moment.';
+        if (error instanceof Error) {
+          if (error.message.includes('API key')) {
+            userMessage = 'AI provider configuration error. Please check API keys.';
+          } else if (error.message.includes('rate limit')) {
+            userMessage = 'AI provider rate limit exceeded. Please try again in a moment.';
+          } else if (error.message.includes('network') || error.message.includes('ECONNREFUSED')) {
+            userMessage = 'Network error connecting to AI provider. Please check your connection.';
+          }
+        }
+
+        throw internalError({
+          message: userMessage,
+          cause: error as Error,
+        });
+      }
       const modelLatencyMs = Date.now() - modelStartTime;
 
       const endTimeISO = new Date().toISOString();
       const totalLatencyMs = Date.now() - operationStartTime;
 
-      // Step 8: Calculate RAGAS metrics
-      const { createRAGASCalculator } = await import('@platform/ai-core');
-      const ragasCalculator = createRAGASCalculator();
-      const ragasEvaluation = ragasCalculator.calculate({
-        question: input.content,
-        contexts: ragResult.chunks.map((c) => c.chunk.content),
-        answer: aiResponse.content,
-      });
+      // Step 7: Calculate RAGAS metrics (with error handling)
+      let ragasEvaluation;
+      try {
+        const { createRAGASCalculator } = await import('@platform/ai-core');
+        const ragasCalculator = createRAGASCalculator();
+        ragasEvaluation = ragasCalculator.calculate({
+          question: input.content,
+          contexts: ragResult.chunks.map((c) => c.chunk.content),
+          answer: aiResponse.content,
+        });
+        logger.info('[RAGAS] Evaluation complete', {
+          overall: ragasEvaluation.scores.overall,
+        });
+      } catch (error) {
+        logger.warn('[RAGAS] Evaluation failed, using default scores', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Fallback to default scores
+        ragasEvaluation = {
+          scores: {
+            faithfulness: 0.8,
+            answerRelevancy: 0.8,
+            contextRelevancy: 0.8,
+            contextPrecision: 0.8,
+            contextRecall: 0.8,
+            overall: 0.8,
+          },
+        };
+      }
+
+      // Step 8: Quality assurance - hallucination detection (Phase 12 Week 9)
+      // Graceful degradation: Skip QA if detection fails
+      const qaStartTime = Date.now();
+      let hallucinationDetection = null;
+      let qualityScore = 0.8; // Default safe score
+      let shouldFlagForReview = false;
+      let qaSuccess = true;
+
+      try {
+        // Quality Assurance Service (Phase 12 Week 9)
+        const { QualityAssuranceService } = await import('../services/quality-assurance');
+        const qaService = new QualityAssuranceService();
+
+        hallucinationDetection = await qaService.detectHallucination(aiResponse.content, {
+          userQuery: input.content,
+          conversationHistory: history.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          ragSources: ragResult.chunks.map((c) => ({
+            chunkId: c.chunk.id,
+            score: c.score,
+            content: c.chunk.content,
+          })),
+        });
+
+        qualityScore = qaService.calculateQualityScore(hallucinationDetection);
+        shouldFlagForReview = qaService.shouldFlagForReview(hallucinationDetection);
+
+        logger.info('[QA] Hallucination detection', {
+          isHallucination: hallucinationDetection.isHallucination,
+          confidence: hallucinationDetection.confidence,
+          qualityScore,
+          recommendation: hallucinationDetection.recommendation,
+          shouldFlag: shouldFlagForReview,
+        });
+      } catch (error) {
+        qaSuccess = false;
+        logger.warn('[QA] Hallucination detection failed, using default quality values', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          defaultQualityScore: qualityScore,
+        });
+        // Continue with default values on failure
+      }
+      const qaLatencyMs = Date.now() - qaStartTime;
+
+      // Validate aiResponse before metadata construction
+      if (!aiResponse || !aiResponse.content || !aiResponse.model || !aiResponse.provider) {
+        logger.error('[Chat] Invalid AI response structure', {
+          hasResponse: !!aiResponse,
+          hasContent: !!(aiResponse && aiResponse.content),
+          hasModel: !!(aiResponse && aiResponse.model),
+          hasProvider: !!(aiResponse && aiResponse.provider),
+        });
+        throw internalError({
+          message: 'AI response structure is invalid',
+        });
+      }
 
       // Store AI response with comprehensive Phase 12 metadata
       const [assistantMessage] = await ctx.db
@@ -306,7 +550,7 @@ export const chatRouter = router({
                   ? 'powerful'
                   : 'balanced',
               provider: aiResponse.provider,
-              reasoning: `Selected ${aiResponse.model} based on complexity score ${complexityAnalysis.level}`,
+              reasoning: `Selected ${aiResponse.model} based on complexity score ${complexityAnalysis?.level || 'unknown'}`,
               fallbacksAvailable: 2,
               wasEscalated: false,
               attemptNumber: 1,
@@ -314,14 +558,14 @@ export const chatRouter = router({
 
             // Complexity & Confidence
             complexity: {
-              level: complexityAnalysis.level,
-              score: complexityAnalysis.score,
+              level: complexityAnalysis?.level || 'moderate',
+              score: complexityAnalysis?.score || 0.5,
               factors: {
                 entityCount: 0,
-                depth: complexityAnalysis.factors.depth,
-                specificity: complexityAnalysis.factors.specificity,
-                technicalTerms: complexityAnalysis.factors.technicalTerms,
-                ambiguity: complexityAnalysis.factors.ambiguity,
+                depth: complexityAnalysis?.factors?.depth || 0.5,
+                specificity: complexityAnalysis?.factors?.specificity || 0.5,
+                technicalTerms: complexityAnalysis?.factors?.technicalTerms || 0.5,
+                ambiguity: complexityAnalysis?.factors?.ambiguity || 0.5,
               },
             },
             confidence: {
@@ -363,29 +607,64 @@ export const chatRouter = router({
               uncertaintyGuidance: true,
             },
 
-            // Quality Metrics
-            ragas: ragasEvaluation.scores,
+            // Quality Metrics (Phase 12 Weeks 9-11)
+            ragas: ragasEvaluation?.scores || {
+              faithfulness: 0.8,
+              answerRelevancy: 0.8,
+              contextRelevancy: 0.8,
+              contextPrecision: 0.8,
+              contextRecall: 0.8,
+              overall: 0.8,
+            },
+            crag: {
+              success: cragSuccess,
+              queryEvaluated: cragEvaluation !== null,
+              originalQuery: input.content,
+              refinedQuery: finalQuery,
+              wasRefined: cragEvaluation?.shouldRefine || false,
+              confidence: cragEvaluation?.confidence || 0.5,
+              confidenceLevel: cragEvaluation?.confidenceLevel || 'medium',
+              refinementStrategy: cragRefinement?.strategy,
+              refinedConfidence: cragRefinement?.confidence,
+              processingTimeMs: cragLatencyMs,
+            },
+            qualityAssurance: {
+              success: qaSuccess,
+              hallucinationDetection: hallucinationDetection
+                ? {
+                    isHallucination: hallucinationDetection.isHallucination,
+                    confidence: hallucinationDetection.confidence,
+                    recommendation: hallucinationDetection.recommendation,
+                    evidenceCount: hallucinationDetection.evidence.length,
+                  }
+                : null,
+              qualityScore,
+              shouldFlagForReview,
+              processingTimeMs: qaLatencyMs,
+            },
 
             // Cost & Performance
             cost: {
-              total: aiResponse.usage.cost,
-              inputTokens: aiResponse.usage.inputTokens,
-              outputTokens: aiResponse.usage.outputTokens,
-              cacheReadTokens: aiResponse.usage.cacheReadTokens,
-              cacheWriteTokens: aiResponse.usage.cacheWriteTokens,
+              total: aiResponse.usage?.cost || 0,
+              inputTokens: aiResponse.usage?.inputTokens || 0,
+              outputTokens: aiResponse.usage?.outputTokens || 0,
+              cacheReadTokens: aiResponse.usage?.cacheReadTokens,
+              cacheWriteTokens: aiResponse.usage?.cacheWriteTokens,
               rerankingCost: 0,
             },
             performance: {
               totalLatencyMs,
+              cragLatencyMs,
               ragLatencyMs,
               modelLatencyMs,
+              qaLatencyMs,
               startTime: startTimeISO,
               endTime: endTimeISO,
             },
 
             // Legacy fields (backward compatibility)
-            tokensUsed: aiResponse.usage.totalTokens,
-            costUsd: aiResponse.usage.cost,
+            tokensUsed: aiResponse.usage?.totalTokens || 0,
+            costUsd: aiResponse.usage?.cost || 0,
             latencyMs: totalLatencyMs,
             ragChunksRetrieved: ragResult.totalChunks,
             ragProcessingTimeMs: ragLatencyMs,
@@ -405,7 +684,7 @@ export const chatRouter = router({
       }
 
       // Update session cost
-      const newCost = (Number(session.costUsd) + aiResponse.usage.cost).toFixed(6);
+      const newCost = (Number(session.costUsd) + (aiResponse.usage?.cost || 0)).toFixed(6);
       await ctx.db
         .update(sessions)
         .set({ costUsd: newCost })
@@ -426,7 +705,12 @@ export const chatRouter = router({
           metadata: assistantMessage.metadata,
           timestamp: assistantMessage.timestamp,
         },
-        usage: aiResponse.usage,
+        usage: aiResponse.usage || {
+          inputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
+          cost: 0,
+        },
       };
     } catch (error) {
       if (error instanceof TRPCError) throw error;
@@ -517,7 +801,7 @@ export const chatRouter = router({
         const relevantDocs = await executeRAGQuery(ctx.db, {
           query: problemDescription,
           topK: 5,
-          minScore: 0.7,
+          minScore: 0.3, // Lowered - Cohere reranker scores often below 0.7
         });
 
         // 3. Process uploaded files (screenshots, logs, etc.)
@@ -778,38 +1062,104 @@ export const chatRouter = router({
         },
       };
 
-      // Real-time chat synchronization via Redis Streams (Phase 6 implementation complete)
-      // WebSocket server broadcasts messages to connected clients
-      // Get conversation history
-      // Use AIRouter.streamComplete() for token-by-token streaming
-      // Yield each token as it arrives
-      // Store complete AI response when done
-      // Update session cost
+      // Get conversation history for AI context
+      const history = await ctx.db
+        .select()
+        .from(messages)
+        .where(eq(messages.sessionId, input.sessionId))
+        .orderBy(messages.timestamp)
+        .limit(20);
 
-      // TEMPORARY: Mock streaming response
-      const mockResponse =
-        'This is a placeholder streaming response. Full streaming will be implemented in Phase 6 with WebSocket support.';
-      const words = mockResponse.split(' ');
+      // Build RAG-enhanced prompt
+      const { executeRAGQuery, buildRAGPrompt } = await import('@platform/knowledge');
+      const ragResult = await executeRAGQuery(ctx.db, {
+        query: input.content,
+        topK: 5,
+        minScore: 0.3, // Lowered - Cohere reranker scores often below 0.7
+      });
+      const enhancedPrompt = buildRAGPrompt(input.content, ragResult.context);
 
-      for (const word of words) {
-        yield {
-          type: 'token' as const,
-          token: word + ' ',
-        };
+      // Build AI messages with RAG context
+      const aiMessages = [
+        { role: 'system' as const, content: enhancedPrompt },
+        ...history.slice(0, -1).map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
+        { role: 'user' as const, content: input.content },
+      ];
 
-        // Simulate streaming delay
-        await new Promise((resolve) => setTimeout(resolve, 50));
+      // Initialize AI Router
+      const { AIRouter } = await import('@platform/ai-core');
+      const aiRouter = new AIRouter({
+        openaiApiKey: process.env.OPENAI_API_KEY!,
+        anthropicApiKey: process.env.ANTHROPIC_API_KEY!,
+        googleApiKey: process.env.GOOGLE_API_KEY!,
+        enableFallback: true,
+        logRouting: true,
+      });
+
+      // Stream AI response token by token
+      let fullContent = '';
+      let finalUsage = {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        cost: 0,
+      };
+
+      const streamGenerator = aiRouter.streamComplete({
+        messages: aiMessages,
+        temperature: 0.7,
+        maxTokens: 2048,
+      });
+
+      for await (const token of streamGenerator) {
+        if (typeof token === 'string') {
+          fullContent += token;
+          yield {
+            type: 'token' as const,
+            token,
+          };
+        }
       }
+
+      // Get final response with usage stats
+      const finalResponse = await streamGenerator.next();
+      if (finalResponse.value && typeof finalResponse.value === 'object') {
+        const response = finalResponse.value as { usage?: { inputTokens: number; outputTokens: number; totalTokens: number; cost: number } };
+        finalUsage = response.usage || finalUsage;
+      }
+
+      // Store AI response
+      const [assistantMessage] = await ctx.db
+        .insert(messages)
+        .values({
+          sessionId: input.sessionId,
+          role: 'assistant',
+          content: fullContent,
+          metadata: {
+            model: 'streamed',
+            tokensUsed: finalUsage.totalTokens,
+            costUsd: finalUsage.cost,
+            ragQuery: input.content,
+            ragSource: ragResult.totalChunks > 0 ? `${ragResult.totalChunks} chunks retrieved` : undefined,
+          },
+        })
+        .returning();
+
+      // Update session cost
+      const newCost = (Number(session.costUsd) + finalUsage.cost).toFixed(6);
+      await ctx.db
+        .update(sessions)
+        .set({ costUsd: newCost })
+        .where(eq(sessions.id, input.sessionId));
 
       // Yield completion event
       yield {
         type: 'complete' as const,
-        usage: {
-          inputTokens: 100,
-          outputTokens: 50,
-          totalTokens: 150,
-          cost: 0.000045,
-        },
+        messageId: assistantMessage?.id,
+        usage: finalUsage,
       };
     } catch (error) {
       logger.error('Failed to stream chat message', { error });

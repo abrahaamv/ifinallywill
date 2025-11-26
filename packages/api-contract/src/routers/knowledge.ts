@@ -114,6 +114,32 @@ const uploadDocumentSchema = z.object({
 });
 
 /**
+ * Priority 2: Batch file upload schema for multiple files
+ */
+const uploadBatchSchema = z.object({
+  files: z
+    .array(
+      z.object({
+        title: z.string().min(1, 'Title is required').max(500, 'Title too long'),
+        content: z.string().min(1, 'Content is required'),
+        category: z.string().max(100).optional(),
+        fileName: z.string().optional(),
+        fileType: z.string().optional(),
+        fileSize: z.number().optional(),
+      })
+    )
+    .min(1, 'At least one file is required')
+    .max(20, 'Maximum 20 files per batch'),
+  chunkOptions: z
+    .object({
+      chunkSize: z.number().int().min(100).max(2000).optional(),
+      overlapSize: z.number().int().min(0).optional(),
+      preserveSentences: z.boolean().optional(),
+    })
+    .optional(),
+});
+
+/**
  * RAG operation schemas
  */
 const searchKnowledgeSchema = z.object({
@@ -534,6 +560,7 @@ export const knowledgeRouter = router({
         // 4. Store chunks with embeddings
         const chunkRecords = chunks.map((chunk, index) => ({
           documentId: document.id,
+          tenantId: ctx.tenantId, // Required for RLS filtering
           content: chunk.content,
           embedding: sql`${JSON.stringify(embeddings[index])}::vector`,
           position: chunk.position,
@@ -571,6 +598,212 @@ export const knowledgeRouter = router({
 
       throw internalError({
         message: 'Failed to upload document',
+        cause: error as Error,
+        logLevel: 'error',
+      });
+    }
+  }),
+
+  /**
+   * Batch upload multiple documents (Priority 2 Enhancement)
+   *
+   * Process multiple files in a single request with shared embedding generation.
+   * More efficient than individual uploads for bulk operations.
+   *
+   * Process:
+   * 1. Validate all files
+   * 2. Chunk all documents
+   * 3. Batch generate embeddings (Voyage AI)
+   * 4. Store all documents and chunks in a transaction
+   *
+   * Admin/owner only
+   */
+  uploadBatch: adminProcedure.input(uploadBatchSchema).mutation(async ({ ctx, input }) => {
+    try {
+      // Validate Voyage API key
+      if (!process.env.VOYAGE_API_KEY) {
+        throw internalError({
+          message: 'VOYAGE_API_KEY not configured. Set environment variable to enable embeddings.',
+        });
+      }
+
+      const voyageProvider = new VoyageEmbeddingProvider({
+        apiKey: process.env.VOYAGE_API_KEY,
+      });
+
+      // Validate chunk options if provided
+      if (input.chunkOptions) {
+        const validation = validateChunkOptions(input.chunkOptions as ChunkOptions);
+        if (!validation.valid) {
+          throw badRequest({
+            message: `Invalid chunk options: ${validation.errors.join(', ')}`,
+          });
+        }
+      }
+
+      // Process each file: chunk and prepare for embedding
+      const processedFiles: Array<{
+        title: string;
+        content: string;
+        category?: string;
+        fileName?: string;
+        fileType?: string;
+        fileSize?: number;
+        chunks: ReturnType<typeof chunkDocument>;
+      }> = [];
+
+      const allChunkTexts: string[] = [];
+      const chunkToFileMapping: Array<{ fileIndex: number; chunkIndex: number }> = [];
+
+      for (let fileIndex = 0; fileIndex < input.files.length; fileIndex++) {
+        const file = input.files[fileIndex];
+
+        // Chunk the document
+        const chunks = chunkDocument(file.content, input.chunkOptions as ChunkOptions);
+
+        if (chunks.length === 0) {
+          throw badRequest({
+            message: `File "${file.title}" is empty or could not be chunked`,
+          });
+        }
+
+        processedFiles.push({
+          title: file.title,
+          content: file.content,
+          category: file.category,
+          fileName: file.fileName,
+          fileType: file.fileType,
+          fileSize: file.fileSize,
+          chunks,
+        });
+
+        // Collect all chunk texts for batch embedding
+        for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+          allChunkTexts.push(chunks[chunkIndex].content);
+          chunkToFileMapping.push({ fileIndex, chunkIndex });
+        }
+      }
+
+      // Generate embeddings for all chunks in batches
+      const BATCH_SIZE = 128; // Voyage API max batch size
+      const allEmbeddings: number[][] = [];
+
+      for (let i = 0; i < allChunkTexts.length; i += BATCH_SIZE) {
+        const batch = allChunkTexts.slice(i, i + BATCH_SIZE);
+        const batchEmbeddings = await voyageProvider.embedBatch(batch, 'document');
+        allEmbeddings.push(...batchEmbeddings);
+      }
+
+      // Verify embeddings count
+      if (allEmbeddings.length !== allChunkTexts.length) {
+        throw internalError({
+          message: `Embedding count mismatch: expected ${allChunkTexts.length}, got ${allEmbeddings.length}`,
+        });
+      }
+
+      // Transaction: Insert all documents and chunks atomically
+      const results = await ctx.db.transaction(async (tx) => {
+        const uploadResults: Array<{
+          id: string;
+          title: string;
+          category: string | undefined;
+          chunksCreated: number;
+          totalTokens: number;
+        }> = [];
+
+        let embeddingIndex = 0;
+
+        for (const file of processedFiles) {
+          // Create document metadata
+          const documentMetadata: Record<string, unknown> = {
+            source: 'batch-upload',
+            uploadedAt: new Date().toISOString(),
+          };
+
+          if (file.fileName) {
+            documentMetadata.uploadedFileName = file.fileName;
+          }
+          if (file.fileType) {
+            documentMetadata.uploadedFileType = file.fileType;
+          }
+          if (file.fileSize) {
+            documentMetadata.uploadedFileSize = file.fileSize;
+          }
+
+          // Insert document
+          const [document] = await tx
+            .insert(knowledgeDocuments)
+            .values({
+              tenantId: ctx.tenantId,
+              title: file.title,
+              content: file.content,
+              category: file.category,
+              metadata: documentMetadata,
+            })
+            .returning();
+
+          if (!document) {
+            throw internalError({
+              message: `Failed to create document: ${file.title}`,
+            });
+          }
+
+          // Insert chunks with embeddings
+          const chunkRecords = file.chunks.map((chunk, idx) => {
+            const embedding = allEmbeddings[embeddingIndex + idx];
+            return {
+              documentId: document.id,
+              tenantId: ctx.tenantId, // Required for RLS filtering
+              content: chunk.content,
+              embedding: sql`${JSON.stringify(embedding)}::vector`,
+              position: chunk.position,
+              metadata: chunk.metadata,
+            };
+          });
+
+          await tx.insert(knowledgeChunks).values(chunkRecords);
+
+          // Update embedding index for next file
+          embeddingIndex += file.chunks.length;
+
+          // Calculate stats
+          const totalTokens = file.chunks.reduce(
+            (sum, chunk) => sum + estimateTokens(chunk.content),
+            0
+          );
+
+          uploadResults.push({
+            id: document.id,
+            title: document.title,
+            category: file.category,
+            chunksCreated: file.chunks.length,
+            totalTokens,
+          });
+        }
+
+        return uploadResults;
+      });
+
+      // Calculate total stats
+      const totalChunks = results.reduce((sum, r) => sum + r.chunksCreated, 0);
+      const totalTokens = results.reduce((sum, r) => sum + r.totalTokens, 0);
+      const totalContentLength = input.files.reduce((sum, f) => sum + f.content.length, 0);
+      const estimatedCost = voyageProvider.estimateCost(totalContentLength);
+
+      return {
+        documents: results,
+        summary: {
+          totalDocuments: results.length,
+          totalChunks,
+          totalTokens,
+          estimatedCost,
+        },
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      throw internalError({
+        message: 'Failed to upload documents batch',
         cause: error as Error,
         logLevel: 'error',
       });

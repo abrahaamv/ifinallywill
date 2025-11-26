@@ -11,10 +11,10 @@
  * - Role hierarchy enforced: owner > admin > member
  */
 
-import { widgets } from '@platform/db';
+import { aiPersonalities, widgets } from '@platform/db';
 import { internalError, notFound } from '@platform/shared';
 import { TRPCError } from '@trpc/server';
-import { count, eq } from 'drizzle-orm';
+import { and, count, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { adminProcedure, ownerProcedure, protectedProcedure, router } from '../trpc';
 
@@ -33,6 +33,9 @@ const widgetSettingsSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color')
     .optional(),
+  // Screen share settings for unified widget
+  enableScreenShare: z.boolean().optional(),
+  screenSharePrompt: z.string().max(500, 'Screen share prompt too long').optional(),
 });
 
 const createWidgetSchema = z.object({
@@ -63,6 +66,15 @@ const listWidgetsSchema = z.object({
 
 const deleteWidgetSchema = z.object({
   id: z.string().uuid('Invalid widget ID'),
+});
+
+const getWithPersonalitySchema = z.object({
+  widgetId: z.string().uuid('Invalid widget ID'),
+});
+
+const setPersonalitySchema = z.object({
+  widgetId: z.string().uuid('Invalid widget ID'),
+  personalityId: z.string().uuid('Invalid personality ID').nullable(),
 });
 
 /**
@@ -185,6 +197,15 @@ export const widgetsRouter = router({
    */
   create: adminProcedure.input(createWidgetSchema).mutation(async ({ ctx, input }) => {
     try {
+      // Apply defaults for settings if not provided
+      const settings = {
+        theme: input.settings?.theme ?? 'light' as const,
+        position: input.settings?.position ?? 'bottom-right' as const,
+        greeting: input.settings?.greeting,
+        primaryColor: input.settings?.primaryColor,
+        secondaryColor: input.settings?.secondaryColor,
+      };
+
       // Create widget - tenantId automatically set via RLS
       const [newWidget] = await ctx.db
         .insert(widgets)
@@ -192,7 +213,7 @@ export const widgetsRouter = router({
           tenantId: ctx.tenantId, // Explicit for clarity, but RLS enforces match
           name: input.name,
           domainWhitelist: input.domainWhitelist,
-          settings: input.settings,
+          settings,
           isActive: true,
         })
         .returning();
@@ -242,16 +263,30 @@ export const widgetsRouter = router({
         });
       }
 
+      // Build update object - only include provided fields
+      const updateData: Record<string, unknown> = {
+        updatedAt: new Date(),
+      };
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.domainWhitelist !== undefined) updateData.domainWhitelist = input.domainWhitelist;
+      if (input.isActive !== undefined) updateData.isActive = input.isActive;
+      if (input.settings !== undefined) {
+        // Ensure settings has required fields with defaults
+        updateData.settings = {
+          theme: input.settings.theme ?? 'light' as const,
+          position: input.settings.position ?? 'bottom-right' as const,
+          greeting: input.settings.greeting,
+          primaryColor: input.settings.primaryColor,
+          secondaryColor: input.settings.secondaryColor,
+          enableScreenShare: input.settings.enableScreenShare,
+          screenSharePrompt: input.settings.screenSharePrompt,
+        };
+      }
+
       // Update widget - RLS ensures we can only update within our tenant
       const [updated] = await ctx.db
         .update(widgets)
-        .set({
-          name: input.name,
-          domainWhitelist: input.domainWhitelist,
-          settings: input.settings,
-          isActive: input.isActive,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(widgets.id, input.id))
         .returning();
 
@@ -313,4 +348,213 @@ export const widgetsRouter = router({
       });
     }
   }),
+
+  /**
+   * Get widget with its AI personality
+   *
+   * Returns widget with the associated AI personality.
+   * Falls back to tenant's default personality if widget has none set.
+   */
+  getWithPersonality: protectedProcedure
+    .input(getWithPersonalitySchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        // Get widget with personality
+        const [widget] = await ctx.db
+          .select({
+            id: widgets.id,
+            tenantId: widgets.tenantId,
+            name: widgets.name,
+            domainWhitelist: widgets.domainWhitelist,
+            settings: widgets.settings,
+            aiPersonalityId: widgets.aiPersonalityId,
+            isActive: widgets.isActive,
+            createdAt: widgets.createdAt,
+            updatedAt: widgets.updatedAt,
+          })
+          .from(widgets)
+          .where(eq(widgets.id, input.widgetId))
+          .limit(1);
+
+        if (!widget) {
+          throw notFound({
+            message: 'Widget not found or access denied',
+          });
+        }
+
+        // Get personality - either widget's specific or tenant default
+        let personality = null;
+
+        if (widget.aiPersonalityId) {
+          // Widget has a specific personality
+          const [widgetPersonality] = await ctx.db
+            .select({
+              id: aiPersonalities.id,
+              name: aiPersonalities.name,
+              description: aiPersonalities.description,
+              systemPrompt: aiPersonalities.systemPrompt,
+              temperature: aiPersonalities.temperature,
+              maxTokens: aiPersonalities.maxTokens,
+              topP: aiPersonalities.topP,
+              frequencyPenalty: aiPersonalities.frequencyPenalty,
+              presencePenalty: aiPersonalities.presencePenalty,
+              preferredModel: aiPersonalities.preferredModel,
+              isDefault: aiPersonalities.isDefault,
+            })
+            .from(aiPersonalities)
+            .where(eq(aiPersonalities.id, widget.aiPersonalityId))
+            .limit(1);
+
+          personality = widgetPersonality || null;
+        }
+
+        // Fallback to tenant's default personality if widget has none
+        if (!personality) {
+          const [defaultPersonality] = await ctx.db
+            .select({
+              id: aiPersonalities.id,
+              name: aiPersonalities.name,
+              description: aiPersonalities.description,
+              systemPrompt: aiPersonalities.systemPrompt,
+              temperature: aiPersonalities.temperature,
+              maxTokens: aiPersonalities.maxTokens,
+              topP: aiPersonalities.topP,
+              frequencyPenalty: aiPersonalities.frequencyPenalty,
+              presencePenalty: aiPersonalities.presencePenalty,
+              preferredModel: aiPersonalities.preferredModel,
+              isDefault: aiPersonalities.isDefault,
+            })
+            .from(aiPersonalities)
+            .where(
+              and(
+                eq(aiPersonalities.tenantId, ctx.tenantId),
+                eq(aiPersonalities.isDefault, true),
+                eq(aiPersonalities.isActive, true)
+              )
+            )
+            .limit(1);
+
+          personality = defaultPersonality || null;
+        }
+
+        return {
+          widget: {
+            id: widget.id,
+            name: widget.name,
+            domainWhitelist: widget.domainWhitelist,
+            settings: widget.settings,
+            aiPersonalityId: widget.aiPersonalityId,
+            isActive: widget.isActive,
+            createdAt: widget.createdAt,
+            updatedAt: widget.updatedAt,
+          },
+          personality: personality
+            ? {
+                id: personality.id,
+                name: personality.name,
+                description: personality.description,
+                systemPrompt: personality.systemPrompt,
+                temperature: Number(personality.temperature),
+                maxTokens: personality.maxTokens,
+                topP: personality.topP ? Number(personality.topP) : undefined,
+                frequencyPenalty: personality.frequencyPenalty
+                  ? Number(personality.frequencyPenalty)
+                  : undefined,
+                presencePenalty: personality.presencePenalty
+                  ? Number(personality.presencePenalty)
+                  : undefined,
+                preferredModel: personality.preferredModel,
+                isDefault: personality.isDefault,
+              }
+            : null,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
+        throw internalError({
+          message: 'Failed to retrieve widget with personality',
+          cause: error as Error,
+          logLevel: 'error',
+        });
+      }
+    }),
+
+  /**
+   * Set widget's AI personality (admin/owner only)
+   *
+   * Associates an AI personality with a widget.
+   * Pass null to use tenant's default personality.
+   */
+  setPersonality: adminProcedure
+    .input(setPersonalitySchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Verify widget exists and belongs to tenant (RLS)
+        const [existing] = await ctx.db
+          .select({ id: widgets.id })
+          .from(widgets)
+          .where(eq(widgets.id, input.widgetId))
+          .limit(1);
+
+        if (!existing) {
+          throw notFound({
+            message: 'Widget not found or access denied',
+          });
+        }
+
+        // If personalityId provided, verify it exists and belongs to tenant
+        if (input.personalityId) {
+          const [personality] = await ctx.db
+            .select({ id: aiPersonalities.id })
+            .from(aiPersonalities)
+            .where(
+              and(
+                eq(aiPersonalities.id, input.personalityId),
+                eq(aiPersonalities.tenantId, ctx.tenantId)
+              )
+            )
+            .limit(1);
+
+          if (!personality) {
+            throw notFound({
+              message: 'AI personality not found or access denied',
+            });
+          }
+        }
+
+        // Update widget's personality
+        const [updated] = await ctx.db
+          .update(widgets)
+          .set({
+            aiPersonalityId: input.personalityId,
+            updatedAt: new Date(),
+          })
+          .where(eq(widgets.id, input.widgetId))
+          .returning({
+            id: widgets.id,
+            aiPersonalityId: widgets.aiPersonalityId,
+            updatedAt: widgets.updatedAt,
+          });
+
+        if (!updated) {
+          throw internalError({
+            message: 'Failed to update widget personality',
+          });
+        }
+
+        return {
+          id: updated.id,
+          aiPersonalityId: updated.aiPersonalityId,
+          updatedAt: updated.updatedAt,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+
+        throw internalError({
+          message: 'Failed to set widget personality',
+          cause: error as Error,
+          logLevel: 'error',
+        });
+      }
+    }),
 });

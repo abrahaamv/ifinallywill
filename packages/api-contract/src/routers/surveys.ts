@@ -31,7 +31,15 @@ export const surveysRouter = router({
       const [survey] = await ctx.db
         .insert(surveyResponses)
         .values({
-          ...input,
+          tenantId: input.tenantId,
+          sessionId: input.sessionId,
+          surveyMethod: input.surveyMethod,
+          endUserId: input.endUserId,
+          resolutionId: input.resolutionId,
+          problemSolved: input.problemSolved,
+          experienceRating: input.experienceRating,
+          wouldRecommend: input.wouldRecommend,
+          feedbackText: input.feedbackText,
           surveyCompleted: !!(input.experienceRating || input.problemSolved !== undefined),
           respondedAt: new Date(),
         })
@@ -55,7 +63,9 @@ export const surveysRouter = router({
       const [survey] = await ctx.db
         .insert(surveyResponses)
         .values({
-          ...input,
+          tenantId: input.tenantId,
+          sessionId: input.sessionId,
+          surveyMethod: input.surveyMethod,
           refusedToRate: true,
           surveyCompleted: false,
         })
