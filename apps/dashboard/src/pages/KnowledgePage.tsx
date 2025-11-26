@@ -1,7 +1,7 @@
 /**
  * Knowledge Base Page - Complete Redesign
  * Library-style UI with upload, document cards, and multiple views
- * Inspired by Library interface design
+ * Supports multi-file upload with drag-and-drop
  */
 
 import {
@@ -19,6 +19,7 @@ import {
   DialogTitle,
   Input,
   Label,
+  Progress,
   Skeleton,
   Tabs,
   TabsContent,
@@ -28,31 +29,33 @@ import {
 import {
   AlertCircle,
   BookOpen,
+  CheckCircle2,
   Database,
   Eye,
+  File,
   FileText,
+  Loader2,
   Search,
   Sparkles,
   Star,
   Trash2,
   Upload,
   X,
+  XCircle,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
-interface UploadFormData {
+interface FileWithMeta {
+  file: File;
   title: string;
   category: string;
-  file: File | null;
+  status: 'pending' | 'reading' | 'uploading' | 'success' | 'error';
+  error?: string;
+  content?: string;
 }
 
 export function KnowledgePage() {
-  const [uploadFormData, setUploadFormData] = useState<UploadFormData>({
-    title: '',
-    category: '',
-    file: null,
-  });
   const [isUploading, setIsUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -60,7 +63,13 @@ export function KnowledgePage() {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Multi-file upload state
+  const [multiFiles, setMultiFiles] = useState<FileWithMeta[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [defaultCategory, setDefaultCategory] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data: documentsData,
@@ -80,26 +89,40 @@ export function KnowledgePage() {
     { enabled: !!selectedDocId }
   );
 
-  const uploadMutation = trpc.knowledge.upload.useMutation({
-    onSuccess: () => {
-      setIsUploading(false);
-      setUploadFormData({ title: '', category: '', file: null });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setShowUploadModal(false);
-      refetch();
-    },
-    onError: () => {
-      setIsUploading(false);
-    },
-  });
-
   const deleteMutation = trpc.knowledge.delete.useMutation({
     onSuccess: () => {
       setIsDeleteDialogOpen(false);
       setDeleteDocId(null);
       refetch();
+    },
+  });
+
+  const batchUploadMutation = trpc.knowledge.uploadBatch.useMutation({
+    onSuccess: () => {
+      // Mark all files as success
+      setMultiFiles((prev) =>
+        prev.map((f) => ({ ...f, status: 'success' as const }))
+      );
+      setIsUploading(false);
+      setUploadProgress(100);
+      refetch();
+
+      // Reset after delay
+      setTimeout(() => {
+        setMultiFiles([]);
+        setUploadProgress(0);
+        setShowUploadModal(false);
+      }, 2000);
+    },
+    onError: (error) => {
+      setMultiFiles((prev) =>
+        prev.map((f) =>
+          f.status === 'uploading'
+            ? { ...f, status: 'error' as const, error: error.message }
+            : f
+        )
+      );
+      setIsUploading(false);
     },
   });
 
@@ -113,28 +136,208 @@ export function KnowledgePage() {
       (doc.category?.toLowerCase() ?? '').includes(searchQuery.toLowerCase())
   );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadFormData({ ...uploadFormData, file });
+  // Multi-file upload helpers
+  const getFileTitle = (fileName: string): string => {
+    // Remove extension and convert to title case
+    const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+    return nameWithoutExt
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const isValidFileType = (file: File): boolean => {
+    const validTypes = [
+      'text/plain',
+      'text/markdown',
+      'text/md',
+      'application/json',
+      'text/csv',
+    ];
+    const validExtensions = ['.txt', '.md', '.json', '.csv', '.markdown'];
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+
+    return validTypes.includes(file.type) || validExtensions.includes(extension);
+  };
+
+  const addFiles = useCallback((files: FileList | File[]) => {
+    const newFiles: FileWithMeta[] = [];
+
+    for (const file of Array.from(files)) {
+      // Skip if file already added
+      if (multiFiles.some((f) => f.file.name === file.name && f.file.size === file.size)) {
+        continue;
+      }
+
+      // Validate file type
+      if (!isValidFileType(file)) {
+        newFiles.push({
+          file,
+          title: getFileTitle(file.name),
+          category: defaultCategory || 'general',
+          status: 'error',
+          error: 'Unsupported file type. Use TXT, MD, JSON, or CSV.',
+        });
+        continue;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        newFiles.push({
+          file,
+          title: getFileTitle(file.name),
+          category: defaultCategory || 'general',
+          status: 'error',
+          error: 'File size must be less than 10MB',
+        });
+        continue;
+      }
+
+      newFiles.push({
+        file,
+        title: getFileTitle(file.name),
+        category: defaultCategory || 'general',
+        status: 'pending',
+      });
+    }
+
+    setMultiFiles((prev) => [...prev, ...newFiles]);
+  }, [multiFiles, defaultCategory]);
+
+  const removeFile = (index: number) => {
+    setMultiFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateFileTitle = (index: number, title: string) => {
+    setMultiFiles((prev) =>
+      prev.map((f, i) => (i === index ? { ...f, title } : f))
+    );
+  };
+
+  const updateFileCategory = (index: number, category: string) => {
+    setMultiFiles((prev) =>
+      prev.map((f, i) => (i === index ? { ...f, category } : f))
+    );
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        addFiles(files);
+      }
+    },
+    [addFiles]
+  );
+
+  const handleMultiFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      addFiles(files);
+    }
+    // Reset input
+    if (multiFileInputRef.current) {
+      multiFileInputRef.current.value = '';
     }
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadFormData.file || !uploadFormData.title) return;
+  // Batch upload handler
+  const handleBatchUpload = async () => {
+    const validFiles = multiFiles.filter((f) => f.status === 'pending');
+    if (validFiles.length === 0) return;
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      await uploadMutation.mutateAsync({
-        title: uploadFormData.title,
-        content,
-        category: uploadFormData.category || 'general',
+    setUploadProgress(0);
+
+    // Read all files
+    const filesToUpload: Array<{
+      title: string;
+      content: string;
+      category: string;
+      fileName: string;
+      fileType: string;
+      fileSize: number;
+    }> = [];
+
+    // Mark files as reading
+    setMultiFiles((prev) =>
+      prev.map((f) =>
+        f.status === 'pending' ? { ...f, status: 'reading' as const } : f
+      )
+    );
+
+    try {
+      for (let i = 0; i < validFiles.length; i++) {
+        const fileMeta = validFiles[i];
+        if (!fileMeta) continue;
+
+        const content = await readFileAsText(fileMeta.file);
+
+        filesToUpload.push({
+          title: fileMeta.title,
+          content,
+          category: fileMeta.category || 'general',
+          fileName: fileMeta.file.name,
+          fileType: fileMeta.file.type || 'text/plain',
+          fileSize: fileMeta.file.size,
+        });
+
+        setUploadProgress(Math.round(((i + 1) / validFiles.length) * 50));
+      }
+
+      // Mark files as uploading
+      setMultiFiles((prev) =>
+        prev.map((f) =>
+          f.status === 'reading' ? { ...f, status: 'uploading' as const } : f
+        )
+      );
+
+      // Upload batch
+      await batchUploadMutation.mutateAsync({
+        files: filesToUpload,
       });
-    };
-    reader.readAsText(uploadFormData.file);
+    } catch (error) {
+      console.error('Batch upload error:', error);
+    }
+  };
+
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsText(file);
+    });
+  };
+
+  const getFileIcon = (status: FileWithMeta['status']) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'error':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'reading':
+      case 'uploading':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      default:
+        return <File className="h-4 w-4 text-gray-400" />;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -184,62 +387,185 @@ export function KnowledgePage() {
         </Button>
       </div>
 
-      {/* Upload Form */}
+      {/* Upload Form - Multi-file with Drag & Drop */}
       {showUploadModal && (
         <Card className="border shadow-card">
           <CardHeader>
-            <CardTitle>Upload Document</CardTitle>
-            <CardDescription>
-              Add new documents to your knowledge base for AI training
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Upload Documents</CardTitle>
+                <CardDescription>
+                  Drag and drop files or click to select. Supports TXT, MD, JSON, CSV files.
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setMultiFiles([]);
+                  setUploadProgress(0);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Document Title</Label>
-                <Input
-                  id="title"
-                  value={uploadFormData.title}
-                  onChange={(e) => setUploadFormData({ ...uploadFormData, title: e.target.value })}
-                  placeholder="e.g., API Documentation v2.0"
-                  required
-                />
-              </div>
+          <CardContent className="space-y-4">
+            {/* Default Category */}
+            <div className="space-y-2">
+              <Label htmlFor="defaultCategory">Default Category (optional)</Label>
+              <Input
+                id="defaultCategory"
+                value={defaultCategory}
+                onChange={(e) => setDefaultCategory(e.target.value)}
+                placeholder="e.g., documentation, faq, guide"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={uploadFormData.category}
-                  onChange={(e) =>
-                    setUploadFormData({ ...uploadFormData, category: e.target.value })
-                  }
-                  placeholder="e.g., documentation, api, guide"
-                />
-              </div>
+            {/* Drag & Drop Zone */}
+            <div
+              className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                isDragOver
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                ref={multiFileInputRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.json,.csv,.markdown"
+                onChange={handleMultiFileSelect}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+              <Upload className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                <span className="font-medium text-primary">Click to upload</span> or drag and drop
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                TXT, MD, JSON, CSV (max 10MB each, up to 20 files)
+              </p>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="file">File</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".txt,.md,.pdf,.doc,.docx"
-                  required
-                />
-                <p className="text-xs text-muted-foreground">Supported: TXT, MD, PDF, DOC, DOCX</p>
-              </div>
+            {/* File List */}
+            {multiFiles.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Files ({multiFiles.length})</Label>
+                  {multiFiles.length > 1 && !isUploading && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMultiFiles([])}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={isUploading}>
-                  {isUploading ? 'Uploading...' : 'Upload'}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => setShowUploadModal(false)}>
-                  Cancel
-                </Button>
+                <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-2">
+                  {multiFiles.map((fileMeta, index) => (
+                    <div
+                      key={`${fileMeta.file.name}-${index}`}
+                      className={`flex items-start gap-3 rounded-md p-2 ${
+                        fileMeta.status === 'error' ? 'bg-red-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      <div className="mt-2">{getFileIcon(fileMeta.status)}</div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <Input
+                          value={fileMeta.title}
+                          onChange={(e) => updateFileTitle(index, e.target.value)}
+                          className="h-8 text-sm"
+                          placeholder="Document title"
+                          disabled={fileMeta.status !== 'pending'}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={fileMeta.category}
+                            onChange={(e) => updateFileCategory(index, e.target.value)}
+                            className="h-7 flex-1 text-xs"
+                            placeholder="Category"
+                            disabled={fileMeta.status !== 'pending'}
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {(fileMeta.file.size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                        {fileMeta.error && (
+                          <p className="text-xs text-red-500">{fileMeta.error}</p>
+                        )}
+                        {fileMeta.status === 'success' && (
+                          <p className="text-xs text-green-500">Uploaded successfully</p>
+                        )}
+                      </div>
+                      {fileMeta.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </form>
+            )}
+
+            {/* Progress Bar */}
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {uploadProgress < 50 ? 'Reading files...' : 'Uploading and processing...'}
+                  </span>
+                  <span className="font-medium">{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                onClick={handleBatchUpload}
+                disabled={isUploading || multiFiles.filter((f) => f.status === 'pending').length === 0}
+                className="flex-1"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload {multiFiles.filter((f) => f.status === 'pending').length} File
+                    {multiFiles.filter((f) => f.status === 'pending').length !== 1 ? 's' : ''}
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setMultiFiles([]);
+                  setUploadProgress(0);
+                }}
+                disabled={isUploading}
+              >
+                Cancel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

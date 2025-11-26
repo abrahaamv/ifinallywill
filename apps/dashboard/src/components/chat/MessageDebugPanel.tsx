@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import type { MessageMetadata } from '../../types/message';
 
 interface MessageDebugPanelProps {
@@ -8,23 +13,124 @@ interface MessageDebugPanelProps {
 
 export function MessageDebugPanel({ metadata }: MessageDebugPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDeveloperMode, setIsDeveloperMode] = useState(false);
+
+  // Helper: Get quality color/status
+  const getQualityStatus = (value: number): { color: string; label: string; icon: string } => {
+    if (value >= 0.8) return { color: 'text-green-600 dark:text-green-400', label: 'Excellent', icon: '✅' };
+    if (value >= 0.6) return { color: 'text-yellow-600 dark:text-yellow-400', label: 'Fair', icon: '⚠️' };
+    return { color: 'text-red-600 dark:text-red-400', label: 'Poor', icon: '❌' };
+  };
+
+  // Helper: Render progress bar
+  const ProgressBar = ({ value }: { value: number }) => {
+    const percentage = Math.round(value * 100);
+    const status = getQualityStatus(value);
+    return (
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-1">
+          <span className={`text-xs font-medium ${status.color}`}>
+            {status.icon} {percentage}% ({status.label})
+          </span>
+        </div>
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className={`h-full ${status.color.replace('text-', 'bg-')} transition-all`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // Calculate overall health score
+  const calculateHealthScore = (): number => {
+    if (!metadata.ragas) return 0.75; // Default reasonable score
+    return metadata.ragas.overall;
+  };
+
+  // Get quality recommendations
+  const getRecommendations = (): string[] => {
+    const recommendations: string[] = [];
+
+    if (metadata.ragas) {
+      if (metadata.ragas.contextRecall < 0.5) {
+        recommendations.push('📚 Context Recall is low (< 50%) - Consider uploading more relevant documents');
+      }
+      if (metadata.ragas.faithfulness < 0.61) {
+        recommendations.push('🎯 Faithfulness is fair (< 61%) - Review if answer matches your knowledge base');
+      }
+      if (metadata.ragas.contextRelevancy < 0.5) {
+        recommendations.push('🔍 Context Relevancy is low (< 50%) - Review document quality and chunking strategy');
+      }
+    }
+
+    if (metadata.performance) {
+      if (metadata.performance.totalLatencyMs > 6000) {
+        recommendations.push('⚡ Performance is slow (> 6s) - Consider optimization or increasing resources');
+      } else if (metadata.performance.totalLatencyMs < 3000) {
+        recommendations.push('✨ Performance is excellent (< 3s) - No action needed');
+      }
+    }
+
+    return recommendations;
+  };
+
+  if (!isExpanded) {
+    // Compact collapsed view
+    return (
+      <div className="mt-2 border-t border-border pt-2">
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight className="w-3 h-3" />
+          Developer Info
+          {metadata.ragas && (
+            <span className={`ml-2 font-medium ${getQualityStatus(metadata.ragas.overall).color}`}>
+              {getQualityStatus(metadata.ragas.overall).icon} {Math.round(metadata.ragas.overall * 100)}%
+            </span>
+          )}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-2 border-t border-border pt-2">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        {isExpanded ? (
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setIsExpanded(false)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
           <ChevronDown className="w-3 h-3" />
-        ) : (
-          <ChevronRight className="w-3 h-3" />
-        )}
-        Developer Info
-      </button>
+          Developer Info
+        </button>
 
-      {isExpanded && (
-        <div className="mt-2 space-y-3 text-xs">
+        {/* User/Developer Mode Toggle */}
+        <button
+          onClick={() => setIsDeveloperMode(!isDeveloperMode)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title={isDeveloperMode ? 'Switch to User View' : 'Switch to Developer View'}
+        >
+          {isDeveloperMode ? (
+            <>
+              <Eye className="w-3 h-3" />
+              <span>User View</span>
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-3 h-3" />
+              <span>Developer View</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Developer Mode - Original Format (Easy to Copy) */}
+      {isDeveloperMode && (
+        <div className="space-y-3 text-xs">
           {/* Model & Routing */}
           {metadata.modelRouting && (
             <div className="space-y-1">
@@ -202,6 +308,29 @@ export function MessageDebugPanel({ metadata }: MessageDebugPanelProps) {
                   {metadata.prompt.systemPrompt}
                 </div>
               </details>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* User Mode - Simplified View */}
+      {!isDeveloperMode && (
+        <div className="space-y-3 text-xs">
+          <div>
+            <div className="text-xs font-semibold mb-2 text-foreground">Response Quality</div>
+            <ProgressBar value={calculateHealthScore()} />
+          </div>
+
+          {getRecommendations().length > 0 && (
+            <div>
+              <div className="text-xs font-semibold mb-2 text-foreground">Suggestions</div>
+              <div className="space-y-1">
+                {getRecommendations().slice(0, 2).map((rec, idx) => (
+                  <div key={idx} className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                    {rec}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

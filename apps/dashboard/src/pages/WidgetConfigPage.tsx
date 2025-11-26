@@ -1,7 +1,6 @@
 /**
- * Widget Configuration Page - Complete Redesign
- * Modern configuration interface with live preview and deployment
- * Inspired by embeddable widget configuration interfaces
+ * Widget Configuration Page
+ * Modern configuration interface with live preview, database persistence, and deployment
  */
 
 import {
@@ -34,42 +33,114 @@ import {
   Download,
   Eye,
   Globe,
+  Loader2,
   MessageCircle,
   Palette,
+  Save,
   Settings2,
   Smartphone,
   Zap,
 } from 'lucide-react';
 import { createModuleLogger } from '../utils/logger';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { trpc } from '../utils/trpc';
+import { EmbeddableWidget } from '../components/embeddable-widget';
 
 const logger = createModuleLogger('WidgetConfigPage');
+
+// Widget settings type
+interface WidgetSettings {
+  theme: 'light' | 'dark' | 'auto';
+  position: 'bottom-right' | 'bottom-left';
+  greeting?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  enableScreenShare?: boolean;
+  screenSharePrompt?: string;
+  showDeveloperInfo?: boolean;
+}
 
 export function WidgetConfigPage() {
   const [copiedScript, setCopiedScript] = useState(false);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0); // Force re-render of preview
 
-  const { data: widgetsData, isLoading } = trpc.widgets.list.useQuery({
+  // Current settings state (editable)
+  const [settings, setSettings] = useState<WidgetSettings>({
+    theme: 'light',
+    position: 'bottom-right',
+    greeting: 'Hi! How can I help you today?',
+    primaryColor: '#6366f1',
+    enableScreenShare: true,
+    showDeveloperInfo: false,
+  });
+
+  // tRPC utils for cache invalidation
+  const utils = trpc.useUtils();
+
+  // Fetch widgets
+  const { data: widgetsData, isLoading, refetch } = trpc.widgets.list.useQuery({
     limit: 10,
     offset: 0,
   });
 
-  const widgets = widgetsData?.widgets || [];
-  const activeWidget = widgets[0]; // Use first widget for demo
+  // Update widget mutation
+  const updateWidget = trpc.widgets.update.useMutation({
+    onSuccess: async () => {
+      setHasUnsavedChanges(false);
+      // Invalidate all widget queries to force refetch
+      await utils.widgets.invalidate();
+      setPreviewKey(prev => prev + 1); // Refresh preview
+      refetch();
+    },
+    onError: (error) => {
+      logger.error('Failed to save widget settings', { error });
+    },
+  });
 
-  // Mock widget configuration
-  const widgetConfig = {
-    theme: 'light',
-    position: 'bottom-right',
-    primaryColor: '#6366f1',
-    showAvatar: true,
-    welcomeMessage: 'Hi! How can I help you today?',
-    placeholder: 'Type your message...',
-    brandName: 'Acme Support',
-    allowFileUpload: true,
-    showTimestamps: true,
-    soundEnabled: true,
+  const widgets = widgetsData?.widgets || [];
+  const activeWidget = widgets[0];
+
+  // Load settings from active widget
+  useEffect(() => {
+    if (activeWidget?.settings) {
+      const widgetSettings = activeWidget.settings as WidgetSettings;
+      setSettings({
+        theme: widgetSettings.theme || 'light',
+        position: widgetSettings.position || 'bottom-right',
+        greeting: widgetSettings.greeting || 'Hi! How can I help you today?',
+        primaryColor: widgetSettings.primaryColor || '#6366f1',
+        secondaryColor: widgetSettings.secondaryColor,
+        enableScreenShare: widgetSettings.enableScreenShare ?? true,
+        screenSharePrompt: widgetSettings.screenSharePrompt,
+        showDeveloperInfo: widgetSettings.showDeveloperInfo ?? false,
+      });
+    }
+  }, [activeWidget]);
+
+  // Update a setting
+  const updateSetting = <K extends keyof WidgetSettings>(key: K, value: WidgetSettings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Save settings to database
+  const handleSave = async () => {
+    if (!activeWidget) return;
+
+    await updateWidget.mutateAsync({
+      id: activeWidget.id,
+      settings: {
+        theme: settings.theme,
+        position: settings.position,
+        greeting: settings.greeting,
+        primaryColor: settings.primaryColor,
+        secondaryColor: settings.secondaryColor,
+        enableScreenShare: settings.enableScreenShare,
+        screenSharePrompt: settings.screenSharePrompt,
+      },
+    });
   };
 
   const getEmbedScript = () => {
@@ -83,8 +154,8 @@ export function WidgetConfigPage() {
 
   pw('init', {
     widgetId: '${activeWidget?.id || 'widget-abc123'}',
-    theme: '${widgetConfig.theme}',
-    position: '${widgetConfig.position}'
+    theme: '${settings.theme}',
+    position: '${settings.position}'
   });
 </script>`;
   };
@@ -109,10 +180,28 @@ export function WidgetConfigPage() {
             Customize and deploy your embeddable AI assistant widget
           </p>
         </div>
-        <Button>
-          <Download className="mr-2 h-4 w-4" />
-          Export Config
-        </Button>
+        <div className="flex gap-2">
+          {hasUnsavedChanges && (
+            <Badge variant="outline" className="text-orange-600 border-orange-600">
+              Unsaved Changes
+            </Badge>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={!hasUnsavedChanges || updateWidget.isPending || !activeWidget}
+          >
+            {updateWidget.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Save Changes
+          </Button>
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export Config
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -204,7 +293,10 @@ export function WidgetConfigPage() {
                   <TabsContent value="appearance" className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="theme">Theme</Label>
-                      <Select defaultValue={widgetConfig.theme}>
+                      <Select
+                        value={settings.theme}
+                        onValueChange={(value: 'light' | 'dark' | 'auto') => updateSetting('theme', value)}
+                      >
                         <SelectTrigger id="theme">
                           <SelectValue />
                         </SelectTrigger>
@@ -218,15 +310,16 @@ export function WidgetConfigPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="position">Position</Label>
-                      <Select defaultValue={widgetConfig.position}>
+                      <Select
+                        value={settings.position}
+                        onValueChange={(value: 'bottom-right' | 'bottom-left') => updateSetting('position', value)}
+                      >
                         <SelectTrigger id="position">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="bottom-right">Bottom Right</SelectItem>
                           <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                          <SelectItem value="top-right">Top Right</SelectItem>
-                          <SelectItem value="top-left">Top Left</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -237,91 +330,87 @@ export function WidgetConfigPage() {
                         <Input
                           id="primaryColor"
                           type="color"
-                          defaultValue={widgetConfig.primaryColor}
+                          value={settings.primaryColor || '#6366f1'}
+                          onChange={(e) => updateSetting('primaryColor', e.target.value)}
                           className="h-10 w-20"
                         />
                         <Input
-                          defaultValue={widgetConfig.primaryColor}
+                          value={settings.primaryColor || '#6366f1'}
+                          onChange={(e) => updateSetting('primaryColor', e.target.value)}
                           className="flex-1 font-mono"
                         />
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="brandName">Brand Name</Label>
-                      <Input
-                        id="brandName"
-                        defaultValue={widgetConfig.brandName}
-                        placeholder="Your company name"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Show Avatar</p>
-                        <p className="text-sm text-muted-foreground">Display AI assistant avatar</p>
-                      </div>
-                      <Switch defaultChecked={widgetConfig.showAvatar} />
                     </div>
                   </TabsContent>
 
                   {/* Behavior Tab */}
                   <TabsContent value="behavior" className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="welcomeMessage">Welcome Message</Label>
+                      <Label htmlFor="greeting">Greeting Message</Label>
                       <Textarea
-                        id="welcomeMessage"
-                        defaultValue={widgetConfig.welcomeMessage}
+                        id="greeting"
+                        value={settings.greeting || ''}
+                        onChange={(e) => updateSetting('greeting', e.target.value)}
                         rows={3}
+                        placeholder="Hi! How can I help you today?"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="placeholder">Input Placeholder</Label>
-                      <Input id="placeholder" defaultValue={widgetConfig.placeholder} />
-                    </div>
-
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">Allow File Upload</p>
-                        <p className="text-sm text-muted-foreground">Users can attach files to messages</p>
+                        <p className="font-medium">Enable Screen Share</p>
+                        <p className="text-sm text-muted-foreground">
+                          Allow users to share their screen with AI via LiveKit
+                        </p>
                       </div>
-                      <Switch defaultChecked={widgetConfig.allowFileUpload} />
+                      <Switch
+                        checked={settings.enableScreenShare ?? false}
+                        onCheckedChange={(checked) => updateSetting('enableScreenShare', checked)}
+                      />
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Show Timestamps</p>
-                        <p className="text-sm text-muted-foreground">Display message timestamps</p>
+                    {settings.enableScreenShare && (
+                      <div className="space-y-2">
+                        <Label htmlFor="screenSharePrompt">Screen Share Prompt</Label>
+                        <Textarea
+                          id="screenSharePrompt"
+                          value={settings.screenSharePrompt || ''}
+                          onChange={(e) => updateSetting('screenSharePrompt', e.target.value)}
+                          rows={2}
+                          placeholder="I can see your screen now. What would you like help with?"
+                        />
                       </div>
-                      <Switch defaultChecked={widgetConfig.showTimestamps} />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Sound Notifications</p>
-                        <p className="text-sm text-muted-foreground">Play sound for new messages</p>
-                      </div>
-                      <Switch defaultChecked={widgetConfig.soundEnabled} />
-                    </div>
+                    )}
                   </TabsContent>
 
                   {/* Advanced Tab */}
                   <TabsContent value="advanced" className="space-y-4">
-                    <div className="rounded-lg border border p-4">
+                    <div className="rounded-lg border p-4">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 text-primary-600 mt-0.5" />
                         <div>
                           <p className="font-medium">Shadow DOM Isolation</p>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            Widget styles are isolated from parent page CSS using Shadow DOM. This
-                            prevents style conflicts and ensures consistent appearance.
+                            Widget styles are isolated from parent page CSS using Shadow DOM.
                           </p>
                           <Badge variant="secondary" className="mt-2">
                             Always Enabled
                           </Badge>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Show Developer Info</p>
+                        <p className="text-sm text-muted-foreground">
+                          Display debug information (RAG metrics, model routing, costs)
+                        </p>
+                      </div>
+                      <Switch
+                        checked={settings.showDeveloperInfo ?? false}
+                        onCheckedChange={(checked) => updateSetting('showDeveloperInfo', checked)}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -332,23 +421,6 @@ export function WidgetConfigPage() {
                         rows={4}
                         className="font-mono text-sm"
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="apiEndpoint">Custom API Endpoint</Label>
-                      <Input
-                        id="apiEndpoint"
-                        placeholder="https://api.yourdomain.com"
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Debug Mode</p>
-                        <p className="text-sm text-muted-foreground">Enable console logging</p>
-                      </div>
-                      <Switch />
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -367,7 +439,7 @@ export function WidgetConfigPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
-                <pre className="overflow-x-auto rounded-lg border border bg-background p-4 text-sm">
+                <pre className="overflow-x-auto rounded-lg border bg-background p-4 text-sm">
                   <code>{getEmbedScript()}</code>
                 </pre>
                 <Button
@@ -437,22 +509,74 @@ export function WidgetConfigPage() {
             </CardHeader>
             <CardContent>
               <div
-                className={`mx-auto rounded-lg border-2 border bg-muted transition-all ${
+                className={`mx-auto rounded-lg border-2 bg-muted transition-all overflow-hidden ${
                   previewMode === 'desktop' ? 'h-[600px]' : 'h-[600px] w-[375px]'
                 }`}
               >
-                <div className="flex h-full items-center justify-center p-8">
-                  <div className="text-center">
-                    <MessageCircle className="mx-auto h-16 w-16 text-gray-400" />
-                    <p className="mt-4 text-muted-foreground">Widget preview will appear here</p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {previewMode === 'desktop' ? 'Desktop' : 'Mobile'} view
-                    </p>
+                {activeWidget ? (
+                  <div className="relative h-full w-full bg-slate-100">
+                    {/* Simulated website background */}
+                    <div className="absolute inset-0 p-6">
+                      <div className="h-8 w-48 bg-slate-300 rounded mb-4" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-full bg-slate-200 rounded" />
+                        <div className="h-4 w-3/4 bg-slate-200 rounded" />
+                        <div className="h-4 w-5/6 bg-slate-200 rounded" />
+                      </div>
+                      <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="h-24 bg-slate-200 rounded" />
+                        <div className="h-24 bg-slate-200 rounded" />
+                        <div className="h-24 bg-slate-200 rounded" />
+                      </div>
+                    </div>
+                    {/* The actual embeddable widget */}
+                    <EmbeddableWidget
+                      key={previewKey}
+                      widgetId={activeWidget.id}
+                      isPreview={true}
+                      defaultMinimized={false}
+                      showDeveloperInfo={settings.showDeveloperInfo}
+                      className="!absolute !bottom-4 !right-4 !h-[500px] !w-[350px]"
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-8">
+                    <div className="text-center">
+                      <MessageCircle className="mx-auto h-16 w-16 text-gray-400" />
+                      <p className="mt-4 text-muted-foreground">No widget configured yet</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Create a widget to see the preview
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Developer Info Panel (when enabled) */}
+          {settings.showDeveloperInfo && (
+            <Card className="border shadow-card border-orange-200 bg-orange-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-800">
+                  <Code className="h-5 w-5" />
+                  Developer Mode Active
+                </CardTitle>
+                <CardDescription className="text-orange-700">
+                  Debug information will be shown in messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-orange-800">
+                <ul className="list-disc list-inside space-y-1">
+                  <li>RAG retrieval metrics (chunks, relevance, latency)</li>
+                  <li>RAGAS quality scores (faithfulness, relevancy, recall)</li>
+                  <li>Model routing information (tier, provider, escalation)</li>
+                  <li>Cost breakdown (tokens, cache hits)</li>
+                  <li>Performance metrics (latency breakdown)</li>
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Performance Metrics */}
           <Card className="border shadow-card">

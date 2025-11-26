@@ -79,7 +79,7 @@ export function ChatWidget() {
         role: msg.role,
         content: msg.content,
         timestamp: new Date(msg.timestamp),
-        metadata: msg.metadata || undefined,
+        metadata: msg.metadata as Message['metadata'],
       }));
       setMessages(msgs);
     }
@@ -182,7 +182,7 @@ export function ChatWidget() {
           role: result.assistantMessage.role,
           content: result.assistantMessage.content,
           timestamp: new Date(result.assistantMessage.timestamp),
-          metadata: result.assistantMessage.metadata || undefined,
+          metadata: result.assistantMessage.metadata as Message['metadata'],
         },
       ]);
 
