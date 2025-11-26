@@ -242,6 +242,12 @@ export const escalations = pgTable(
     reason: text('reason'), // Escalation reason/description
     problemId: uuid('problem_id').references(() => unresolvedProblems.id, { onDelete: 'set null' }),
 
+    // Phase 12: Ticketing integration fields
+    subject: text('subject'), // Ticket subject line
+    description: text('description'), // Full problem description
+    category: varchar('category', { length: 100 }), // Problem category
+    subcategory: varchar('subcategory', { length: 100 }), // Problem subcategory
+
     // Timing
     withinServiceHours: boolean('within_service_hours').default(true),
     scheduledFollowupAt: timestamp('scheduled_followup_at', { withTimezone: true }),

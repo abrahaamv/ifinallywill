@@ -28,6 +28,22 @@ export const tenants = pgTable('tenants', {
     allowedDomains?: string[];
     features?: string[];
   }>(),
+  // Phase 12: Enterprise integrations metadata (ticketing, CRM, SSO, etc.)
+  metadata: jsonb('metadata').$type<{
+    ticketing?: {
+      provider: string;
+      credentials: Record<string, string>;
+      options?: Record<string, unknown>;
+    };
+    crm?: {
+      provider: string;
+      credentials: Record<string, string>;
+      options?: Record<string, unknown>;
+    };
+    knowledge?: Record<string, unknown>;
+    communication?: Record<string, unknown>;
+    [key: string]: unknown;
+  }>(),
   stripeCustomerId: text('stripe_customer_id').unique(),
   stripeSubscriptionId: text('stripe_subscription_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -167,7 +183,13 @@ export const widgets = pgTable('widgets', {
     greeting?: string;
     primaryColor?: string;
     secondaryColor?: string;
+    enableScreenShare?: boolean;
+    screenSharePrompt?: string;
   }>(),
+  // AI personality link for widget-specific chatbot behavior
+  aiPersonalityId: uuid('ai_personality_id').references(() => aiPersonalities.id, {
+    onDelete: 'set null',
+  }),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -177,6 +199,10 @@ export const widgetsRelations = relations(widgets, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [widgets.tenantId],
     references: [tenants.id],
+  }),
+  aiPersonality: one(aiPersonalities, {
+    fields: [widgets.aiPersonalityId],
+    references: [aiPersonalities.id],
   }),
   sessions: many(sessions),
 }));
@@ -233,6 +259,12 @@ export const sessions = pgTable('sessions', {
   mode: text('mode', { enum: ['text', 'meeting'] })
     .notNull()
     .default('text'),
+  // LiveKit integration for screen share transitions
+  livekitRoomName: text('livekit_room_name'),
+  // AI personality for context preservation during video calls
+  aiPersonalityId: uuid('ai_personality_id').references(() => aiPersonalities.id, {
+    onDelete: 'set null',
+  }),
   costUsd: decimal('cost_usd', { precision: 10, scale: 4 }).default('0'),
   metadata: jsonb('metadata').$type<{
     userAgent?: string;
@@ -257,6 +289,10 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
     fields: [sessions.meetingId],
     references: [meetings.id],
   }),
+  aiPersonality: one(aiPersonalities, {
+    fields: [sessions.aiPersonalityId],
+    references: [aiPersonalities.id],
+  }),
   messages: many(messages),
 }));
 
@@ -279,10 +315,80 @@ export const messages = pgTable('messages', {
       }>
     >(),
   metadata: jsonb('metadata').$type<{
+    // Basic fields (Phase 1-7)
     model?: string;
     tokensUsed?: number;
     costUsd?: number;
     latencyMs?: number;
+    // Phase 12 enterprise AI fields
+    complexity?: {
+      level: 'simple' | 'moderate' | 'complex';
+      score: number;
+      factors?: {
+        entityCount?: number;
+        depth?: number;
+        specificity?: number;
+        technicalTerms?: number;
+        ambiguity?: number;
+      };
+    };
+    cragEvaluation?: {
+      confidence: number;
+      needsRefinement: boolean;
+      refinedQuery?: string;
+      reasoning?: string;
+    };
+    cragRefinement?: {
+      originalQuery: string;
+      refinedQuery: string;
+      reasoning: string;
+    };
+    qaCheck?: {
+      hasHallucination: boolean;
+      confidence: number;
+      issues?: Array<{
+        type: string;
+        severity: 'low' | 'medium' | 'high';
+        description: string;
+      }>;
+    };
+    ragSource?: string;
+    ragQuery?: string;
+    ragas?: {
+      faithfulness?: number;
+      answerRelevancy?: number;
+      contextRelevancy?: number;
+      contextPrecision?: number;
+      contextRecall?: number;
+      overall?: number;
+    };
+    modelRouting?: {
+      provider?: string;
+      model?: string;
+      selectedModel?: string;
+      tier?: 'fast' | 'balanced' | 'powerful';
+      reasoning?: string;
+    };
+    cost?: {
+      total?: number;
+      inputTokens?: number;
+      outputTokens?: number;
+      cacheReadTokens?: number;
+      cacheWriteTokens?: number;
+      rerankingCost?: number;
+    };
+    performance?: {
+      totalLatencyMs?: number;
+      ragLatencyMs?: number;
+      aiLatencyMs?: number;
+      cragLatencyMs?: number;
+      qaLatencyMs?: number;
+    };
+    confidence?: {
+      score?: number;
+      requiresEscalation?: boolean;
+      reasoning?: string;
+    };
   }>(),
   timestamp: timestamp('timestamp').notNull().defaultNow(),
 });
@@ -346,11 +452,19 @@ export const knowledgeDocuments = pgTable('knowledge_documents', {
   content: text('content').notNull(),
   category: text('category'),
   embedding: vector('embedding', { dimensions: 1024 }), // Voyage Multimodal-3
+  // Phase 12 Week 7: Knowledge connector fields
+  contentType: text('content_type', { enum: ['text/plain', 'text/markdown', 'text/html'] }).default('text/plain'),
+  url: text('url'),
+  parentId: uuid('parent_id'),
+  path: text('path'),
+  author: text('author'),
+  tags: jsonb('tags').$type<string[]>(),
   metadata: jsonb('metadata').$type<{
     source?: string;
     url?: string;
     author?: string;
     tags?: string[];
+    [key: string]: unknown;
   }>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -369,12 +483,20 @@ export const knowledgeChunks = pgTable('knowledge_chunks', {
   documentId: uuid('document_id')
     .notNull()
     .references(() => knowledgeDocuments.id, { onDelete: 'cascade' }),
+  // Phase 12 Week 7: Add tenantId for efficient RLS queries
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   embedding: vector('embedding', { dimensions: 1024 }).notNull(),
-  position: integer('position').notNull(), // Order within document
+  position: integer('position').notNull(), // Order within document (alias: chunkIndex)
+  // Phase 12 Week 7: Character offset tracking for document reconstruction
+  startOffset: integer('start_offset'),
+  endOffset: integer('end_offset'),
   metadata: jsonb('metadata').$type<{
     chunkSize?: number;
     overlapSize?: number;
+    tokenCount?: number;
+    contentType?: string;
+    [key: string]: unknown;
   }>(),
   // Phase 12 Week 1: BM25 full-text search and hierarchical retrieval
   tokenCount: integer('token_count'),
@@ -526,11 +648,13 @@ export const aiPersonalities = pgTable('ai_personalities', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one }) => ({
+export const aiPersonalitiesRelations = relations(aiPersonalities, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [aiPersonalities.tenantId],
     references: [tenants.id],
   }),
+  widgets: many(widgets),
+  sessions: many(sessions),
 }));
 
 // ==================== API KEYS (Phase 8) ====================
@@ -660,6 +784,18 @@ export * from './rag-evaluation';
 // ==================== CRM INTEGRATIONS (PHASE 12 WEEK 5-6) ====================
 
 export * from './crm-integrations';
+
+// ==================== QUALITY ASSURANCE (PHASE 12 WEEK 9) ====================
+
+export * from './quality-assurance';
+
+// ==================== ENTERPRISE SECURITY (PHASE 12 WEEK 10) ====================
+
+export * from './enterprise-security';
+
+// ==================== CRAG (PHASE 12 WEEK 11) ====================
+
+export * from './crag';
 
 // ==================== INDEXES ====================
 // Indexes are defined via SQL migration files in packages/db/migrations/
