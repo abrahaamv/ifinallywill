@@ -14,6 +14,7 @@ export type {
 export {
   executeRAGQuery,
   buildRAGPrompt,
+  buildRAGPromptWithPersonality,
 } from './rag-query';
 
 // Document chunking (Priority 2)
@@ -121,6 +122,22 @@ export {
   COMMON_QUERY_PATTERNS,
 } from './cache-warming';
 
+// Phase 12 Week 1 Day 5: Golden Evaluation Dataset
+export type {
+  EvaluationExample,
+} from './evaluation/golden-dataset';
+
+export {
+  goldenDataset,
+  getGoldenDatasetByCategory,
+  getGoldenDatasetStats,
+  getExamplesByComplexity,
+  getExamplesByModel,
+  getRandomSample,
+  validateExample,
+  validateDataset,
+} from './evaluation/golden-dataset';
+
 // Phase 12 Week 4: RAGAS evaluation framework
 export type {
   RAGASMetrics,
@@ -198,3 +215,18 @@ export {
   exportPrometheusMetrics,
   resetMetrics,
 } from './ab-testing';
+
+// ==================== KNOWLEDGE BASE CONNECTORS (PHASE 12 WEEK 7) ====================
+
+export {
+  BaseKnowledgeConnector,
+  KnowledgeConnectorFactory,
+  KnowledgeConnectorError,
+  ConfluenceConnector,
+  NotionConnector,
+  GoogleDriveConnector,
+  type Document,
+  type Space,
+  type SyncStatus,
+  type KnowledgeConnectorConfig,
+} from './connectors';

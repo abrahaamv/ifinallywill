@@ -30,8 +30,16 @@ vi.mock('@platform/shared', () => ({
   })),
 }));
 
+// Mock reranker module - disable Cohere reranking for tests
+vi.mock('../reranker', () => ({
+  cohereReranker: {
+    rerankSearchResults: vi.fn((query, results) => Promise.resolve(results)),
+  },
+  isCohereRerankingEnabled: vi.fn(() => false),
+}));
+
 describe('executeRAGQuery()', () => {
-  // Mock database instance
+  // Mock database instance that matches drizzle's execute pattern
   const createMockDb = () => ({
     execute: vi.fn(),
   });

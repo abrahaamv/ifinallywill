@@ -245,21 +245,21 @@ Final paragraph.`;
   });
 
   describe('Default Configuration', () => {
-    it('should use default chunkSize of 800', () => {
-      const text = 'This is a long sentence. '.repeat(50); // ~1250 chars with sentence boundaries
+    it('should use default chunkSize of 1400', () => {
+      const text = 'This is a long sentence. '.repeat(80); // ~2000 chars with sentence boundaries
 
       const chunks = chunkDocument(text);
 
-      // Should split because text exceeds default 800
+      // Should split because text exceeds default 1400
       expect(chunks.length).toBeGreaterThan(1);
     });
 
-    it('should use default overlapSize of 100', () => {
+    it('should use default overlapSize of 250', () => {
       const text = 'A'.repeat(1000) + '\n\n' + 'B'.repeat(1000);
 
       const chunks = chunkDocument(text);
 
-      expect(chunks[0]?.metadata.overlapSize).toBe(100);
+      expect(chunks[0]?.metadata.overlapSize).toBe(250);
     });
 
     it('should preserve sentences by default', () => {
@@ -314,7 +314,7 @@ describe('validateChunkOptions()', () => {
     const result = validateChunkOptions({ chunkSize: 3000 });
 
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('chunkSize should not exceed 2000 characters (~500 tokens)');
+    expect(result.errors).toContain('chunkSize should not exceed 2400 characters (~600 tokens)');
   });
 
   it('should reject negative overlapSize', () => {

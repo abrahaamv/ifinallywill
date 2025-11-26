@@ -38,3 +38,15 @@ export {
   DEFAULT_TEST_SETS,
   createDefaultTestSet,
 } from './test-sets';
+
+// Phase 12 Week 4: Continuous Evaluation
+export type {
+  ContinuousEvaluationConfig,
+  QualityThresholds,
+  EvaluationAlert,
+} from './continuous-evaluation';
+
+export {
+  ContinuousRAGEvaluator,
+  createContinuousEvaluator,
+} from './continuous-evaluation';

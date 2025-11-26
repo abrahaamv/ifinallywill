@@ -58,7 +58,7 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
   const {
     query,
     topK = 5,
-    minScore = 0.7,
+    minScore = 0.3, // Lowered from 0.7 - Cohere reranker returns scores 0-1, often below 0.7 even for relevant docs
     hybridWeights = { semantic: 0.7, keyword: 0.3 },
     useReranking = true,
   } = options;
@@ -134,6 +134,9 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
       try {
         logger.info('Applying Cohere reranking', { resultCount: mergedResults.length });
         mergedResults = await cohereReranker.rerankSearchResults(query, mergedResults, topK * 2);
+        logger.info('Cohere reranking completed', {
+          topScores: mergedResults.slice(0, 3).map(r => ({ score: r.score, preview: r.chunk.content.slice(0, 50) })),
+        });
       } catch (error) {
         logger.warn('Cohere reranking failed, using base scores', { error });
         // Continue with base scores if Cohere fails
@@ -141,7 +144,16 @@ export async function executeRAGQuery<T extends Record<string, unknown>>(
     }
 
     // Step 5: Filter by minimum score and limit to topK
+    logger.info('Filtering results', {
+      beforeFilter: mergedResults.length,
+      minScore,
+      scores: mergedResults.slice(0, 5).map(r => r.score),
+    });
     const filteredResults = mergedResults.filter((r) => r.score >= minScore).slice(0, topK);
+    logger.info('After filtering', {
+      afterFilter: filteredResults.length,
+      finalScores: filteredResults.map(r => r.score),
+    });
 
     // Step 6: Build context from top chunks
     const context =
@@ -255,4 +267,36 @@ INSTRUCTIONS:
 - If the context doesn't help, acknowledge that and provide a general answer
 - Be concise and direct
 - If you're uncertain, say so`;
+}
+
+/**
+ * Build personality-aware prompt with RAG context
+ *
+ * Uses the personality's system prompt as the base, then adds RAG context.
+ * This allows for customized AI behavior while still using knowledge base retrieval.
+ *
+ * @param query - User's question
+ * @param context - RAG context from knowledge base
+ * @param personalityPrompt - System prompt from AI personality configuration
+ */
+export function buildRAGPromptWithPersonality(
+  query: string,
+  context: string,
+  personalityPrompt: string
+): string {
+  return `${personalityPrompt}
+
+You have access to the following knowledge base context:
+
+CONTEXT:
+${context}
+
+USER QUESTION:
+${query}
+
+INSTRUCTIONS:
+- Use the context to provide accurate answers
+- Cite sources using [1], [2], etc.
+- Stay in character according to your personality
+- If context doesn't help, acknowledge and provide general guidance`;
 }
