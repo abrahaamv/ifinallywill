@@ -2,6 +2,7 @@
  * tRPC Context (moved from @platform/api to avoid cyclic dependency)
  *
  * Provides authentication state and tenant context for tRPC procedures.
+ * Supports both Auth.js sessions and service-to-service JWT authentication.
  */
 
 import { db } from '@platform/db';
@@ -11,9 +12,21 @@ import { createModuleLogger } from '@platform/shared';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type Redis from 'ioredis';
+import jwt from 'jsonwebtoken';
 import type { StorageService } from './services/storage';
 
 const logger = createModuleLogger('trpc-context');
+
+/**
+ * Service account JWT claims
+ */
+interface ServiceTokenClaims {
+  sub: string;
+  service: boolean;
+  tenantId?: string;
+  iat: number;
+  exp: number;
+}
 
 /**
  * Auth.js User type
@@ -108,9 +121,63 @@ async function getSession(request: FastifyRequest): Promise<Session | null> {
 }
 
 /**
+ * Helper: Validate service-to-service JWT token
+ *
+ * Used by internal services (LiveKit agent, etc.) to authenticate API requests.
+ * Service tokens include tenant context in JWT claims.
+ *
+ * Security:
+ * - Validates token signature using SERVICE_JWT_SECRET
+ * - Checks token expiration
+ * - Extracts tenant context from claims
+ */
+function validateServiceToken(request: FastifyRequest): ServiceTokenClaims | null {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+    const secret = process.env.SERVICE_JWT_SECRET || process.env.BACKEND_API_KEY;
+
+    if (!secret) {
+      logger.warn('SERVICE_JWT_SECRET not configured - service authentication disabled');
+      return null;
+    }
+
+    // Verify and decode token
+    const decoded = jwt.verify(token, secret) as ServiceTokenClaims;
+
+    // Validate required claims
+    if (!decoded.service || decoded.sub !== 'livekit-agent') {
+      logger.warn('Invalid service token claims', { sub: decoded.sub, service: decoded.service });
+      return null;
+    }
+
+    logger.debug('Service token validated', { sub: decoded.sub, tenantId: decoded.tenantId });
+    return decoded;
+  } catch (error) {
+    // Handle JWT errors by checking error name (more robust than instanceof for ESM)
+    const err = error as Error & { name?: string };
+    if (err.name === 'TokenExpiredError') {
+      logger.debug('Service token expired');
+    } else if (err.name === 'JsonWebTokenError') {
+      logger.debug('Invalid service token', { error: err.message });
+    } else {
+      logger.debug('Service token validation error', { error: err.message });
+    }
+    return null;
+  }
+}
+
+/**
  * Create tRPC context from Fastify request
  *
- * Extracts Auth.js session from request cookies and builds context object.
+ * Authentication priority:
+ * 1. Auth.js session (browser/dashboard requests)
+ * 2. Service JWT token (internal services like LiveKit agent)
+ *
  * Called on every tRPC request via Fastify adapter.
  *
  * Phase 12 Week 3: Enhanced with Redis and Voyage embedding provider for RAG caching
@@ -128,20 +195,63 @@ export async function createContext({
   embeddingProvider?: VoyageEmbeddingProvider;
   storage?: StorageService;
 }): Promise<Context> {
-  // Get Auth.js session from request cookies
+  // Try Auth.js session first (browser/dashboard requests)
   const session = await getSession(req);
 
-  // Extract tenant and user info from session
-  const tenantId = session?.user?.tenantId || '';
-  const userId = session?.user?.id || '';
-  const role = session?.user?.role || 'member';
+  if (session?.user) {
+    // Authenticated via Auth.js session
+    return {
+      req,
+      session,
+      tenantId: session.user.tenantId || '',
+      userId: session.user.id || '',
+      role: session.user.role || 'member',
+      db,
+      redis,
+      embeddingProvider,
+      storage,
+    };
+  }
 
+  // Try service-to-service JWT authentication (LiveKit agent, etc.)
+  const serviceToken = validateServiceToken(req);
+
+  if (serviceToken?.tenantId) {
+    // Authenticated via service token - create synthetic session
+    const serviceSession: Session = {
+      user: {
+        id: `service:${serviceToken.sub}`,
+        tenantId: serviceToken.tenantId,
+        role: 'admin', // Service accounts get admin access
+      },
+      expires: new Date(serviceToken.exp * 1000).toISOString(),
+    };
+
+    logger.debug('Service account authenticated', {
+      sub: serviceToken.sub,
+      tenantId: serviceToken.tenantId,
+    });
+
+    return {
+      req,
+      session: serviceSession,
+      tenantId: serviceToken.tenantId,
+      userId: `service:${serviceToken.sub}`,
+      role: 'admin',
+      db,
+      redis,
+      embeddingProvider,
+      storage,
+    };
+  }
+
+  // No authentication - return empty context (will fail on protected procedures)
   return {
     req,
-    session,
-    tenantId,
-    userId,
-    role,
+    session: null,
+    tenantId: '',
+    userId: '',
+    role: 'member',
     db,
     redis,
     embeddingProvider,
