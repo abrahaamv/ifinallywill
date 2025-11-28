@@ -18,7 +18,7 @@ import {
   useConnectionState,
 } from '@livekit/components-react';
 import '@livekit/components-styles';
-import { ConnectionState, Track, RoomEvent, type LocalTrackPublication } from 'livekit-client';
+import { ConnectionState, Track, type LocalTrackPublication } from 'livekit-client';
 import { useEmbeddableWidget } from './EmbeddableWidgetContext';
 
 interface VideoModeProps {
@@ -50,7 +50,7 @@ function VideoModeInner({ onEnd }: VideoModeProps) {
 
   const [isMuted, setIsMuted] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [screenTrack, setScreenTrack] = useState<LocalTrackPublication | null>(null);
+  const [_screenTrack, setScreenTrack] = useState<LocalTrackPublication | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
 
   // Listen for agent messages via data channel
@@ -352,7 +352,7 @@ function VideoModeInner({ onEnd }: VideoModeProps) {
  * VideoMode wrapper - provides LiveKit context
  */
 export function VideoMode({ onEnd }: VideoModeProps) {
-  const { livekitToken, livekitUrl, roomName } = useEmbeddableWidget();
+  const { livekitToken, livekitUrl } = useEmbeddableWidget();
 
   // Missing configuration error
   if (!livekitToken || !livekitUrl) {
