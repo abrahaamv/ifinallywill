@@ -7,6 +7,7 @@ Features:
 - Sub-500ms audio latency (vs 2-5s with manual STT→LLM→TTS)
 - Automatic video processing from room tracks
 - Built-in interruption support
+- RAG integration via function calling
 - ~95% less code than manual implementation
 
 Replaces:
@@ -17,11 +18,13 @@ Replaces:
 
 With:
 - google.realtime.RealtimeModel (handles everything)
+- Function tools for RAG knowledge base queries
 """
 
 import asyncio
 import logging
 import os
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -38,6 +41,7 @@ from livekit.agents import (
     room_io,
     voice,
 )
+from livekit.agents.llm import function_tool
 from livekit.plugins import google
 from livekit.plugins.google.beta import realtime
 
@@ -55,6 +59,82 @@ logger = logging.getLogger(__name__)
 logging.getLogger("websockets.client").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+def create_rag_tool(backend: BackendClient, tenant_id: str):
+    """
+    Create a RAG search function tool with access to backend and tenant context.
+
+    This factory pattern allows the function tool to access the backend client
+    and tenant_id without global variables.
+    """
+
+    @function_tool
+    async def search_knowledge_base(
+        query: str,
+        top_k: int = 5
+    ) -> str:
+        """
+        Search the knowledge base for relevant information about the user's question.
+
+        Use this tool when the user asks questions that might be answered by:
+        - Company documentation or policies
+        - Product information or features
+        - FAQs or help articles
+        - Technical specifications
+        - Procedures or how-to guides
+
+        Do NOT use this for:
+        - General conversation or greetings
+        - Questions about what's on the screen (use vision instead)
+        - Math calculations or logic puzzles
+        - Personal opinions or creative tasks
+
+        Args:
+            query: The search query extracted from user's question
+            top_k: Number of results to retrieve (default 5)
+
+        Returns:
+            Relevant context from the knowledge base, or a message if nothing found
+        """
+        logger.info(f"🔍 RAG query: '{query}' (top_k={top_k})")
+
+        try:
+            result = await backend.search_knowledge(
+                tenant_id=tenant_id,
+                query=query,
+                top_k=top_k
+            )
+
+            if result and result.sources:
+                logger.info(f"✅ RAG found {len(result.sources)} sources (confidence: {result.confidence:.2f})")
+
+                # Format context for Gemini
+                context_parts = [
+                    "Here is relevant information from the knowledge base:\n"
+                ]
+
+                for i, source in enumerate(result.sources[:top_k], 1):
+                    content = source.get("content", "")[:500]  # Limit content length
+                    doc_title = source.get("documentTitle", "Unknown")
+                    context_parts.append(f"[{i}] From '{doc_title}':\n{content}\n")
+                    # Debug: log first source details
+                    if i == 1:
+                        logger.info(f"📄 First source title: '{doc_title}'")
+                        logger.info(f"📄 First source content preview: '{content[:100]}...'")
+
+                final_context = "\n".join(context_parts)
+                logger.info(f"📤 Returning {len(final_context)} chars to Gemini")
+                return final_context
+            else:
+                logger.info("❌ RAG found no relevant results")
+                return "No relevant information found in the knowledge base for this question."
+
+        except Exception as e:
+            logger.error(f"RAG query error: {e}")
+            return f"Unable to search knowledge base: {str(e)}"
+
+    return search_knowledge_base
 
 
 async def entrypoint(ctx: JobContext):
@@ -114,6 +194,26 @@ async def entrypoint(ctx: JobContext):
     # Build system instructions
     system_instructions = tenant_config.system_prompt or "You are a helpful AI assistant."
 
+    # Add RAG instructions if knowledge base is enabled
+    rag_instructions = ""
+    enable_rag = getattr(tenant_config, 'enable_knowledge_base', True)  # Default to enabled
+    if enable_rag:
+        rag_instructions = """
+
+KNOWLEDGE BASE ACCESS:
+You have access to a knowledge base through the search_knowledge_base tool.
+
+IMPORTANT - How to use the knowledge base:
+1. When users ask questions about the product, company, or documentation, ALWAYS use the search_knowledge_base tool first
+2. When the tool returns information, you MUST use that information to answer the user's question
+3. The tool results are YOUR source of truth - treat them as factual information you can share
+4. Summarize and explain the information from the tool results in a helpful, conversational way
+5. If the tool returns "No relevant information found", ONLY THEN say you don't have that information
+
+DO NOT say "I don't have information about that" when the tool HAS returned relevant results.
+DO use the tool results to provide a complete, helpful answer.
+"""
+
     # Add conversation history context if available
     history_context = ""
     if tenant_config.conversation_history:
@@ -123,12 +223,20 @@ async def entrypoint(ctx: JobContext):
             history_context += f"{role_label}: {msg.content[:100]}...\n"
         history_context += "\n[Continue the conversation naturally from this context]\n"
 
-    full_instructions = system_instructions + history_context
+    full_instructions = system_instructions + rag_instructions + history_context
 
     logger.info("Creating Agent with Gemini Live API...")
     logger.info(f"Model: gemini-2.0-flash-live-001")
     logger.info(f"Voice: Puck")
+    logger.info(f"RAG enabled: {enable_rag}")
     logger.info(f"Instructions: {full_instructions[:100]}...")
+
+    # Create RAG tool if enabled
+    tools = []
+    if enable_rag:
+        rag_tool = create_rag_tool(backend, tenant_id)
+        tools.append(rag_tool)
+        logger.info("📚 RAG tool registered: search_knowledge_base")
 
     # Create Agent with Gemini Live API
     # This replaces the entire manual STT → LLM → TTS pipeline
@@ -140,6 +248,7 @@ async def entrypoint(ctx: JobContext):
             temperature=0.8,
             # modalities defaults to ["AUDIO"] - do NOT add "IMAGE" (that's for OUTPUT)
         ),
+        tools=tools if tools else None,  # Pass tools only if we have any
     )
 
     logger.info("✅ Agent created with Gemini Live API")
@@ -211,12 +320,16 @@ async def entrypoint(ctx: JobContext):
     logger.info("   - Speak to test audio latency (<500ms expected)")
     logger.info("   - Share screen to test vision capabilities")
     logger.info("   - Try interrupting mid-sentence")
+    if enable_rag:
+        logger.info("   - Ask factual questions to test RAG integration")
 
     # Cost tracking note
     logger.info("💰 Cost tracking: Using Gemini Live API pricing")
     logger.info("   - Input: $0.075/1M tokens")
     logger.info("   - Output: $0.30/1M tokens")
     logger.info("   - Audio: Native (no separate STT/TTS costs)")
+    if enable_rag:
+        logger.info("   - RAG: ~200-500ms added latency when knowledge base is queried")
 
     # Keep alive - session handles everything
     while True:

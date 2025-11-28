@@ -4,8 +4,10 @@ Integrates with TypeScript Fastify + tRPC backend for tenant context, RAG, and c
 """
 
 import asyncio
+import json
 import logging
 import time
+import urllib.parse
 from enum import Enum
 from typing import Any, Optional
 
@@ -168,38 +170,55 @@ class BackendClient:
 
         logger.info(f"Backend client initialized: {self.base_url}")
 
-    def _get_token(self) -> str:
+    def _get_token(self, tenant_id: Optional[str] = None) -> str:
         """
         Generate JWT token for service-to-service authentication
         Caches token for 55 minutes (refresh before 60min expiry)
+
+        Args:
+            tenant_id: Optional tenant ID to include in token claims
 
         Returns:
             JWT token string
         """
         current_time = time.time()
 
-        # Return cached token if still valid
-        if self._token and current_time < self._token_expires_at:
-            return self._token
+        # Cache key includes tenant_id for tenant-specific tokens
+        cache_key = f"token_{tenant_id or 'default'}"
 
-        # Generate new token
+        # Return cached token if still valid (stored per tenant)
+        if hasattr(self, '_token_cache') and cache_key in self._token_cache:
+            token, expires_at = self._token_cache[cache_key]
+            if current_time < expires_at:
+                return token
+
+        # Initialize cache if needed
+        if not hasattr(self, '_token_cache'):
+            self._token_cache = {}
+
+        # Generate new token with tenant context
         payload = {
             "sub": "livekit-agent",
             "service": True,
             "iat": int(current_time),
-            "exp": int(current_time + 3600)  # 60 minute expiry
+            "exp": int(current_time + 3600),  # 60 minute expiry
         }
 
-        self._token = jwt.encode(payload, self.api_key, algorithm="HS256")
-        self._token_expires_at = current_time + 3300  # Refresh at 55min
-        logger.debug("Generated new JWT token")
+        # Include tenant_id in claims for RLS context
+        if tenant_id:
+            payload["tenantId"] = tenant_id
 
-        return self._token
+        token = jwt.encode(payload, self.api_key, algorithm="HS256")
+        self._token_cache[cache_key] = (token, current_time + 3300)  # Refresh at 55min
+        logger.debug(f"Generated new JWT token for tenant: {tenant_id or 'default'}")
+
+        return token
 
     async def _request_with_retry(
         self,
         method: str,
         url: str,
+        tenant_id: Optional[str] = None,
         **kwargs
     ) -> Optional[httpx.Response]:
         """
@@ -208,6 +227,7 @@ class BackendClient:
         Args:
             method: HTTP method (GET, POST, etc.)
             url: Request URL (relative to base_url)
+            tenant_id: Optional tenant ID for JWT claims
             **kwargs: Additional arguments passed to httpx
 
         Returns:
@@ -222,9 +242,9 @@ class BackendClient:
 
         for attempt in range(self.max_retries):
             try:
-                # Add JWT token to headers
+                # Add JWT token with tenant context to headers
                 headers = kwargs.get("headers", {})
-                headers["Authorization"] = f"Bearer {self._get_token()}"
+                headers["Authorization"] = f"Bearer {self._get_token(tenant_id)}"
                 kwargs["headers"] = headers
 
                 # Execute request
@@ -261,32 +281,34 @@ class BackendClient:
         logger.error(f"Request failed after {self.max_retries} attempts: {last_exception}")
         return None
 
-    async def get(self, url: str, **kwargs) -> Optional[dict]:
+    async def get(self, url: str, tenant_id: Optional[str] = None, **kwargs) -> Optional[dict]:
         """
         Execute GET request
 
         Args:
             url: Request URL (relative to base_url)
+            tenant_id: Optional tenant ID for JWT claims
             **kwargs: Additional arguments passed to httpx
 
         Returns:
             JSON response or None on failure
         """
-        response = await self._request_with_retry("GET", url, **kwargs)
+        response = await self._request_with_retry("GET", url, tenant_id=tenant_id, **kwargs)
         return response.json() if response and response.status_code == 200 else None
 
-    async def post(self, url: str, **kwargs) -> Optional[dict]:
+    async def post(self, url: str, tenant_id: Optional[str] = None, **kwargs) -> Optional[dict]:
         """
         Execute POST request
 
         Args:
             url: Request URL (relative to base_url)
+            tenant_id: Optional tenant ID for JWT claims
             **kwargs: Additional arguments passed to httpx
 
         Returns:
             JSON response or None on failure
         """
-        response = await self._request_with_retry("POST", url, **kwargs)
+        response = await self._request_with_retry("POST", url, tenant_id=tenant_id, **kwargs)
         return response.json() if response and response.status_code == 200 else None
 
     async def get_tenant_context(
@@ -341,39 +363,43 @@ class BackendClient:
             RAGResult with answer and sources, or None on error
         """
         try:
-            # tRPC batch request format for knowledge.search
-            payload = {
-                "0": {
-                    "json": {
-                        "query": query,
-                        "topK": top_k,
-                        "minScore": 0.7
-                    }
-                }
+            # tRPC query format - uses GET with URL-encoded input (non-batch)
+            # Schema expects: query (string), limit (number), minScore (number)
+            input_data = {
+                "query": query,
+                "limit": top_k,  # Schema uses 'limit' not 'topK'
+                "minScore": 0.7
             }
 
-            result = await self.post("/trpc/knowledge.search?batch=1", json=payload)
+            # URL-encode the input parameter for GET request (non-batch format)
+            encoded_input = urllib.parse.quote(json.dumps(input_data))
+            result = await self.get(
+                f"/trpc/knowledge.search?input={encoded_input}",
+                tenant_id=tenant_id  # Pass tenant_id for JWT claims
+            )
 
-            if result and "0" in result and "result" in result["0"]:
-                data = result["0"]["result"]["data"]["json"]
-                chunks = data.get("chunks", [])
+            if result and "result" in result and "data" in result["result"]:
+                # tRPC v11 non-batch format: result.data directly contains the response
+                data = result["result"]["data"]
+                # Response has 'results' array
+                results = data.get("results", [])
 
-                # Build answer from chunks
-                if chunks:
+                # Build answer from results
+                if results:
                     answer = "\n\n".join([
                         f"[{i+1}] {chunk['content'][:200]}..."
-                        for i, chunk in enumerate(chunks[:3])  # Top 3 chunks
+                        for i, chunk in enumerate(results[:3])  # Top 3 results
                     ])
 
-                    # Calculate average confidence from chunk scores
-                    scores = [chunk.get("similarity", 0.0) for chunk in chunks]
+                    # Calculate average confidence from similarity scores
+                    scores = [float(chunk.get("similarityScore", 0.0)) for chunk in results]
                     avg_confidence = sum(scores) / len(scores) if scores else 0.0
 
                     return RAGResult(
                         answer=answer,
-                        sources=chunks,
+                        sources=results,
                         confidence=avg_confidence,
-                        metadata={"total_chunks": len(chunks), "query": query}
+                        metadata={"total_chunks": len(results), "query": query}
                     )
 
             return None
