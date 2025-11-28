@@ -1,0 +1,58 @@
+# =============================================================================
+# LiveKit Server Configuration
+# Self-hosted WebRTC infrastructure
+# =============================================================================
+
+# Server port configuration
+port: 7880
+bind_addresses:
+  - ""
+
+# RTC (WebRTC) configuration
+rtc:
+  # Port range for WebRTC UDP traffic
+  port_range_start: 50000
+  port_range_end: 50060
+
+  # TCP port for WebRTC (fallback when UDP blocked)
+  tcp_port: 7881
+
+  # Use the container's external IP for ICE candidates
+  use_external_ip: true
+
+  # STUN servers for NAT traversal
+  stun_servers:
+    - stun:stun.l.google.com:19302
+    - stun:stun1.l.google.com:19302
+
+# Room configuration
+room:
+  # Enable rooms to be automatically created
+  auto_create: true
+
+  # Empty room timeout (5 minutes)
+  empty_timeout: 300
+
+  # Max participants per room (0 = unlimited)
+  max_participants: 50
+
+# Logging
+logging:
+  level: info
+  # Use JSON format for structured logging
+  json: true
+
+# Webhook configuration (optional)
+# webhook:
+#   urls:
+#     - http://api:3001/webhooks/livekit
+#   api_key: your-webhook-key
+
+# Redis configuration (optional, for multi-node deployment)
+# redis:
+#   address: redis:6379
+#   password: your-redis-password
+#   db: 0
+
+# API keys are set via LIVEKIT_KEYS environment variable
+# Format: "api-key:api-secret"

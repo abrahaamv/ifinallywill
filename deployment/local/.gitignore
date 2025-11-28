@@ -1,0 +1,17 @@
+# Environment files (contain secrets)
+.env
+.env.local
+.env.production
+
+# Backups (too large for git)
+backups/
+
+# Cloudflare credentials
+*.json
+!livekit.yaml
+
+# Docker build artifacts
+.docker/
+
+# Logs
+*.log
