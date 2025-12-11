@@ -1,0 +1,12 @@
+# Railway Deployment Configuration
+# VisualKit Landing Page - visualkit.live
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/landing/Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

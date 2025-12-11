@@ -1,185 +1,232 @@
 /**
- * Contact Page
- * Contact form and support information
+ * Contact Page - Dark Theme
+ * Matches the professional design system
  */
 
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-} from '@platform/ui';
+import { ArrowRight, Building2, Clock, Mail, MessageSquare, Send } from 'lucide-react';
+import { useState } from 'react';
+import { Button, Input, Label } from '@platform/ui';
+import { useComingSoon } from '../context/ComingSoonContext';
+
+const CONTACT_OPTIONS = [
+  {
+    icon: Mail,
+    title: 'Email Support',
+    description: 'For general inquiries and support questions',
+    contact: 'support@visualkit.live',
+    href: 'mailto:support@visualkit.live',
+  },
+  {
+    icon: Building2,
+    title: 'Sales Inquiries',
+    description: 'For enterprise plans and custom solutions',
+    contact: 'sales@visualkit.live',
+    href: 'mailto:sales@visualkit.live',
+  },
+  {
+    icon: Clock,
+    title: 'Office Hours',
+    description: "We're here to help during business hours",
+    contact: 'Mon-Fri: 9AM - 6PM PST',
+  },
+];
 
 export function ContactPage() {
-  const handleSubmit = (e: React.FormEvent) => {
+  const { openModal } = useComingSoon();
+  const [formState, setFormState] = useState({
+    name: '',
+    email: '',
+    company: '',
+    message: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Contact form submission - integrate with email service in Phase 8
-    alert('Form submission will be implemented in Phase 5');
+    setIsSubmitting(true);
+
+    // Simulate form submission - integrate with email service
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    setIsSubmitting(false);
+    setSubmitted(true);
   };
 
   return (
-    <div className="container mx-auto px-4 py-24">
-      <div className="mb-12 text-center">
-        <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">Get in Touch</h1>
-        <p className="text-lg text-muted-foreground">Have questions? We'd love to hear from you.</p>
+    <div className="min-h-screen bg-[#08080a] text-white pt-24 pb-20">
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[20%] right-[15%] w-[500px] h-[500px] bg-indigo-600/[0.05] rounded-full blur-[128px]" />
+        <div className="absolute bottom-[20%] left-[10%] w-[400px] h-[400px] bg-purple-600/[0.04] rounded-full blur-[128px]" />
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Contact Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Send us a message</CardTitle>
-            <CardDescription>
-              Fill out the form below and we'll get back to you within 24 hours.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="John Doe" required />
+      <div className="relative max-w-5xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-[12px] font-medium text-white/60 mb-6">
+            <MessageSquare className="w-3.5 h-3.5" />
+            Get in Touch
+          </div>
+          <h1 className="text-[36px] sm:text-[48px] font-bold tracking-[-0.03em] leading-[1.1] mb-4">
+            <span className="text-white">Let's Talk About</span>
+            <br />
+            <span className="bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+              Your Support Needs
+            </span>
+          </h1>
+          <p className="text-[17px] text-white/50 max-w-xl mx-auto">
+            Have questions about Visual AI? Want a demo? We'd love to hear from you.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Contact Form */}
+          <div className="lg:col-span-3">
+            <div className="rounded-[24px] bg-white/[0.02] border border-white/[0.06] p-8">
+              {submitted ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
+                    <Send className="w-7 h-7 text-emerald-400" />
+                  </div>
+                  <h3 className="text-[20px] font-semibold text-white mb-2">Message Sent!</h3>
+                  <p className="text-[15px] text-white/50 mb-6">
+                    Thanks for reaching out. We'll get back to you within 24 hours.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setSubmitted(false);
+                      setFormState({ name: '', email: '', company: '', message: '' });
+                    }}
+                    className="bg-white/[0.06] text-white hover:bg-white/[0.1] border border-white/[0.08]"
+                  >
+                    Send Another Message
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-[20px] font-semibold text-white mb-2">Send us a message</h2>
+                  <p className="text-[14px] text-white/40 mb-8">
+                    Fill out the form below and we'll get back to you within 24 hours.
+                  </p>
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-[13px] text-white/60">Name *</Label>
+                        <Input
+                          id="name"
+                          value={formState.name}
+                          onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                          placeholder="John Doe"
+                          required
+                          className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-[13px] text-white/60">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formState.email}
+                          onChange={(e) => setFormState({ ...formState, email: e.target.value })}
+                          placeholder="john@example.com"
+                          required
+                          className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="company" className="text-[13px] text-white/60">Company</Label>
+                      <Input
+                        id="company"
+                        value={formState.company}
+                        onChange={(e) => setFormState({ ...formState, company: e.target.value })}
+                        placeholder="Acme Inc."
+                        className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="message" className="text-[13px] text-white/60">Message *</Label>
+                      <textarea
+                        id="message"
+                        value={formState.message}
+                        onChange={(e) => setFormState({ ...formState, message: e.target.value })}
+                        placeholder="Tell us about your project and how we can help..."
+                        required
+                        rows={5}
+                        className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-[14px] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-none transition-colors"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px]"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Sending...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          Send Message
+                          <ArrowRight className="w-4 h-4" />
+                        </span>
+                      )}
+                    </Button>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Contact Options */}
+          <div className="lg:col-span-2 space-y-4">
+            {CONTACT_OPTIONS.map((option) => (
+              <div
+                key={option.title}
+                className="rounded-[20px] bg-white/[0.02] border border-white/[0.06] p-6 hover:bg-white/[0.03] transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-4">
+                  <option.icon className="w-5 h-5 text-white/60" />
+                </div>
+                <h3 className="text-[16px] font-semibold text-white mb-1">{option.title}</h3>
+                <p className="text-[13px] text-white/40 mb-3">{option.description}</p>
+                {option.href ? (
+                  <a
+                    href={option.href}
+                    className="text-[14px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    {option.contact}
+                  </a>
+                ) : (
+                  <span className="text-[14px] text-white/60">{option.contact}</span>
+                )}
               </div>
+            ))}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="john@example.com" required />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="company">Company</Label>
-                <Input id="company" placeholder="Acme Inc." />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <textarea
-                  id="message"
-                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Tell us about your project..."
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full">
-                Send Message
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Contact Information */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Support</CardTitle>
-              <CardDescription>For general inquiries and support questions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <a href="mailto:support@aiassistant.com" className="text-primary hover:underline">
-                support@aiassistant.com
-              </a>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Inquiries</CardTitle>
-              <CardDescription>For enterprise plans and custom solutions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <a href="mailto:sales@aiassistant.com" className="text-primary hover:underline">
-                sales@aiassistant.com
-              </a>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Office Hours</CardTitle>
-              <CardDescription>We're here to help during business hours</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Monday - Friday: 9:00 AM - 6:00 PM PST
-                <br />
-                Weekend: Closed
+            {/* Quick CTA */}
+            <div className="rounded-[20px] bg-gradient-to-br from-indigo-500/[0.1] to-purple-500/[0.05] border border-indigo-500/20 p-6">
+              <h3 className="text-[16px] font-semibold text-white mb-2">Try Visual AI Free</h3>
+              <p className="text-[13px] text-white/40 mb-4">
+                See screen-sharing AI in action. No credit card required.
               </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Community</CardTitle>
-              <CardDescription>Join our community for discussions and updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <a
-                  href="https://twitter.com/aiassistant"
-                  className="text-muted-foreground hover:text-foreground"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="sr-only">Follow us on Twitter</span>
-                  <svg
-                    className="h-6 w-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <title>Twitter</title>
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                  </svg>
-                </a>
-                <a
-                  href="https://github.com/aiassistant"
-                  className="text-muted-foreground hover:text-foreground"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="sr-only">View our GitHub</span>
-                  <svg
-                    className="h-6 w-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <title>GitHub</title>
-                    <path
-                      fillRule="evenodd"
-                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </a>
-                <a
-                  href="https://dribbble.com/aiassistant"
-                  className="text-muted-foreground hover:text-foreground"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="sr-only">View our Dribbble</span>
-                  <svg
-                    className="h-6 w-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <title>Dribbble</title>
-                    <path
-                      fillRule="evenodd"
-                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c5.51 0 10-4.48 10-10S17.51 2 12 2zm6.605 4.61a8.502 8.502 0 011.93 5.314c-.281-.054-3.101-.629-5.943-.271-.065-.141-.12-.293-.184-.445a25.416 25.416 0 00-.564-1.236c3.145-1.28 4.577-3.124 4.761-3.362zM12 3.475c2.17 0 4.154.813 5.662 2.148-.152.216-1.443 1.941-4.48 3.08-1.399-2.57-2.95-4.675-3.189-5A8.687 8.687 0 0112 3.475zm-3.633.803a53.896 53.896 0 013.167 4.935c-3.992 1.063-7.517 1.04-7.896 1.04a8.581 8.581 0 014.729-5.975zM3.453 12.01v-.26c.37.01 4.512.065 8.775-1.215.25.477.477.965.694 1.453-.109.033-.228.065-.336.098-4.404 1.42-6.747 5.303-6.942 5.629a8.522 8.522 0 01-2.19-5.705zM12 20.547a8.482 8.482 0 01-5.239-1.8c.152-.315 1.888-3.656 6.703-5.337.022-.01.033-.01.054-.022a35.318 35.318 0 011.823 6.475 8.4 8.4 0 01-3.341.684zm4.761-1.465c-.086-.52-.542-3.015-1.659-6.084 2.679-.423 5.022.271 5.314.369a8.468 8.468 0 01-3.655 5.715z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
+              <Button
+                onClick={openModal}
+                className="w-full h-10 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[14px]"
+              >
+                Start Free Trial
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

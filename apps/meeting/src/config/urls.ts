@@ -2,46 +2,59 @@
  * Application URL Configuration
  *
  * Centralized URL management using environment variables.
- * NO FALLBACKS - fail-fast if environment variables are not set.
+ * Uses sensible defaults for investor preview deployment.
  *
  * Phase 2 Task 2.3: Remove Hardcoded URLs
  */
 
+// Detect if we're in production based on hostname or env
+const isProduction = typeof window !== 'undefined' &&
+  (window.location.hostname.includes('visualkit.live') ||
+   window.location.hostname.includes('railway.app'));
+
+// Default URLs for production (visualkit.live domain)
+const PRODUCTION_DEFAULTS = {
+  dashboard: 'https://dashboard.visualkit.live',
+  meeting: 'https://meet.visualkit.live',
+  landing: 'https://visualkit.live',
+};
+
+// Default URLs for local development
+const DEV_DEFAULTS = {
+  dashboard: 'http://localhost:5174',
+  meeting: 'http://localhost:5175',
+  landing: 'http://localhost:5173',
+};
+
+const defaults = isProduction ? PRODUCTION_DEFAULTS : DEV_DEFAULTS;
+
 /**
  * Get landing URL from environment
- * @throws Error if VITE_APP_URL is not configured
+ * Falls back to sensible defaults for investor preview
  */
 export function getLandingUrl(): string {
-  const url = import.meta.env.VITE_APP_URL;
-  if (!url) {
-    throw new Error(
-      'Configuration error: VITE_APP_URL not set.\n' +
-        'Please configure VITE_APP_URL in your .env.local file.\n' +
-        'See .env.example for configuration template.'
-    );
-  }
-  return url;
+  return import.meta.env.VITE_APP_URL || defaults.landing;
 }
 
 /**
  * Get dashboard URL from environment
- * @throws Error if VITE_DASHBOARD_URL is not configured
+ * Falls back to sensible defaults for investor preview
  */
 export function getDashboardUrl(): string {
-  const url = import.meta.env.VITE_DASHBOARD_URL;
-  if (!url) {
-    throw new Error(
-      'Configuration error: VITE_DASHBOARD_URL not set.\n' +
-        'Please configure VITE_DASHBOARD_URL in your .env.local file.\n' +
-        'See .env.example for configuration template.'
-    );
-  }
-  return url;
+  return import.meta.env.VITE_DASHBOARD_URL || defaults.dashboard;
+}
+
+/**
+ * Get meeting URL from environment
+ * Falls back to sensible defaults for investor preview
+ */
+export function getMeetingUrl(): string {
+  return import.meta.env.VITE_MEET_URL || defaults.meeting;
 }
 
 /**
  * Pre-configured app URLs for convenience
- * These will throw errors if environment variables are not set
+ * Uses environment variables with sensible fallbacks
  */
 export const appUrls = {
   /** Landing app URL (home page) */
@@ -52,5 +65,10 @@ export const appUrls = {
   /** Dashboard app URL (admin portal) */
   get dashboard(): string {
     return getDashboardUrl();
+  },
+
+  /** Meeting app URL */
+  get meeting(): string {
+    return getMeetingUrl();
   },
 } as const;

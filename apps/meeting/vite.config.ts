@@ -8,11 +8,18 @@ export default defineConfig({
   server: {
     port: 5175,
   },
+  build: {
+    rollupOptions: {
+      // Resolve Node.js polyfills for production build
+      external: [],
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      // Polyfill Node.js globals for browser
-      buffer: 'buffer',
       // Mock Node.js built-in modules for browser (absolute paths for monorepo)
       perf_hooks: resolve(__dirname, './src/mocks/perf_hooks.ts'),
     },
@@ -23,10 +30,7 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
   optimizeDeps: {
-    include: [
-      // Include buffer polyfill for pre-bundling (needed by bcryptjs)
-      'buffer',
-    ],
+    include: [],
     exclude: [
       // Exclude backend-only packages (server-side only)
       '@platform/db',

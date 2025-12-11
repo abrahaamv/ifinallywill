@@ -1,0 +1,12 @@
+# Railway Deployment Configuration
+# VisualKit Meeting App - meet.visualkit.live
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "apps/meeting/Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
