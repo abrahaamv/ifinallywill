@@ -264,6 +264,10 @@ export const escalations = pgTable(
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     resolutionNotes: text('resolution_notes'),
 
+    // Chatwoot Integration
+    chatwootConversationId: integer('chatwoot_conversation_id'), // Chatwoot conversation ID
+    chatwootContactId: integer('chatwoot_contact_id'), // Chatwoot contact ID
+
     // Metadata
     escalationMetadata: jsonb('escalation_metadata').$type<{
       sessionDuration?: number;
@@ -282,6 +286,7 @@ export const escalations = pgTable(
     scheduledIdx: index('idx_escalations_scheduled').on(table.scheduledFollowupAt),
     humanAgentIdx: index('idx_escalations_human_agent').on(table.humanAgentId),
     unresolvedIdx: index('idx_escalations_unresolved').on(table.resolvedAt),
+    chatwootConvIdx: index('idx_escalations_chatwoot_conv').on(table.chatwootConversationId),
     // Constraints
     validEscalationType: check(
       'valid_escalation_type',

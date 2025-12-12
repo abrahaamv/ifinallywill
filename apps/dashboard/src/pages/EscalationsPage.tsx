@@ -1,7 +1,16 @@
 /**
- * Escalations Page
- * Manage conversations that require human intervention
- * Based on product strategy: Human handoff workflows, priority management*
+ * Escalations Page (DEPRECATED)
+ *
+ * @deprecated This page is deprecated. Escalations are now handled via
+ * the Conversations page (/conversations) with Chatwoot integration.
+ * See ConversationsPage.tsx for the new escalation workflow.
+ *
+ * This page is kept for backwards compatibility but will be removed
+ * in a future release.
+ *
+ * New workflow:
+ * - AI Transcripts tab: Full AI conversation history
+ * - Escalated tab: Embedded Chatwoot inbox for human agents
  */
 
 import {
@@ -24,11 +33,12 @@ import {
   TableHeader,
   TableRow,
 } from '@platform/ui';
-import { AlertTriangle, CheckCircle2, Clock, MessageCircle, User, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageCircle, User, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 export function EscalationsPage() {
+  const navigate = useNavigate();
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('pending');
 
@@ -137,6 +147,25 @@ export function EscalationsPage() {
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
+      {/* Deprecation Banner */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <div>
+              <h3 className="font-semibold text-amber-900">This page is deprecated</h3>
+              <p className="text-sm text-amber-800">
+                Escalations are now managed through the Conversations page with Chatwoot integration.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => navigate('/conversations')} className="gap-2">
+            Go to Conversations
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

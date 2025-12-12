@@ -2,6 +2,8 @@
  * Integrations Page - Complete Redesign
  * Third-party integrations, webhooks, and API configuration
  * Modern card-based layout with category filtering
+ *
+ * Includes Chatwoot integration for human agent escalation.
  */
 
 import {
@@ -12,6 +14,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
   Select,
@@ -33,6 +41,7 @@ import {
   CheckCircle2,
   Code,
   ExternalLink,
+  Headphones,
   Plug,
   Plus,
   Settings,
@@ -40,12 +49,33 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { trpc } from '../utils/trpc';
 
 export function IntegrationsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [chatwootDialogOpen, setChatwootDialogOpen] = useState(false);
+  const [chatwootConfig, setChatwootConfig] = useState({
+    baseUrl: '',
+    accountId: '',
+    apiAccessToken: '',
+    inboxId: '',
+  });
 
-  // Mock integrations data
+  // Check Chatwoot configuration status
+  const { data: chatwootStatus } = trpc.escalations.getChatwootStatus.useQuery();
+
+  // Mock integrations data - Chatwoot is special (first-party)
   const availableIntegrations = [
+    {
+      id: 'chatwoot',
+      name: 'Chatwoot',
+      category: 'escalation',
+      description: 'Human agent escalation inbox for conversations AI cannot resolve',
+      status: chatwootStatus?.configured ? 'connected' : 'available',
+      icon: '🎧',
+      features: ['Human agent handoff', 'AI context sharing', 'Meeting URLs', 'Full transcript'],
+      isCore: true, // First-party integration
+    },
     {
       id: 'slack',
       name: 'Slack',
@@ -217,6 +247,7 @@ export function IntegrationsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="escalation">Escalation</SelectItem>
                 <SelectItem value="communication">Communication</SelectItem>
                 <SelectItem value="helpdesk">Help Desk</SelectItem>
                 <SelectItem value="crm">CRM</SelectItem>
@@ -260,7 +291,27 @@ export function IntegrationsPage() {
                     ))}
                   </div>
 
-                  {integration.status === 'connected' ? (
+                  {/* Special handling for Chatwoot */}
+                  {integration.id === 'chatwoot' ? (
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      variant={integration.status === 'connected' ? 'outline' : 'default'}
+                      onClick={() => setChatwootDialogOpen(true)}
+                    >
+                      {integration.status === 'connected' ? (
+                        <>
+                          <Settings className="mr-2 h-4 w-4" />
+                          Configure
+                        </>
+                      ) : (
+                        <>
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Setup Chatwoot
+                        </>
+                      )}
+                    </Button>
+                  ) : integration.status === 'connected' ? (
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1">
                         <Settings className="mr-2 h-4 w-4" />
@@ -436,6 +487,114 @@ export function IntegrationsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Chatwoot Configuration Dialog */}
+      <Dialog open={chatwootDialogOpen} onOpenChange={setChatwootDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Headphones className="h-5 w-5" />
+              Configure Chatwoot
+            </DialogTitle>
+            <DialogDescription>
+              Connect your self-hosted Chatwoot instance for human agent escalation. Agents will
+              receive AI conversation context when handling escalated conversations.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="chatwoot-url">Chatwoot URL</Label>
+              <Input
+                id="chatwoot-url"
+                placeholder="https://chatwoot.yourcompany.com"
+                value={chatwootConfig.baseUrl}
+                onChange={(e) =>
+                  setChatwootConfig((prev) => ({ ...prev, baseUrl: e.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Your self-hosted Chatwoot instance URL
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="chatwoot-account">Account ID</Label>
+              <Input
+                id="chatwoot-account"
+                placeholder="1"
+                value={chatwootConfig.accountId}
+                onChange={(e) =>
+                  setChatwootConfig((prev) => ({ ...prev, accountId: e.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Found in Chatwoot URL: /app/accounts/{'{'}id{'}'}/...
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="chatwoot-token">API Access Token</Label>
+              <Input
+                id="chatwoot-token"
+                type="password"
+                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value={chatwootConfig.apiAccessToken}
+                onChange={(e) =>
+                  setChatwootConfig((prev) => ({ ...prev, apiAccessToken: e.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                Profile Settings → Access Token in Chatwoot
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="chatwoot-inbox">Inbox ID</Label>
+              <Input
+                id="chatwoot-inbox"
+                placeholder="1"
+                value={chatwootConfig.inboxId}
+                onChange={(e) =>
+                  setChatwootConfig((prev) => ({ ...prev, inboxId: e.target.value }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                The API inbox ID for VisualKit escalations
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <h4 className="mb-1 text-xs font-semibold text-blue-900">Setup Requirements</h4>
+              <ul className="list-inside list-disc space-y-1 text-xs text-blue-800">
+                <li>Create an API-type inbox in Chatwoot</li>
+                <li>
+                  Configure webhook URL:{' '}
+                  <code className="rounded bg-blue-100 px-1">
+                    {window.location.origin}/api/webhooks/chatwoot
+                  </code>
+                </li>
+                <li>Enable events: message_created, conversation_resolved</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChatwootDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                // TODO: Save configuration via tRPC
+                console.log('Saving Chatwoot config:', chatwootConfig);
+                setChatwootDialogOpen(false);
+              }}
+            >
+              Save Configuration
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

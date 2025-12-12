@@ -17,6 +17,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 // import { constants as zlibConstants } from 'node:zlib'; // TEMP: Disabled with compress plugin
 import { appRouter, createContext, createStorageService } from '@platform/api-contract';
+import { ChatwootWebhookHandler } from '@platform/chatwoot';
 import {
   VoyageEmbeddingProvider,
   warmEmbeddingCache,
@@ -280,6 +281,71 @@ async function main() {
       },
     };
   });
+
+  // Chatwoot webhook endpoint (Phase: Chatwoot Integration)
+  // Handles events from Chatwoot for escalation status sync
+  const chatwootWebhookSecret = process.env.CHATWOOT_WEBHOOK_SECRET;
+  if (chatwootWebhookSecret) {
+    const webhookHandler = new ChatwootWebhookHandler(chatwootWebhookSecret);
+
+    fastify.post('/webhooks/chatwoot', {
+      config: {
+        // Skip default JSON parser for this route to get raw body
+        rawBody: true,
+      },
+    }, async (request, reply) => {
+      // Get raw body for signature verification
+      const rawBody = JSON.stringify(request.body);
+      const signature = request.headers['x-chatwoot-signature'] as string | undefined;
+
+      // Verify webhook signature
+      if (!webhookHandler.verifySignature(rawBody, signature)) {
+        fastify.log.warn('Chatwoot webhook signature verification failed');
+        return reply.status(401).send({ error: 'Invalid signature' });
+      }
+
+      try {
+        const event = webhookHandler.parse(request.body);
+
+        // Log event type (sessionId only exists on some event types)
+        const sessionId = 'sessionId' in event ? event.sessionId : undefined;
+        fastify.log.info({ eventType: event.type, sessionId }, 'Chatwoot webhook received');
+
+        // Handle different event types
+        if (event.type === 'conversation_resolved' && event.sessionId) {
+          // TODO: Call escalations.updateFromChatwoot via internal tRPC call
+          // For now, log the event for manual handling
+          fastify.log.info(
+            {
+              chatwootConversationId: event.conversationId,
+              sessionId: event.sessionId,
+              resolvedAt: event.resolvedAt.toISOString(),
+            },
+            'Chatwoot conversation resolved'
+          );
+        } else if (event.type === 'message_created' && event.isAgentMessage && event.sessionId) {
+          // Agent replied - track for AI training
+          fastify.log.info(
+            {
+              chatwootConversationId: event.conversationId,
+              sessionId: event.sessionId,
+              agentMessage: event.message.content?.substring(0, 100),
+            },
+            'Chatwoot agent replied'
+          );
+        }
+
+        return reply.status(200).send({ received: true });
+      } catch (error) {
+        fastify.log.error({ error }, 'Failed to process Chatwoot webhook');
+        return reply.status(400).send({ error: 'Invalid payload' });
+      }
+    });
+
+    fastify.log.info('Chatwoot webhook endpoint registered at /webhooks/chatwoot');
+  } else {
+    fastify.log.info('CHATWOOT_WEBHOOK_SECRET not set, Chatwoot webhook endpoint disabled');
+  }
 
   // Initialize WebSocket server (on separate port)
   const realtimeServer = new RealtimeServer({

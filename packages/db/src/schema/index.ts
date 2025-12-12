@@ -86,6 +86,8 @@ export const users = pgTable('users', {
   lockedUntil: timestamp('locked_until'),
   lastLoginAt: timestamp('last_login_at'),
   lastLoginIp: text('last_login_ip'),
+  // Chatwoot integration: Platform API user ID for SSO
+  chatwootUserId: integer('chatwoot_user_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
