@@ -1,10 +1,10 @@
 /**
- * Email Service - SendGrid Integration
- * Multi-tier survey fallback: Email link after SMS fails
- * Phase 11 Week 3
+ * Email Service - Resend Integration
+ * Replaces SendGrid with Resend for all email functionality
+ * Updated: 2025-12-10
  */
 
-import sendgrid from '@sendgrid/mail';
+import { Resend } from 'resend';
 import { createModuleLogger } from '@platform/shared';
 
 const logger = createModuleLogger('email-service');
@@ -16,11 +16,12 @@ interface EmailConfig {
 }
 
 export class EmailService {
+  private resend: Resend;
   private fromEmail: string;
   private fromName: string;
 
   constructor(config: EmailConfig) {
-    sendgrid.setApiKey(config.apiKey);
+    this.resend = new Resend(config.apiKey);
     this.fromEmail = config.fromEmail;
     this.fromName = config.fromName || 'AI Assistant Platform';
   }
@@ -35,26 +36,31 @@ export class EmailService {
     sessionId: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const [response] = await sendgrid.send({
+      const { data, error } = await this.resend.emails.send({
+        from: `${this.fromName} <${this.fromEmail}>`,
         to: toEmail,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: 'Quick Feedback - Your Recent AI Assistant Conversation',
         text: `Hi! We'd love your quick feedback about your recent conversation with our AI assistant. Please take a moment to rate your experience: ${surveyUrl}`,
         html: this._generateSurveyEmailHTML(surveyUrl, sessionId),
       });
 
+      if (error) {
+        logger.error('Failed to send email survey', { toEmail, error });
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
       logger.info('Email survey sent', {
         toEmail,
-        messageId: response.headers['x-message-id'],
+        messageId: data?.id,
         sessionId
       });
 
       return {
         success: true,
-        messageId: response.headers['x-message-id'] as string,
+        messageId: data?.id,
       };
     } catch (error) {
       logger.error('Failed to send email survey', { toEmail, error });
@@ -67,32 +73,36 @@ export class EmailService {
 
   /**
    * Send verification code via email
-   * Fix #4 - Email verification implementation
    */
   async sendVerificationCode(
     toEmail: string,
     code: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const [response] = await sendgrid.send({
+      const { data, error } = await this.resend.emails.send({
+        from: `${this.fromName} <${this.fromEmail}>`,
         to: toEmail,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: 'Your Verification Code',
         text: `Your verification code is: ${code}. This code expires in 10 minutes.`,
         html: this._generateVerificationCodeHTML(code),
       });
 
+      if (error) {
+        logger.error('Failed to send verification code via email', { toEmail, error });
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
       logger.info('Verification code sent via email', {
         toEmail,
-        messageId: response.headers['x-message-id']
+        messageId: data?.id
       });
 
       return {
         success: true,
-        messageId: response.headers['x-message-id'] as string,
+        messageId: data?.id,
       };
     } catch (error) {
       logger.error('Failed to send verification code via email', { toEmail, error });
@@ -112,25 +122,30 @@ export class EmailService {
     verificationUrl: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const [response] = await sendgrid.send({
+      const { data, error } = await this.resend.emails.send({
+        from: `${this.fromName} <${this.fromEmail}>`,
         to: toEmail,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: 'Verify Your Email Address',
         text: `Please verify your email address by clicking this link: ${verificationUrl}. This link expires in 24 hours.`,
         html: this._generateVerificationEmailHTML(verificationUrl),
       });
 
+      if (error) {
+        logger.error('Failed to send verification email', { toEmail, error });
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
       logger.info('Verification email sent', {
         toEmail,
-        messageId: response.headers['x-message-id']
+        messageId: data?.id
       });
 
       return {
         success: true,
-        messageId: response.headers['x-message-id'] as string,
+        messageId: data?.id,
       };
     } catch (error) {
       logger.error('Failed to send verification email', { toEmail, error });
@@ -152,26 +167,31 @@ export class EmailService {
     problemDescription?: string
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const [response] = await sendgrid.send({
+      const { data, error } = await this.resend.emails.send({
+        from: `${this.fromName} <${this.fromEmail}>`,
         to: toEmail,
-        from: {
-          email: this.fromEmail,
-          name: this.fromName,
-        },
         subject: `New Escalation Requires Human Assistance - ${sessionId.substring(0, 8)}`,
         text: `A customer conversation requires human assistance. Join meeting: ${meetingUrl}${problemDescription ? `\n\nProblem: ${problemDescription}` : ''}`,
         html: this._generateEscalationEmailHTML(meetingUrl, sessionId, problemDescription),
       });
 
+      if (error) {
+        logger.error('Failed to send escalation email', { toEmail, sessionId, error });
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
       logger.info('Escalation email sent', {
         toEmail,
-        messageId: response.headers['x-message-id'],
+        messageId: data?.id,
         sessionId
       });
 
       return {
         success: true,
-        messageId: response.headers['x-message-id'] as string,
+        messageId: data?.id,
       };
     } catch (error) {
       logger.error('Failed to send escalation email', { toEmail, sessionId, error });
@@ -300,7 +320,7 @@ export class EmailService {
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 30px; margin-bottom: 20px;">
-    <h2 style="color: #dc2626; margin-top: 0;">🚨 New Escalation Requires Human Assistance</h2>
+    <h2 style="color: #dc2626; margin-top: 0;">New Escalation Requires Human Assistance</h2>
     <p style="font-size: 16px; margin-bottom: 10px;">
       <strong>Session ID:</strong> ${sessionId}
     </p>
@@ -325,12 +345,12 @@ export class EmailService {
  * Create email service from environment variables
  */
 export function createEmailService(): EmailService {
-  const apiKey = process.env.SENDGRID_API_KEY;
-  const fromEmail = process.env.SENDGRID_FROM_EMAIL;
-  const fromName = process.env.SENDGRID_FROM_NAME;
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL;
+  const fromName = process.env.RESEND_FROM_NAME;
 
   if (!apiKey || !fromEmail) {
-    throw new Error('Missing SendGrid configuration. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL');
+    throw new Error('Missing Resend configuration. Set RESEND_API_KEY and RESEND_FROM_EMAIL');
   }
 
   return new EmailService({
