@@ -1,11 +1,21 @@
-# AI Assistant Platform - Development Environment
-# PostgreSQL + Redis for local development
+# AI Assistant Platform - Unified Development Environment
+# All services in one compose file
+#
+# Usage:
+#   docker compose up -d                    # Start core services (postgres, redis, janus, vk-agent)
+#   docker compose --profile tools up -d    # Include pgAdmin
+#   docker compose --profile chatwoot up -d # Include Chatwoot
+#   docker compose --profile all up -d      # Start everything
 
 name: platform
 
 services:
+  # ============================================================
+  # Core Infrastructure
+  # ============================================================
+
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg17
     container_name: platform-postgres
     restart: unless-stopped
     environment:
@@ -22,6 +32,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      platform-network:
+        ipv4_address: 172.30.0.10
 
   redis:
     image: redis:7.4.2-alpine
@@ -37,8 +50,67 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      platform-network:
+        ipv4_address: 172.30.0.11
 
-  # Optional: pgAdmin for database management
+  # ============================================================
+  # Voice AI Services (VK-Agent + Janus)
+  # ============================================================
+
+  janus:
+    image: canyan/janus-gateway:latest
+    container_name: platform-janus
+    restart: unless-stopped
+    volumes:
+      - ./janus-configs/janus.jcfg:/usr/local/etc/janus/janus.jcfg:ro
+      - ./janus-configs/janus.plugin.audiobridge.jcfg:/usr/local/etc/janus/janus.plugin.audiobridge.jcfg:ro
+      - ./janus-configs/janus.transport.websockets.jcfg:/usr/local/etc/janus/janus.transport.websockets.jcfg:ro
+    ports:
+      - "8188:8188"           # WebSocket API
+      - "8088:8088"           # HTTP Admin
+      - "10000-10100:10000-10100/udp"  # RTP/RTCP
+    healthcheck:
+      test: ['CMD', 'bash', '-c', 'echo > /dev/tcp/localhost/8188 && echo > /dev/tcp/localhost/8088']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      platform-network:
+        ipv4_address: 172.30.0.20
+
+  vk-agent:
+    build:
+      context: ../../services/vk-agent
+      dockerfile: Dockerfile
+    container_name: platform-vk-agent
+    restart: unless-stopped
+    env_file:
+      - ../../services/vk-agent/.env
+    environment:
+      - VK_AGENT_JANUS_WS_URL=ws://platform-janus:8188
+      - VK_AGENT_RTP_HOST=172.30.0.21
+      - VK_AGENT_RTP_PORT=5004
+    ports:
+      - "5004:5004/udp"  # RTP audio
+      - "3004:3004"      # API server
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://localhost:3004/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      janus:
+        condition: service_healthy
+    networks:
+      platform-network:
+        ipv4_address: 172.30.0.21
+
+  # ============================================================
+  # Development Tools (optional)
+  # ============================================================
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: platform-pgadmin
@@ -56,15 +128,128 @@ services:
       - postgres
     profiles:
       - tools
+      - all
+    networks:
+      - platform-network
+
+  # ============================================================
+  # Chatwoot (optional - human agent escalation)
+  # ============================================================
+
+  chatwoot-proxy:
+    image: nginx:alpine
+    container_name: platform-chatwoot-proxy
+    restart: unless-stopped
+    ports:
+      - '3003:80'
+    volumes:
+      - ../../apps/chatwoot/nginx-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      chatwoot:
+        condition: service_healthy
+    profiles:
+      - chatwoot
+      - all
+    networks:
+      - platform-network
+
+  chatwoot:
+    image: chatwoot/chatwoot:v3.14.1
+    container_name: platform-chatwoot
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - '3000:3000'
+    env_file: ../../apps/chatwoot/.env
+    environment:
+      - RAILS_ENV=production
+      - NODE_ENV=production
+      - RAILS_LOG_TO_STDOUT=true
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'rails', 's', '-p', '3000', '-b', '0.0.0.0']
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://localhost:3000/api']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    depends_on:
+      chatwoot-migrate:
+        condition: service_completed_successfully
+    profiles:
+      - chatwoot
+      - all
+    networks:
+      - platform-network
+    volumes:
+      - chatwoot_storage:/app/storage
+      - chatwoot_public:/app/public
+
+  chatwoot-migrate:
+    image: chatwoot/chatwoot:v3.14.1
+    container_name: platform-chatwoot-migrate
+    working_dir: /app
+    env_file: ../../apps/chatwoot/.env
+    environment:
+      - RAILS_ENV=production
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'rails', 'db:chatwoot_prepare']
+    profiles:
+      - chatwoot
+      - all
+    networks:
+      - platform-network
+
+  chatwoot-sidekiq:
+    image: chatwoot/chatwoot:v3.14.1
+    container_name: platform-chatwoot-sidekiq
+    restart: unless-stopped
+    working_dir: /app
+    env_file: ../../apps/chatwoot/.env
+    environment:
+      - RAILS_ENV=production
+    entrypoint: docker/entrypoints/rails.sh
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml']
+    depends_on:
+      chatwoot:
+        condition: service_healthy
+    profiles:
+      - chatwoot
+      - all
+    networks:
+      - platform-network
+    volumes:
+      - chatwoot_storage:/app/storage
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: platform-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025'  # SMTP
+      - '8025:8025'  # Web UI
+    profiles:
+      - chatwoot
+      - all
+    networks:
+      - platform-network
 
 volumes:
   postgres_data:
-    driver: local
+    name: platform-postgres-data
   redis_data:
-    driver: local
+    name: platform-redis-data
   pgadmin_data:
-    driver: local
+    name: platform-pgadmin-data
+  chatwoot_storage:
+    name: platform-chatwoot-storage
+  chatwoot_public:
+    name: platform-chatwoot-public
 
 networks:
-  default:
+  platform-network:
     name: platform-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
