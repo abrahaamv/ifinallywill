@@ -460,7 +460,7 @@ export function HomePage() {
               variant="outline"
               className="group h-12 sm:h-14 px-7 sm:px-9 text-[14px] sm:text-[15px] rounded-2xl border-indigo-500/30 bg-indigo-500/10 text-white hover:bg-indigo-500/20 font-medium"
             >
-              <a href={`${appUrls.meeting}/sales-demo`}>
+              <a href={appUrls.meeting}>
                 <Phone className="w-4 h-4 mr-2" />
                 Talk to AI
               </a>

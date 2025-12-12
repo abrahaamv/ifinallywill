@@ -3,60 +3,82 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    port: 5175,
-  },
-  build: {
-    rollupOptions: {
-      // Resolve Node.js polyfills for production build
-      external: [],
+export default defineConfig(({ mode }) => {
+  // Production URLs for deployment
+  const prodUrls = {
+    meeting: 'https://meet.visualkit.live',
+    dashboard: 'https://dashboard.visualkit.live',
+    landing: 'https://visualkit.live',
+  };
+
+  // Dev URLs for local development
+  const devUrls = {
+    meeting: 'http://localhost:5175',
+    dashboard: 'http://localhost:5174',
+    landing: 'http://localhost:5173',
+  };
+
+  const urls = mode === 'production' ? prodUrls : devUrls;
+
+  return {
+    plugins: [react(), tailwindcss()],
+    server: {
+      port: 5175,
     },
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
-  },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './src'),
-      // Mock Node.js built-in modules for browser (absolute paths for monorepo)
-      perf_hooks: resolve(__dirname, './src/mocks/perf_hooks.ts'),
-    },
-  },
-  define: {
-    // Polyfill Node.js globals for browser (polyfills.ts handles Buffer and process)
-    global: 'globalThis',
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-  },
-  optimizeDeps: {
-    include: [],
-    exclude: [
-      // Exclude backend-only packages (server-side only)
-      '@platform/db',
-      '@platform/auth',
-      '@platform/knowledge',
-      '@platform/realtime',
-      'postgres',
-      'drizzle-orm',
-      'ioredis',
-      // Exclude Node.js native modules and crypto libraries
-      'argon2',
-      '@node-rs/argon2',
-      'bcryptjs',
-      'bcrypt',
-      'otpauth',
-      'qrcode',
-      '@mapbox/node-pre-gyp',
-      'mock-aws-s3',
-      'aws-sdk',
-      'nock',
-    ],
-    esbuildOptions: {
-      // Node.js global to browser globalThis
-      define: {
-        global: 'globalThis',
+    build: {
+      rollupOptions: {
+        // Resolve Node.js polyfills for production build
+        external: [],
+      },
+      commonjsOptions: {
+        transformMixedEsModules: true,
       },
     },
-  },
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
+        // Mock Node.js built-in modules for browser (absolute paths for monorepo)
+        perf_hooks: resolve(__dirname, './src/mocks/perf_hooks.ts'),
+      },
+    },
+    define: {
+      // Polyfill Node.js globals for browser (polyfills.ts handles Buffer and process)
+      global: 'globalThis',
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      // URL constants injected at build time
+      '__VITE_MEET_URL__': JSON.stringify(urls.meeting),
+      '__VITE_DASHBOARD_URL__': JSON.stringify(urls.dashboard),
+      '__VITE_APP_URL__': JSON.stringify(urls.landing),
+    },
+    optimizeDeps: {
+      include: [],
+      exclude: [
+        // Exclude backend-only packages (server-side only)
+        '@platform/db',
+        '@platform/auth',
+        '@platform/knowledge',
+        '@platform/realtime',
+        'postgres',
+        'drizzle-orm',
+        'ioredis',
+        // Exclude Node.js native modules and crypto libraries
+        'argon2',
+        '@node-rs/argon2',
+        'bcryptjs',
+        'bcrypt',
+        'otpauth',
+        'qrcode',
+        '@mapbox/node-pre-gyp',
+        'mock-aws-s3',
+        'aws-sdk',
+        'nock',
+      ],
+      esbuildOptions: {
+        // Node.js global to browser globalThis
+        define: {
+          global: 'globalThis',
+        },
+      },
+    },
+  };
 });

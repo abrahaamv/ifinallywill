@@ -9,6 +9,7 @@ import { Button } from '@platform/ui/components/button';
 import { Input } from '@platform/ui/components/input';
 import { Label } from '@platform/ui/components/label';
 import { MessageSquare, X, Send, Video, Sparkles } from 'lucide-react';
+import { appUrls } from '../config/urls';
 
 interface DemoMessage {
   id: string;
@@ -20,16 +21,6 @@ interface DemoMessage {
 interface DemoWidgetProps {
   maxDurationMs?: number; // Default 5 minutes
   onLeadCapture?: (email: string, name?: string) => void;
-}
-
-// Get meeting URL safely
-function getMeetingUrl(): string {
-  try {
-    const url = import.meta.env.VITE_MEET_URL;
-    return url || 'http://localhost:5175';
-  } catch {
-    return 'http://localhost:5175';
-  }
 }
 
 const PRE_LOADED_RESPONSES = {
@@ -212,8 +203,7 @@ export function DemoWidget({
   };
 
   const handleJoinVideoCall = () => {
-    const meetingUrl = getMeetingUrl();
-    window.open(`${meetingUrl}/sales-demo`, '_blank');
+    window.open(appUrls.meeting, '_blank');
   };
 
   const formatTimeRemaining = () => {

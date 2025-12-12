@@ -135,7 +135,7 @@ export function MainLayout() {
               className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 text-[13px] h-9 px-4"
               asChild
             >
-              <a href={`${appUrls.meeting}/sales-demo`}>
+              <a href={appUrls.meeting}>
                 <Phone className="w-3.5 h-3.5 mr-1.5" />
                 Talk to AI
               </a>

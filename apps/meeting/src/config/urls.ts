@@ -1,55 +1,36 @@
 /**
  * Application URL Configuration
  *
- * Centralized URL management using environment variables.
- * Uses sensible defaults for investor preview deployment.
+ * URLs are injected at build time via vite.config.ts define.
+ * Production builds get production URLs, dev builds get localhost.
  *
  * Phase 2 Task 2.3: Remove Hardcoded URLs
  */
 
-// Detect if we're in production based on hostname or env
-const isProduction = typeof window !== 'undefined' &&
-  (window.location.hostname.includes('visualkit.live') ||
-   window.location.hostname.includes('railway.app'));
-
-// Default URLs for production (visualkit.live domain)
-const PRODUCTION_DEFAULTS = {
-  dashboard: 'https://dashboard.visualkit.live',
-  meeting: 'https://meet.visualkit.live',
-  landing: 'https://visualkit.live',
-};
-
-// Default URLs for local development
-const DEV_DEFAULTS = {
-  dashboard: 'http://localhost:5174',
-  meeting: 'http://localhost:5175',
-  landing: 'http://localhost:5173',
-};
-
-const defaults = isProduction ? PRODUCTION_DEFAULTS : DEV_DEFAULTS;
+// These globals are replaced at build time by Vite's define config
+declare const __VITE_MEET_URL__: string;
+declare const __VITE_DASHBOARD_URL__: string;
+declare const __VITE_APP_URL__: string;
 
 /**
- * Get landing URL from environment
- * Falls back to sensible defaults for investor preview
+ * Get landing URL - injected at build time
  */
 export function getLandingUrl(): string {
-  return import.meta.env.VITE_APP_URL || defaults.landing;
+  return __VITE_APP_URL__;
 }
 
 /**
- * Get dashboard URL from environment
- * Falls back to sensible defaults for investor preview
+ * Get dashboard URL - injected at build time
  */
 export function getDashboardUrl(): string {
-  return import.meta.env.VITE_DASHBOARD_URL || defaults.dashboard;
+  return __VITE_DASHBOARD_URL__;
 }
 
 /**
- * Get meeting URL from environment
- * Falls back to sensible defaults for investor preview
+ * Get meeting URL - injected at build time
  */
 export function getMeetingUrl(): string {
-  return import.meta.env.VITE_MEET_URL || defaults.meeting;
+  return __VITE_MEET_URL__;
 }
 
 /**
