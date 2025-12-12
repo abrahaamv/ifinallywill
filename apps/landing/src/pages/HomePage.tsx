@@ -191,6 +191,62 @@ const SECURITY_FEATURES = [
   { label: 'SOC 2 Roadmap', icon: Server },
 ];
 
+// Competitor comparison data
+const COMPETITOR_COMPARISONS = [
+  {
+    category: 'Video Infrastructure',
+    competitor: 'LiveKit Cloud',
+    competitorDesc: 'Enterprise video infrastructure',
+    visualkitAdvantage: 'Self-hosted Janus Gateway',
+    metrics: [
+      { label: 'Monthly Cost', competitor: '$5,000-$10,000', visualkit: '~$400', advantage: true },
+      { label: 'Annual Cost', competitor: '$60,000-$120,000', visualkit: '~$4,800', advantage: true },
+      { label: 'AI Integration', competitor: 'DIY', visualkit: 'Built-in', advantage: true },
+      { label: 'Control', competitor: 'Vendor lock-in', visualkit: 'Full ownership', advantage: true },
+    ],
+    verdict: '92-96% cheaper infrastructure with native AI',
+  },
+  {
+    category: 'AI Support Chat',
+    competitor: 'Intercom Fin',
+    competitorDesc: 'AI-powered customer support',
+    visualkitAdvantage: 'Visual AI with screen sharing',
+    metrics: [
+      { label: 'Visual Context', competitor: 'Text only', visualkit: 'Screen sharing', advantage: true },
+      { label: 'Issue Resolution', competitor: 'Based on description', visualkit: 'Sees the actual issue', advantage: true },
+      { label: 'Human Escalation', competitor: 'Yes', visualkit: 'Yes + context', advantage: true },
+      { label: 'Pricing Model', competitor: 'Per resolution', visualkit: 'Flat rate', advantage: true },
+    ],
+    verdict: 'AI that sees problems, not just reads about them',
+  },
+  {
+    category: 'Live Chat Platform',
+    competitor: 'Tawk.to / Crisp',
+    competitorDesc: 'Free live chat widgets',
+    visualkitAdvantage: 'AI-first with visual support',
+    metrics: [
+      { label: 'AI Capabilities', competitor: 'Basic/None', visualkit: 'Advanced multimodal', advantage: true },
+      { label: 'Screen Sharing', competitor: 'Limited/Paid', visualkit: 'Built-in free', advantage: true },
+      { label: 'Video Calls', competitor: 'Separate tool', visualkit: 'Integrated', advantage: true },
+      { label: 'Self-Service Rate', competitor: '~30%', visualkit: '~70%', advantage: true },
+    ],
+    verdict: '70% tickets resolved by AI before human needed',
+  },
+  {
+    category: 'Enterprise Support',
+    competitor: 'Zendesk Suite',
+    competitorDesc: 'Traditional helpdesk platform',
+    visualkitAdvantage: 'AI-native from day one',
+    metrics: [
+      { label: 'AI Integration', competitor: 'Bolt-on addon', visualkit: 'Core architecture', advantage: true },
+      { label: 'Setup Time', competitor: 'Weeks', visualkit: 'Minutes', advantage: true },
+      { label: 'Visual Support', competitor: 'Screenshots only', visualkit: 'Real-time screen sharing', advantage: true },
+      { label: 'Per-Agent Cost', competitor: '$55-$115/agent', visualkit: 'Flat team pricing', advantage: true },
+    ],
+    verdict: 'Modern AI-native vs legacy + AI plugins',
+  },
+];
+
 // ============================================================================
 // COMPONENTS
 // ============================================================================
@@ -294,6 +350,49 @@ function UseCaseCard({ useCase }: { useCase: typeof USE_CASES[0] }) {
       </div>
       <h4 className="text-[16px] font-semibold text-white mb-2">{useCase.title}</h4>
       <p className="text-[13px] text-white/40 leading-relaxed">{useCase.description}</p>
+    </div>
+  );
+}
+
+function CompetitorCard({ comparison }: { comparison: typeof COMPETITOR_COMPARISONS[0] }) {
+  return (
+    <div className="rounded-[24px] bg-white/[0.02] border border-white/[0.06] overflow-hidden">
+      {/* Header */}
+      <div className="p-5 border-b border-white/[0.06] bg-white/[0.01]">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider">
+            {comparison.category}
+          </span>
+          <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+            VisualKit Wins
+          </span>
+        </div>
+        <h4 className="text-[18px] font-bold text-white">
+          vs {comparison.competitor}
+        </h4>
+        <p className="text-[12px] text-white/40 mt-1">{comparison.competitorDesc}</p>
+      </div>
+
+      {/* Comparison Table */}
+      <div className="divide-y divide-white/[0.04]">
+        {comparison.metrics.map((metric) => (
+          <div key={metric.label} className="grid grid-cols-3 text-[13px]">
+            <div className="p-3 text-white/50 font-medium">{metric.label}</div>
+            <div className="p-3 text-white/40 text-center bg-red-500/[0.03]">{metric.competitor}</div>
+            <div className="p-3 text-emerald-400 text-center bg-emerald-500/[0.05] font-medium">
+              {metric.visualkit}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Verdict */}
+      <div className="p-4 bg-gradient-to-r from-emerald-500/[0.08] to-indigo-500/[0.05] border-t border-emerald-500/20">
+        <div className="flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400" />
+          <span className="text-[13px] font-medium text-white/70">{comparison.verdict}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -634,6 +733,47 @@ export function HomePage() {
               className="h-11 px-6 text-[14px] rounded-xl bg-white text-[#08080a] hover:bg-white/90 font-semibold"
             >
               Get API Key
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          COMPETITOR COMPARISON - Why Choose Us
+          ==================================================================== */}
+      <section className="relative py-20 sm:py-28 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-14 sm:mb-16">
+            <p className="text-[11px] sm:text-[12px] uppercase tracking-[0.2em] text-indigo-400/70 font-semibold mb-4">
+              Why VisualKit
+            </p>
+            <h2 className="text-[28px] sm:text-[36px] md:text-[44px] font-bold text-white tracking-[-0.02em] mb-4">
+              How We Compare
+            </h2>
+            <p className="text-[16px] text-white/40 max-w-xl mx-auto">
+              See how VisualKit stacks up against traditional support tools and video infrastructure providers.
+            </p>
+          </div>
+
+          {/* Comparison Cards Grid */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {COMPETITOR_COMPARISONS.map((comparison) => (
+              <CompetitorCard key={comparison.competitor} comparison={comparison} />
+            ))}
+          </div>
+
+          {/* Summary CTA */}
+          <div className="mt-12 text-center">
+            <p className="text-[14px] text-white/40 mb-6">
+              Ready to switch from legacy tools to AI-native support?
+            </p>
+            <Button
+              onClick={openModal}
+              className="h-12 px-8 text-[15px] rounded-2xl bg-white text-[#08080a] hover:bg-white/95 font-semibold"
+            >
+              Start Free Migration
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

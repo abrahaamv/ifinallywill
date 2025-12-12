@@ -27,7 +27,7 @@ function PrivateBetaBanner({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <span className="text-white/60">—</span>
         <span className="text-[13px] text-white/90">
-          Launching Q1 2025
+          Launching Q1 2026
         </span>
         <Link
           to="/contact"

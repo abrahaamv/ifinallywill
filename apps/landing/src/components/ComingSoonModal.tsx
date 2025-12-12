@@ -6,7 +6,7 @@
 import { Button } from '@platform/ui';
 import { Mail, Sparkles, X } from 'lucide-react';
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface ComingSoonModalProps {
   isOpen: boolean;
@@ -14,6 +14,8 @@ interface ComingSoonModalProps {
 }
 
 export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
+  const navigate = useNavigate();
+
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -28,6 +30,11 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  const handleRequestAccess = () => {
+    onClose();
+    navigate('/contact');
+  };
 
   if (!isOpen) return null;
 
@@ -59,7 +66,7 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
 
           {/* Title */}
           <h2 className="text-2xl font-bold text-white mb-3">
-            Coming Q1 2025
+            Coming Q1 2026
           </h2>
 
           {/* Description */}
@@ -80,13 +87,11 @@ export function ComingSoonModal({ isOpen, onClose }: ComingSoonModalProps) {
           {/* CTAs */}
           <div className="space-y-3">
             <Button
-              asChild
+              onClick={handleRequestAccess}
               className="w-full h-12 text-[15px] rounded-xl bg-white text-[#08080a] hover:bg-white/90 font-semibold"
             >
-              <Link to="/contact">
-                <Mail className="w-4 h-4 mr-2" />
-                Request Early Access
-              </Link>
+              <Mail className="w-4 h-4 mr-2" />
+              Request Early Access
             </Button>
             <Button
               variant="ghost"

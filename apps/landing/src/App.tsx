@@ -15,8 +15,8 @@ import { PricingPage } from './pages/PricingPage';
 
 export function App() {
   return (
-    <ComingSoonProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <ComingSoonProvider>
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
@@ -26,7 +26,7 @@ export function App() {
             <Route path="contact" element={<ContactPage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </ComingSoonProvider>
+      </ComingSoonProvider>
+    </BrowserRouter>
   );
 }
