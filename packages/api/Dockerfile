@@ -17,10 +17,12 @@ COPY tsconfig.json ./
 COPY packages/api/package.json ./packages/api/
 COPY packages/api-contract/package.json ./packages/api-contract/
 COPY packages/auth/package.json ./packages/auth/
+COPY packages/chatwoot/package.json ./packages/chatwoot/
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/knowledge/package.json ./packages/knowledge/
 COPY packages/realtime/package.json ./packages/realtime/
+COPY packages/ai-core/package.json ./packages/ai-core/
 
 # Install all dependencies (including dev dependencies for building)
 RUN pnpm install --frozen-lockfile
@@ -29,15 +31,19 @@ RUN pnpm install --frozen-lockfile
 COPY packages/api ./packages/api
 COPY packages/api-contract ./packages/api-contract
 COPY packages/auth ./packages/auth
+COPY packages/chatwoot ./packages/chatwoot
 COPY packages/db ./packages/db
 COPY packages/shared ./packages/shared
 COPY packages/knowledge ./packages/knowledge
 COPY packages/realtime ./packages/realtime
+COPY packages/ai-core ./packages/ai-core
 
 # Build all dependencies and the API package
 RUN pnpm --filter @platform/shared build
 RUN pnpm --filter @platform/db build
 RUN pnpm --filter @platform/auth build
+RUN pnpm --filter @platform/chatwoot build
+RUN pnpm --filter @platform/ai-core build
 RUN pnpm --filter @platform/api-contract build
 RUN pnpm --filter @platform/knowledge build
 RUN pnpm --filter @platform/realtime build
@@ -65,10 +71,12 @@ COPY turbo.json ./
 COPY packages/api/package.json ./packages/api/
 COPY packages/api-contract/package.json ./packages/api-contract/
 COPY packages/auth/package.json ./packages/auth/
+COPY packages/chatwoot/package.json ./packages/chatwoot/
 COPY packages/db/package.json ./packages/db/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/knowledge/package.json ./packages/knowledge/
 COPY packages/realtime/package.json ./packages/realtime/
+COPY packages/ai-core/package.json ./packages/ai-core/
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
@@ -77,10 +85,12 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder --chown=nodejs:nodejs /app/packages/api/dist ./packages/api/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/api-contract/dist ./packages/api-contract/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/auth/dist ./packages/auth/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/chatwoot/dist ./packages/chatwoot/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/db/dist ./packages/db/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/knowledge/dist ./packages/knowledge/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/realtime/dist ./packages/realtime/dist
+COPY --from=builder --chown=nodejs:nodejs /app/packages/ai-core/dist ./packages/ai-core/dist
 
 # Copy database migrations
 COPY --from=builder --chown=nodejs:nodejs /app/packages/db/migrations ./packages/db/migrations
@@ -88,12 +98,13 @@ COPY --from=builder --chown=nodejs:nodejs /app/packages/db/migrations ./packages
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV WS_PORT=3002
 
 # Switch to non-root user
 USER nodejs
 
-# Expose API port
-EXPOSE 3001
+# Expose API and WebSocket ports
+EXPOSE 3001 3002
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \

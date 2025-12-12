@@ -1,0 +1,68 @@
+# Platform API Server - Hetzner Deployment
+# Deploy alongside Janus Gateway and VK-Agent
+#
+# Usage:
+#   scp -r infrastructure/hetzner root@178.156.151.139:/opt/platform-api/
+#   ssh root@178.156.151.139 "cd /opt/platform-api && docker compose -f docker-compose.api.yml up -d"
+
+name: platform-api
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: packages/api/Dockerfile
+    container_name: platform-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"  # HTTP API (tRPC)
+      - "3002:3002"  # WebSocket (Realtime)
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - WS_PORT=3002
+      # Database (Neon)
+      - DATABASE_URL=${DATABASE_URL}
+      # Redis (Upstash)
+      - REDIS_URL=${REDIS_URL}
+      # Auth
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_URL=${AUTH_URL:-https://api.visualkit.live}
+      # AI Providers
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
+      - VOYAGE_API_KEY=${VOYAGE_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-noreply@visualkit.live}
+      - RESEND_FROM_NAME=${RESEND_FROM_NAME:-VisualKit}
+      # Chatwoot (optional)
+      - CHATWOOT_URL=${CHATWOOT_URL:-}
+      - CHATWOOT_API_TOKEN=${CHATWOOT_API_TOKEN:-}
+      - CHATWOOT_WEBHOOK_SECRET=${CHATWOOT_WEBHOOK_SECRET:-}
+      # VK-Agent connection (same server)
+      - VK_AGENT_URL=http://vk-agent:3004
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      - platform-network
+    depends_on:
+      - vk-agent
+
+  # Reference existing services (already running)
+  vk-agent:
+    image: platform-vk-agent:latest
+    container_name: vk-agent
+    # This service is already running - just reference for networking
+    external: true
+
+networks:
+  platform-network:
+    external: true
+    name: platform-network
