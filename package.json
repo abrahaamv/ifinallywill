@@ -8,7 +8,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "concurrently --names \"TURBO,AGENT\" --prefix-colors \"cyan,magenta\" \"turbo run dev --parallel\" \"pnpm dev:agent\"",
+    "dev": "turbo run dev --parallel",
     "dev:all": "turbo run dev --parallel",
     "dev:landing": "pnpm --filter @platform/landing dev",
     "dev:dashboard": "pnpm --filter @platform/dashboard dev",
@@ -16,7 +16,11 @@
     "dev:widget": "pnpm --filter @platform/widget-sdk dev",
     "dev:api": "pnpm --filter @platform/api dev",
     "dev:realtime": "pnpm --filter @platform/realtime dev",
-    "dev:agent": "cd livekit-agent && (test -d venv && . venv/bin/activate && python agent.py dev || echo '⚠️  Python venv not found. Run: cd livekit-agent && python3 -m venv venv && . venv/bin/activate && pip install -r requirements.txt')",
+    "chatwoot:up": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml up -d",
+    "chatwoot:down": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml down",
+    "chatwoot:logs": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml logs -f",
+    "chatwoot:shell": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml exec chatwoot bash",
+    "chatwoot:console": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml exec chatwoot bundle exec rails console",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
@@ -45,6 +49,12 @@
     "typescript": "5.7.2"
   },
   "packageManager": "pnpm@9.15.0",
+  "pnpm": {
+    "overrides": {
+      "next": "15.5.7",
+      "jws": "4.0.1"
+    }
+  },
   "dependencies": {
     "@tailwindcss/vite": "4.1.14",
     "tailwindcss": "4.1.14"

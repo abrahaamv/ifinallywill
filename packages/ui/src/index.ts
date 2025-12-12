@@ -117,6 +117,13 @@ export type { TextareaProps } from './components/textarea';
 
 export { Switch } from './components/switch';
 
+export {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from './components/accordion';
+
 // Layout Components
 export { AppShell, AppHeader, Sidebar } from './components/layout';
 export type { SidebarItem, SidebarSection } from './components/layout';

@@ -490,7 +490,9 @@ describe('executeRAGQuery()', () => {
       expect(result.chunks.length).toBeLessThanOrEqual(5);
     });
 
-    it('should use default minScore of 0.7', async () => {
+    it('should use default minScore of 0.3', async () => {
+      // Default minScore was lowered to 0.3 because Cohere reranker returns scores 0-1,
+      // often below 0.7 even for relevant docs
       const mockDb = createMockDb();
       mockDb.execute
         .mockResolvedValueOnce([
@@ -500,7 +502,7 @@ describe('executeRAGQuery()', () => {
             content: 'High score',
             metadata: {},
             chunk_index: 0,
-            semantic_score: 0.8,
+            semantic_score: 0.5,
           },
           {
             id: 'chunk-2',
@@ -508,16 +510,16 @@ describe('executeRAGQuery()', () => {
             content: 'Low score',
             metadata: {},
             chunk_index: 1,
-            semantic_score: 0.6,
+            semantic_score: 0.2,
           },
         ])
         .mockResolvedValueOnce([]);
 
       const result = await executeRAGQuery(mockDb as any, { query: 'Test' });
 
-      // Only chunk with score >= 0.7 should be included
+      // Only chunk with score >= 0.3 should be included
       expect(result.chunks.length).toBe(1);
-      expect(result.chunks[0]?.score).toBeGreaterThanOrEqual(0.7);
+      expect(result.chunks[0]?.score).toBeGreaterThanOrEqual(0.3);
     });
 
     it('should use default hybrid weights (0.7 semantic, 0.3 keyword)', async () => {
