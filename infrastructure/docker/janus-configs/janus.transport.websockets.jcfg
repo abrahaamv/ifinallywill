@@ -1,0 +1,28 @@
+# Janus WebSocket Transport Configuration
+# VK-Agent connects via WebSocket for signaling
+
+general: {
+    # Enable JSON over WebSocket
+    json = "indented"
+
+    # Enable WebSocket transport
+    ws = true
+    ws_port = 8188
+    ws_ip = "0.0.0.0"
+
+    # Enable secure WebSocket (disabled for development)
+    wss = false
+    # wss_port = 8989
+
+    # Ping/pong for keepalive
+    ws_ping_pong = true
+
+    # Logging
+    ws_logging = "err,warn"
+}
+
+# Admin interface (optional)
+admin: {
+    admin_ws = false
+    admin_ws_port = 7188
+}

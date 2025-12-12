@@ -1,0 +1,36 @@
+# Janus AudioBridge Plugin Configuration
+# Configured for VK-Agent plain RTP participant mode
+
+general: {
+    # Admin key for protected requests
+    admin_key = "audiobridge_admin"
+
+    # Default sampling rate (48kHz for Opus)
+    default_sampling_rate = 48000
+
+    # Default prebuffering (milliseconds)
+    default_prebuffering = 0
+
+    # Enable comfort noise generation
+    default_comfort_noise = false
+
+    # RTP forwarding allowed
+    rtp_forward_always_on = true
+
+    # Allow plain RTP participants (CRITICAL for VK-Agent)
+    allow_rtp_participants = true
+}
+
+# Pre-configured rooms
+# VK-Agent will create room dynamically, but we can pre-configure defaults
+room-5679: {
+    description = "VK-Agent Default Room"
+    is_private = false
+    sampling_rate = 48000
+    audiolevel_event = true
+    audio_active_packets = 50
+    audio_level_average = 25
+    record = false
+    # Allow plain RTP
+    allow_rtp_participants = true
+}
