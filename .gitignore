@@ -28,9 +28,13 @@ __pycache__/
 dist/
 build/
 
-# IDEs
+# IDEs & Tools
 .vscode/
 .idea/
+.cursor/
+.playwright-mcp/
+.superdesign/
+.fr-*/
 *.swp
 *.swo
 *~
@@ -42,9 +46,11 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
-# Testing
+# Testing & Coverage
 coverage/
 .nyc_output/
+packages/*/coverage/
+apps/*/coverage/
 
 # Database
 *.db
@@ -55,10 +61,21 @@ coverage/
 tmp/
 temp/
 
+# Temporary (local only, not tracked)
+_temp/
+_temp_*/
+
 
 
 # User data (not for version control)
 data/knowledge-base/ifinallywill/
+
+# Chatwoot (cloned from https://github.com/chatwoot/chatwoot.git)
+# Keep our platform-specific config files, ignore the rest
+apps/chatwoot/*
+!apps/chatwoot/.env
+!apps/chatwoot/docker-compose.platform.yml
+!apps/chatwoot/bin/setup-platform
 
 # Claude Flow generated files
 .claude/settings.local.json
