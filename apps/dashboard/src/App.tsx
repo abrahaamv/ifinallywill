@@ -1,31 +1,59 @@
 /**
  * Dashboard App - Main Component
  * Multi-page React application with routing and authentication
+ *
+ * URL Convention:
+ * - Development: http://localhost:5174
+ * - Production: https://dashboard.visualkit.live
+ *
+ * Route Structure (per plan.md):
+ * - MAIN: /dashboard, /conversations, /knowledge
+ * - AGENTS: /personalities, /deployments
+ * - MEETINGS: /rooms, /schedule, /recordings
+ * - PLATFORM: /integrations, /api-keys, /team, /settings
  */
 
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './layouts/DashboardLayout';
-import { AnalyticsPage } from './pages/AnalyticsPage';
+
+// Main section pages
+import { HomePage } from './pages/HomePage';
+import { KnowledgePage } from './pages/KnowledgePage';
+import { SupportPage } from './pages/SupportPage';
+import { TranscriptsPage } from './pages/TranscriptsPage';
+
+// Agents section pages
+import { DeploymentsPage } from './pages/DeploymentsPage';
+import { PersonalitiesPage } from './pages/PersonalitiesPage';
+
+// Meetings section pages
+import { RecordingsPage } from './pages/RecordingsPage';
+import { RoomsPage } from './pages/RoomsPage';
+import { SchedulePage } from './pages/SchedulePage';
+
+// Platform section pages
 import { ApiKeysPage } from './pages/ApiKeysPage';
-import { ConversationsPage } from './pages/ConversationsPage';
+import { IntegrationsPage } from './pages/IntegrationsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { TeamPage } from './pages/TeamPage';
+
+// Auth pages
+import { LoginPage } from './pages/LoginPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { SignupPage } from './pages/SignupPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+
+// Legacy pages (kept for backwards compatibility)
+import { AnalyticsPage } from './pages/AnalyticsPage';
 import { CostsPage } from './pages/CostsPage';
 import { DeployPage } from './pages/DeployPage';
 import { EscalationsPage } from './pages/EscalationsPage';
-import { HomePage } from './pages/HomePage';
-import { IntegrationsPage } from './pages/IntegrationsPage';
-import { KnowledgePage } from './pages/KnowledgePage';
-import { LoginPage } from './pages/LoginPage';
 import { OptimizePage } from './pages/OptimizePage';
-import { PersonalitiesPage } from './pages/PersonalitiesPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { RoomsPage } from './pages/RoomsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { SignupPage } from './pages/SignupPage';
-import { TeamPage } from './pages/TeamPage';
-import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { WidgetConfigPage } from './pages/WidgetConfigPage';
+
+// Providers
 import { AuthProvider } from './providers/AuthProvider';
 import { TRPCProvider } from './providers/TRPCProvider';
 
@@ -54,23 +82,38 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
+                {/* Default redirect to dashboard */}
                 <Route index element={<Navigate to="/dashboard" replace />} />
+
+                {/* MAIN section */}
                 <Route path="dashboard" element={<HomePage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="conversations" element={<ConversationsPage />} />
+                <Route path="support" element={<SupportPage />} />
+                <Route path="transcripts" element={<TranscriptsPage />} />
                 <Route path="knowledge" element={<KnowledgePage />} />
-                <Route path="rooms" element={<RoomsPage />} />
-                <Route path="escalations" element={<EscalationsPage />} />
-                <Route path="costs" element={<CostsPage />} />
-                <Route path="optimize" element={<OptimizePage />} />
-                <Route path="deploy" element={<DeployPage />} />
-                <Route path="integrations" element={<IntegrationsPage />} />
-                <Route path="team" element={<TeamPage />} />
-                <Route path="api-keys" element={<ApiKeysPage />} />
+
+                {/* AGENTS section */}
                 <Route path="personalities" element={<PersonalitiesPage />} />
-                <Route path="widget-config" element={<WidgetConfigPage />} />
+                <Route path="deployments" element={<DeploymentsPage />} />
+
+                {/* MEETINGS section */}
+                <Route path="rooms" element={<RoomsPage />} />
+                <Route path="schedule" element={<SchedulePage />} />
+                <Route path="recordings" element={<RecordingsPage />} />
+
+                {/* PLATFORM section */}
+                <Route path="integrations" element={<IntegrationsPage />} />
+                <Route path="api-keys" element={<ApiKeysPage />} />
+                <Route path="team" element={<TeamPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
+
+                {/* Legacy routes (kept for backwards compatibility) */}
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="costs" element={<CostsPage />} />
+                <Route path="escalations" element={<EscalationsPage />} />
+                <Route path="optimize" element={<OptimizePage />} />
+                <Route path="deploy" element={<DeployPage />} />
+                <Route path="widget-config" element={<WidgetConfigPage />} />
               </Route>
 
               {/* 404 redirect */}

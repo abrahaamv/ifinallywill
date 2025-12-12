@@ -1,7 +1,10 @@
 /**
- * Conversations Page - Complete Redesign
- * Modern table with filters, search, and status indicators
- * Inspired by Touchpoint CRM design
+ * Transcripts Page - AI Conversation History
+ *
+ * URL: dashboard.visualkit.live/transcripts
+ *
+ * Full history of AI conversations from the platform.
+ * Shows session details, message counts, and allows viewing full transcripts.
  */
 
 import {
@@ -40,20 +43,24 @@ import {
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
-export function ConversationsPage() {
+export function TranscriptsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // AI Transcripts data
   const { data, isLoading, error } = trpc.sessions.list.useQuery({
     limit: 100,
     offset: 0,
   });
 
+  // Escalation stats
+  const { data: escalationStats } = trpc.escalations.getStats.useQuery();
+
   const conversations = data?.sessions || [];
   const totalCount = data?.total || 0;
 
   // Helper function to compute status from session data
-  const getConversationStatus = (conv: typeof conversations[0]): string => {
+  const getConversationStatus = (conv: (typeof conversations)[0]): string => {
     if (conv.endedAt) return 'completed';
     return 'active';
   };
@@ -70,7 +77,7 @@ export function ConversationsPage() {
   const getStatusBadge = (status: string) => {
     const variants: Record<
       string,
-      { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: any; label: string }
+      { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock; label: string }
     > = {
       active: { variant: 'default', icon: Clock, label: 'Active' },
       completed: { variant: 'secondary', icon: CheckCircle2, label: 'Completed' },
@@ -104,13 +111,14 @@ export function ConversationsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Conversations</h1>
-          <p className="mt-2 text-muted-foreground">Manage and review AI assistant conversations</p>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Bot className="h-8 w-8 text-primary" />
+            AI Transcripts
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Full history of AI-powered conversations
+          </p>
         </div>
-        <Button>
-          <MessageCircle className="mr-2 h-4 w-4" />
-          New Conversation
-        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -134,7 +142,9 @@ export function ConversationsPage() {
               <Clock className="h-5 w-5 text-blue-500" />
             </div>
             <p className="mt-3 text-3xl font-bold text-foreground">
-              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'active').length}
+              {isLoading
+                ? '—'
+                : conversations.filter((c) => getConversationStatus(c) === 'active').length}
             </p>
           </CardContent>
         </Card>
@@ -146,7 +156,9 @@ export function ConversationsPage() {
               <CheckCircle2 className="h-5 w-5 text-green-500" />
             </div>
             <p className="mt-3 text-3xl font-bold text-foreground">
-              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'completed').length}
+              {isLoading
+                ? '—'
+                : conversations.filter((c) => getConversationStatus(c) === 'completed').length}
             </p>
           </CardContent>
         </Card>
@@ -158,7 +170,10 @@ export function ConversationsPage() {
               <AlertCircle className="h-5 w-5 text-red-500" />
             </div>
             <p className="mt-3 text-3xl font-bold text-foreground">
-              {isLoading ? '—' : conversations.filter((c) => getConversationStatus(c) === 'escalated').length}
+              {escalationStats?.total ?? 0}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {escalationStats?.resolved ?? 0} resolved
             </p>
           </CardContent>
         </Card>
@@ -223,7 +238,7 @@ export function ConversationsPage() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {searchQuery || statusFilter !== 'all'
                   ? 'Try adjusting your filters'
-                  : 'Start a new conversation to get started'}
+                  : 'Conversations will appear here when users interact with the AI'}
               </p>
             </div>
           ) : (
@@ -256,15 +271,15 @@ export function ConversationsPage() {
                             </>
                           ) : (
                             <>
-                              <Bot className="h-4 w-4 text-primary-600" />
+                              <Bot className="h-4 w-4 text-primary" />
                               <span className="text-sm">Text Chat</span>
                             </>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {/* Mock message count */}
-                        {Math.floor(Math.random() * 20) + 1}
+                        {/* Message count would come from backend */}
+                        —
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(conv.createdAt)}

@@ -1,6 +1,12 @@
 /**
  * DashboardLayout - Shared layout wrapper for all dashboard pages
  * Provides consistent sidebar, header, and navigation
+ *
+ * Sidebar Structure (per plan.md):
+ * - MAIN: Home, Conversations, Knowledge Base
+ * - AGENTS: AI Personalities, Deployments
+ * - MEETINGS: Meeting Rooms, Schedule, Recordings (Premium)
+ * - PLATFORM: Integrations, API Keys, Team, Settings
  */
 
 import { createModuleLogger } from '../utils/logger';
@@ -13,16 +19,18 @@ import {
   type SidebarSection,
 } from '@platform/ui';
 import {
-  BarChart3,
   BookOpen,
   Bot,
+  Calendar,
+  FileText,
+  Headphones,
   Home,
-  MessageSquare,
+  Key,
+  Rocket,
   Settings,
   Sparkles,
   Users,
   Video,
-  Zap,
 } from 'lucide-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ChatWidget } from '../components/ChatWidget';
@@ -34,21 +42,26 @@ const logger = createModuleLogger('DashboardLayout');
 const routeTitles: Record<string, string> = {
   '/': 'Dashboard',
   '/dashboard': 'Dashboard',
-  '/conversations': 'Conversations',
+  '/support': 'Support',
+  '/transcripts': 'AI Transcripts',
   '/knowledge': 'Knowledge Base',
   '/personalities': 'AI Personalities',
+  '/deployments': 'Deployments',
   '/rooms': 'Meeting Rooms',
-  '/team': 'Team',
-  '/widget': 'Widget Config',
+  '/schedule': 'Schedule',
+  '/recordings': 'Recordings',
   '/integrations': 'Integrations',
-  '/optimize': 'AI Optimization',
+  '/api-keys': 'API Keys',
+  '/team': 'Team',
   '/settings': 'Settings',
+  '/profile': 'Profile',
+  // Legacy routes (kept for backwards compatibility)
   '/analytics': 'Analytics',
   '/costs': 'Costs',
   '/escalations': 'Escalations',
   '/deploy': 'Deploy',
-  '/api-keys': 'API Keys',
-  '/profile': 'Profile',
+  '/optimize': 'AI Optimization',
+  '/widget-config': 'Widget Config',
 };
 
 export function DashboardLayout() {
@@ -74,11 +87,12 @@ export function DashboardLayout() {
       }
     : {
         name: 'Guest User',
-        email: 'guest@platform.com',
+        email: 'guest@visualkit.live',
         initials: 'GU',
       };
 
   // Navigation sections with active state based on current route
+  // Structure per plan.md: MAIN, AGENTS, MEETINGS, PLATFORM
   const sidebarSections: SidebarSection[] = [
     {
       title: 'Main',
@@ -91,20 +105,31 @@ export function DashboardLayout() {
           active: location.pathname === '/' || location.pathname === '/dashboard',
         },
         {
-          id: 'conversations',
-          label: 'Conversations',
-          icon: MessageSquare,
-          href: '/conversations',
-          active: location.pathname === '/conversations',
-          badge: 12,
+          id: 'support',
+          label: 'Support',
+          icon: Headphones,
+          href: '/support',
+          active: location.pathname === '/support',
+        },
+        {
+          id: 'transcripts',
+          label: 'AI Transcripts',
+          icon: FileText,
+          href: '/transcripts',
+          active: location.pathname === '/transcripts',
         },
         {
           id: 'knowledge',
-          label: 'Knowledge',
+          label: 'Knowledge Base',
           icon: BookOpen,
           href: '/knowledge',
           active: location.pathname === '/knowledge',
         },
+      ],
+    },
+    {
+      title: 'Agents',
+      items: [
         {
           id: 'personalities',
           label: 'AI Personalities',
@@ -112,10 +137,17 @@ export function DashboardLayout() {
           href: '/personalities',
           active: location.pathname === '/personalities',
         },
+        {
+          id: 'deployments',
+          label: 'Deployments',
+          icon: Rocket,
+          href: '/deployments',
+          active: location.pathname === '/deployments',
+        },
       ],
     },
     {
-      title: 'Collaboration',
+      title: 'Meetings',
       items: [
         {
           id: 'rooms',
@@ -125,24 +157,26 @@ export function DashboardLayout() {
           active: location.pathname === '/rooms',
         },
         {
-          id: 'team',
-          label: 'Team',
-          icon: Users,
-          href: '/team',
-          active: location.pathname === '/team',
+          id: 'schedule',
+          label: 'Schedule',
+          icon: Calendar,
+          href: '/schedule',
+          active: location.pathname === '/schedule',
+        },
+        {
+          id: 'recordings',
+          label: 'Recordings',
+          icon: Video,
+          href: '/recordings',
+          active: location.pathname === '/recordings',
+          // Premium badge indicator - using text since badge only accepts string/number
+          badge: 'PRO',
         },
       ],
     },
     {
       title: 'Platform',
       items: [
-        {
-          id: 'widget',
-          label: 'Widget Config',
-          icon: Zap,
-          href: '/widget-config',
-          active: location.pathname === '/widget-config',
-        },
         {
           id: 'integrations',
           label: 'Integrations',
@@ -151,11 +185,18 @@ export function DashboardLayout() {
           active: location.pathname === '/integrations',
         },
         {
-          id: 'optimize',
-          label: 'Optimize',
-          icon: BarChart3,
-          href: '/optimize',
-          active: location.pathname === '/optimize',
+          id: 'api-keys',
+          label: 'API Keys',
+          icon: Key,
+          href: '/api-keys',
+          active: location.pathname === '/api-keys',
+        },
+        {
+          id: 'team',
+          label: 'Team',
+          icon: Users,
+          href: '/team',
+          active: location.pathname === '/team',
         },
         {
           id: 'settings',
@@ -192,10 +233,10 @@ export function DashboardLayout() {
         <Sidebar
           logo={
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold text-gray-900">Platform</span>
+              <span className="text-lg font-bold text-gray-900">VisualKit</span>
             </div>
           }
           sections={sidebarSections}
@@ -230,3 +271,4 @@ export function DashboardLayout() {
     </AppShell>
   );
 }
+

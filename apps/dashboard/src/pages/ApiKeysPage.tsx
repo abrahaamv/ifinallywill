@@ -1,6 +1,7 @@
 /**
  * API Keys Page - Secure Authentication Management
  * Publishable and secret keys with rate limiting and security best practices
+ * Includes WSS URL and SDK configuration for developers
  */
 
 import { createModuleLogger } from '../utils/logger';
@@ -29,7 +30,19 @@ import {
   TableHeader,
   TableRow,
 } from '@platform/ui';
-import { CheckCircle, Copy, Key, Plus, Shield, TrendingUp } from 'lucide-react';
+import {
+  CheckCircle,
+  Code2,
+  Copy,
+  ExternalLink,
+  Globe,
+  Key,
+  Plus,
+  Shield,
+  Terminal,
+  TrendingUp,
+  Wifi,
+} from 'lucide-react';
 import { useState } from 'react';
 import { trpc } from '../utils/trpc';
 
@@ -46,6 +59,17 @@ interface ApiKey {
   lastUsedAt: Date | null | string;
 }
 
+// SDK Connection URLs (from environment or defaults for localhost)
+const SDK_CONFIG = {
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  wssUrl: import.meta.env.VITE_REALTIME_URL || 'ws://localhost:3002',
+  livekitUrl: import.meta.env.VITE_LIVEKIT_URL || 'wss://your-project.livekit.cloud',
+  // Production URLs (shown as reference)
+  productionApiUrl: 'https://api.visualkit.live',
+  productionWssUrl: 'wss://realtime.visualkit.live',
+  productionLivekitUrl: 'wss://livekit.visualkit.live',
+};
+
 export function ApiKeysPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
@@ -56,6 +80,7 @@ export function ApiKeysPage() {
     warning: string;
   } | null>(null);
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // tRPC queries and mutations
   const { data: keysData, refetch: refetchKeys } = trpc.apiKeys.list.useQuery();
@@ -105,6 +130,16 @@ export function ApiKeysPage() {
     }
   };
 
+  const handleCopyField = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      logger.error('Failed to copy', { error });
+    }
+  };
+
   const handleRevokeKey = async (keyId: string, keyName: string) => {
     if (
       !confirm(
@@ -133,19 +168,19 @@ export function ApiKeysPage() {
     }
     if (key.expiresAt && new Date(key.expiresAt) < new Date()) {
       return (
-        <Badge variant="outline" className="text-yellow-600 border-yellow-300">
+        <Badge variant="outline" className="border-yellow-300 text-yellow-600">
           Expired
         </Badge>
       );
     }
     return (
-      <Badge variant="outline" className="text-green-600 border-green-300">
+      <Badge variant="outline" className="border-green-300 text-green-600">
         Active
       </Badge>
     );
   };
 
-  // Calculate stats*
+  // Calculate stats
   const totalKeys = keys.length;
   const activeKeys = keys.filter(
     (k: ApiKey) =>
@@ -154,27 +189,29 @@ export function ApiKeysPage() {
   const apiCallsThisMonth = 47832; // Mock API usage
   const securityStatus = activeKeys > 0 && totalKeys < 10 ? 'Healthy' : 'Review';
 
+  // Determine if we're in production
+  const isProduction = SDK_CONFIG.apiUrl.includes('visualkit.live');
+
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex h-screen flex-col bg-background">
       {/* Header Section */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-6 py-6">
           <div className="mb-4">
-            <h1 className="text-3xl font-bold">API Keys Management</h1>
-            <p className="text-muted-foreground mt-2">
-              Secure API authentication with publishable and secret keys**, rate limiting***, and
-              automatic expiration for production-grade security
+            <h1 className="text-3xl font-bold">API Keys & SDK Configuration</h1>
+            <p className="mt-2 text-muted-foreground">
+              Secure API authentication, WebSocket URLs, and SDK integration for developers
             </p>
           </div>
 
           {/* API Key Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Total Keys</p>
-                    <p className="text-2xl font-bold">{totalKeys}*</p>
+                    <p className="text-2xl font-bold">{totalKeys}</p>
                   </div>
                   <Key className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -186,7 +223,7 @@ export function ApiKeysPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Active Keys</p>
-                    <p className="text-2xl font-bold">{activeKeys}*</p>
+                    <p className="text-2xl font-bold">{activeKeys}</p>
                   </div>
                   <CheckCircle className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -198,7 +235,7 @@ export function ApiKeysPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">API Calls (30d)</p>
-                    <p className="text-2xl font-bold">{apiCallsThisMonth.toLocaleString()}*</p>
+                    <p className="text-2xl font-bold">{apiCallsThisMonth.toLocaleString()}</p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -210,7 +247,7 @@ export function ApiKeysPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Security Status</p>
-                    <p className="text-2xl font-bold">{securityStatus}*</p>
+                    <p className="text-2xl font-bold">{securityStatus}</p>
                   </div>
                   <Shield className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -223,6 +260,194 @@ export function ApiKeysPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="container mx-auto space-y-6">
+          {/* SDK Connection URLs - NEW SECTION */}
+          <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5 text-blue-600" />
+                SDK Connection URLs
+              </CardTitle>
+              <CardDescription>
+                Use these URLs to connect your SDK integration to VisualKit services
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Environment Badge */}
+              <div className="flex items-center gap-2">
+                <Badge
+                  className={
+                    isProduction
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }
+                >
+                  {isProduction ? 'Production' : 'Development'}
+                </Badge>
+                {!isProduction && (
+                  <span className="text-xs text-muted-foreground">
+                    Using localhost URLs for local development
+                  </span>
+                )}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* REST API URL */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    REST API URL
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={SDK_CONFIG.apiUrl}
+                      className="bg-white font-mono text-sm dark:bg-gray-900"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyField(SDK_CONFIG.apiUrl, 'apiUrl')}
+                    >
+                      {copiedField === 'apiUrl' ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* WebSocket URL */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Wifi className="h-4 w-4" />
+                    WebSocket URL (WSS)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={SDK_CONFIG.wssUrl}
+                      className="bg-white font-mono text-sm dark:bg-gray-900"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyField(SDK_CONFIG.wssUrl, 'wssUrl')}
+                    >
+                      {copiedField === 'wssUrl' ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* LiveKit URL */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4" />
+                    LiveKit URL (Voice/Video)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={SDK_CONFIG.livekitUrl}
+                      className="bg-white font-mono text-sm dark:bg-gray-900"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyField(SDK_CONFIG.livekitUrl, 'livekitUrl')}
+                    >
+                      {copiedField === 'livekitUrl' ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* SDK Documentation Link */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Code2 className="h-4 w-4" />
+                    SDK Documentation
+                  </Label>
+                  <Button variant="outline" className="w-full justify-start" asChild>
+                    <a
+                      href="https://docs.visualkit.live/sdk"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      View SDK Documentation
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Start Code */}
+              <div className="mt-4 space-y-2">
+                <Label>Quick Start (JavaScript/TypeScript)</Label>
+                <div className="relative">
+                  <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm text-gray-100">
+                    <code>{`import { VKClient } from '@visualkit/sdk';
+
+const client = new VKClient({
+  apiKey: 'pk_your_api_key_here',
+  apiUrl: '${SDK_CONFIG.apiUrl}',
+  wssUrl: '${SDK_CONFIG.wssUrl}',
+});
+
+// Connect to an agent
+const agent = await client.connectAgent({
+  agentId: 'your_agent_id',
+  userId: 'visitor_123',
+});
+
+// Start voice conversation
+await agent.startVoice();
+
+// Share screen for vision AI
+await agent.shareScreen();`}</code>
+                  </pre>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute right-2 top-2"
+                    onClick={() =>
+                      handleCopyField(
+                        `import { VKClient } from '@visualkit/sdk';\n\nconst client = new VKClient({\n  apiKey: 'pk_your_api_key_here',\n  apiUrl: '${SDK_CONFIG.apiUrl}',\n  wssUrl: '${SDK_CONFIG.wssUrl}',\n});`,
+                        'codeSnippet'
+                      )
+                    }
+                  >
+                    {copiedField === 'codeSnippet' ? 'Copied!' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Production URLs Reference */}
+              {!isProduction && (
+                <Alert className="mt-4">
+                  <AlertDescription className="text-sm">
+                    <strong>Production URLs:</strong> When deploying to production, use these URLs:
+                    <br />
+                    <code className="rounded bg-gray-100 px-1 text-xs dark:bg-gray-800">
+                      API: {SDK_CONFIG.productionApiUrl}
+                    </code>{' '}
+                    |{' '}
+                    <code className="rounded bg-gray-100 px-1 text-xs dark:bg-gray-800">
+                      WSS: {SDK_CONFIG.productionWssUrl}
+                    </code>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Create API Key Card */}
           <Card>
             <CardHeader>
@@ -231,13 +456,12 @@ export function ApiKeysPage() {
                 Generate New API Key
               </CardTitle>
               <CardDescription>
-                Create a new API key to authenticate your widget or integrate with external
-                services**
+                Create a new API key to authenticate your widget or SDK integration
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Generate API Key
               </Button>
             </CardContent>
@@ -251,17 +475,16 @@ export function ApiKeysPage() {
                 Your API Keys ({keys.length})
               </CardTitle>
               <CardDescription>
-                Manage your existing API keys with 90-day expiration** and security best
-                practices***
+                Manage your existing API keys with 90-day expiration and security best practices
               </CardDescription>
             </CardHeader>
             <CardContent>
               {keys.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Key className="h-16 w-16 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">No API keys created yet</p>
+                  <Key className="mb-4 h-16 w-16 text-muted-foreground" />
+                  <p className="mb-2 text-muted-foreground">No API keys created yet</p>
                   <p className="text-sm text-muted-foreground">
-                    Generate your first API key to get started
+                    Generate your first API key to get started with the SDK
                   </p>
                 </div>
               ) : (
@@ -282,7 +505,7 @@ export function ApiKeysPage() {
                       {keys.map((key: ApiKey) => (
                         <TableRow key={key.id}>
                           <TableCell className="font-medium">{key.name}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground font-mono">
+                          <TableCell className="font-mono text-sm text-muted-foreground">
                             {key.keyPrefix}
                           </TableCell>
                           <TableCell>
@@ -297,7 +520,7 @@ export function ApiKeysPage() {
                           <TableCell className="text-sm text-muted-foreground">
                             {formatDate(key.expiresAt)}
                           </TableCell>
-                          <TableCell className="text-right space-x-2">
+                          <TableCell className="space-x-2 text-right">
                             <Button
                               variant="outline"
                               size="sm"
@@ -307,7 +530,7 @@ export function ApiKeysPage() {
                                 'Copied!'
                               ) : (
                                 <>
-                                  <Copy className="w-4 h-4 mr-2" />
+                                  <Copy className="mr-2 h-4 w-4" />
                                   Copy
                                 </>
                               )}
@@ -340,7 +563,7 @@ export function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle>Generate New API Key</DialogTitle>
             <DialogDescription>
-              Create a new API key for your widget or external integration
+              Create a new API key for your widget or SDK integration
             </DialogDescription>
           </DialogHeader>
 
@@ -362,7 +585,7 @@ export function ApiKeysPage() {
                 id="keyType"
                 value={newKeyType}
                 onChange={(e) => setNewKeyType(e.target.value as 'publishable' | 'secret')}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                className="w-full rounded-md border border-border bg-background px-3 py-2"
               >
                 <option value="publishable">Publishable (Client-side, read-only)</option>
                 <option value="secret">Secret (Server-side, full access)</option>
@@ -401,8 +624,8 @@ export function ApiKeysPage() {
           <DialogHeader>
             <DialogTitle>API Key Generated Successfully!</DialogTitle>
             <DialogDescription>
-              <strong className="text-red-600">IMPORTANT:</strong> Copy this key now. You won't be
-              able to see it again!
+              <strong className="text-red-600">IMPORTANT:</strong> Copy this key now. You won&apos;t
+              be able to see it again!
             </DialogDescription>
           </DialogHeader>
 
@@ -417,16 +640,16 @@ export function ApiKeysPage() {
                 <div className="flex gap-2">
                   <Input readOnly value={newKeyData.apiKey} className="font-mono text-sm" />
                   <Button variant="outline" onClick={() => handleCopyKey(newKeyData.apiKey)}>
-                    <Copy className="w-4 h-4" />
+                    <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
-                <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+              <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950">
+                <h4 className="mb-2 text-sm font-semibold text-yellow-800 dark:text-yellow-200">
                   Security Best Practices:
                 </h4>
-                <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                <ul className="space-y-1 text-xs text-yellow-700 dark:text-yellow-300">
                   <li>• Store this key securely (e.g., environment variables)</li>
                   <li>• Never commit API keys to version control</li>
                   <li>• Use different keys for development and production</li>
@@ -438,7 +661,7 @@ export function ApiKeysPage() {
           )}
 
           <DialogFooter>
-            <Button onClick={handleCloseNewKeyDialog}>I've Saved This Key</Button>
+            <Button onClick={handleCloseNewKeyDialog}>I&apos;ve Saved This Key</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -446,30 +669,29 @@ export function ApiKeysPage() {
       {/* Annotation Footer */}
       <div className="border-t border-border bg-muted/30 p-4">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div className="grid grid-cols-1 gap-4 text-xs md:grid-cols-3">
             <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">*</span>
+              <span className="font-bold text-primary">SDK</span>
               <p className="text-muted-foreground">
-                <strong>API Key Metrics:</strong> Total keys includes active, revoked, and expired
-                keys. Active keys count only non-revoked, non-expired keys. API calls tracked over
-                30-day rolling window. Security status evaluates key count and usage patterns.
+                <strong>SDK Integration:</strong> Use the SDK to build custom chatbot experiences.
+                SDK provides voice, vision, and text capabilities. Limited to chatbot interactions -
+                meeting room creation requires the dashboard.
               </p>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">**</span>
+              <span className="font-bold text-primary">Keys</span>
               <p className="text-muted-foreground">
-                <strong>Key Types:</strong> Publishable keys (pk_) for client-side use with
-                read-only permissions. Secret keys (sk_) for server-side with full read/write
-                access. All keys expire after 90 days for security. Argon2id hashing in database.
+                <strong>Key Types:</strong> Publishable keys (pk_) for client-side use with read-only
+                permissions. Secret keys (sk_) for server-side with full read/write access. All keys
+                expire after 90 days.
               </p>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-bold text-primary">***</span>
+              <span className="font-bold text-primary">Security</span>
               <p className="text-muted-foreground">
                 <strong>Security Features:</strong> Rate limiting (100 req/min publishable, 1000
-                req/min secret), automatic expiration (90 days), immediate revocation, audit logging
-                for all key operations, and secure hashing (Argon2id). Never expose secret keys in
-                client code.
+                req/min secret), automatic expiration (90 days), immediate revocation, and secure
+                Argon2id hashing.
               </p>
             </div>
           </div>
