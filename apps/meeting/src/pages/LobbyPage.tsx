@@ -4,9 +4,9 @@
  */
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button, Input, Label } from '@platform/ui';
 import { appUrls } from '../config/urls';
+import { useComingSoon } from '../context/ComingSoonContext';
 import {
   Bot,
   Eye,
@@ -37,7 +37,7 @@ function PrivateBetaBanner({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <span className="text-white/60">—</span>
         <span className="text-[13px] text-white/90">
-          Launching Q1 2025
+          Launching Q1 2026
         </span>
         <a
           href={`${appUrls.landing}/contact`}
@@ -104,29 +104,11 @@ const STATS = [
 ];
 
 export function LobbyPage() {
-  const navigate = useNavigate();
-  const [roomId, setRoomId] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
+  const { openModal } = useComingSoon();
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Banner height offset
   const bannerOffset = bannerDismissed ? '0px' : '40px';
-
-  const handleJoinRoom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!roomId || !displayName) return;
-    sessionStorage.setItem('displayName', displayName);
-    navigate(`/${roomId}`);
-  };
-
-  const handleCreateRoom = () => {
-    if (!displayName) return;
-    setIsCreating(true);
-    const newRoomId = `vk-${Math.random().toString(36).substring(2, 8)}`;
-    sessionStorage.setItem('displayName', displayName);
-    navigate(`/${newRoomId}`);
-  };
 
   return (
     <div className="min-h-screen bg-[#08080a] text-white">
@@ -172,6 +154,7 @@ export function LobbyPage() {
               Pricing
             </a>
             <Button
+              onClick={openModal}
               className="h-9 px-4 text-[13px] rounded-xl bg-white/[0.06] border border-white/[0.08] text-white hover:bg-white/[0.1]"
             >
               Sign In
@@ -244,19 +227,19 @@ export function LobbyPage() {
                   </p>
                 </div>
 
-                <form onSubmit={handleJoinRoom} className="space-y-5">
+                <div className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="displayName" className="text-[13px] text-white/60">
                       Your Name *
                     </Label>
                     <Input
                       id="displayName"
-                      placeholder="Enter your name"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="e.g., Alex from Marketing"
                       className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl"
-                      required
+                      readOnly
+                      onFocus={openModal}
                     />
+                    <p className="text-[11px] text-white/30">This is how you'll appear to others</p>
                   </div>
 
                   <div className="relative py-2">
@@ -274,17 +257,17 @@ export function LobbyPage() {
                     </Label>
                     <Input
                       id="roomId"
-                      placeholder="e.g., vk-abc123"
-                      value={roomId}
-                      onChange={(e) => setRoomId(e.target.value)}
+                      placeholder="Paste room link or ID here"
                       className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl font-mono"
+                      readOnly
+                      onFocus={openModal}
                     />
                   </div>
 
                   <Button
-                    type="submit"
-                    disabled={!roomId || !displayName}
-                    className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px] disabled:opacity-40 disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={openModal}
+                    className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px]"
                   >
                     Join Meeting
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -301,26 +284,13 @@ export function LobbyPage() {
 
                   <Button
                     type="button"
-                    onClick={handleCreateRoom}
-                    disabled={!displayName || isCreating}
-                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl text-[15px] disabled:opacity-40 disabled:cursor-not-allowed border-0"
+                    onClick={openModal}
+                    className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl text-[15px] border-0"
                   >
-                    {isCreating ? (
-                      <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Creating Room...
-                      </span>
-                    ) : (
-                      <>
-                        <Video className="w-4 h-4 mr-2" />
-                        Create New Room
-                      </>
-                    )}
+                    <Video className="w-4 h-4 mr-2" />
+                    Create New Room
                   </Button>
-                </form>
+                </div>
               </div>
             </div>
           </div>

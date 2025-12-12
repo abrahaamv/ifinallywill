@@ -42,7 +42,7 @@ function PrivateBetaBanner({ onDismiss }: { onDismiss: () => void }) {
         </div>
         <span className="text-white/60 text-[12px]">—</span>
         <span className="text-[12px] text-white/90">
-          Launching Q1 2025
+          Launching Q1 2026
         </span>
         <a
           href="https://visualkit.live/contact"

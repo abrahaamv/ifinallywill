@@ -8,15 +8,18 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { LobbyPage } from './pages/LobbyPage';
 import { RoomPage } from './pages/RoomPage';
 import { CSRFProvider } from './providers/CSRFProvider';
+import { ComingSoonProvider } from './context/ComingSoonContext';
 
 export function App() {
   return (
     <CSRFProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LobbyPage />} />
-          <Route path="/:roomId" element={<RoomPage />} />
-        </Routes>
+        <ComingSoonProvider>
+          <Routes>
+            <Route path="/" element={<LobbyPage />} />
+            <Route path="/:roomId" element={<RoomPage />} />
+          </Routes>
+        </ComingSoonProvider>
       </BrowserRouter>
     </CSRFProvider>
   );
