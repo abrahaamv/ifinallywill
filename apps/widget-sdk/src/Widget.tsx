@@ -142,27 +142,18 @@ export function Widget({
     }
   }, [theme]);
 
-  // Handle screen share transition
+  // Handle screen share transition (Placeholder - WebRTC integration coming soon)
   const handleShareScreen = useCallback(async () => {
     if (!sessionId) {
       logger.error('No active session for screen share');
       return;
     }
 
-    setMode('transitioning');
-
-    try {
-      const result = await trpcClient.sessions.transitionToVideo.mutate({ sessionId });
-      setLivekitUrl(result.livekitUrl);
-      setRoomName(result.roomName);
-      // Token would come from the backend in production
-      setLivekitToken('placeholder-token');
-      setMode('video');
-    } catch (err) {
-      logger.error('Failed to transition to video', { error: err });
-      setMode('chat');
-    }
-  }, [sessionId, trpcClient]);
+    // Video functionality placeholder - Janus Gateway integration coming soon
+    logger.info('Video feature coming soon', { sessionId });
+    // For now, just show a message via mode change
+    setMode('chat');
+  }, [sessionId]);
 
   // Handle end screen share
   const handleEndScreenShare = useCallback(() => {

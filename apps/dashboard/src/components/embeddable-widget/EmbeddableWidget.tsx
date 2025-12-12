@@ -9,7 +9,6 @@
 import { useState, useCallback } from 'react';
 import { MessageSquare, Monitor, X, Minimize2 } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, cn } from '@platform/ui';
-import { trpc } from '../../utils/trpc';
 import { useWidgetConfig } from './hooks/useWidgetConfig';
 import { useSessionManager } from './hooks/useSessionManager';
 import {
@@ -20,6 +19,9 @@ import {
 import { ChatMode } from './ChatMode';
 import { VideoMode } from './VideoMode';
 import { TransitionOverlay } from './TransitionOverlay';
+import { createModuleLogger } from '../../utils/logger';
+
+const logger = createModuleLogger('EmbeddableWidget');
 
 interface EmbeddableWidgetProps {
   widgetId: string;
@@ -49,40 +51,20 @@ export function EmbeddableWidget({
   const {
     sessionId,
     setSessionId,
-    transitionToVideo,
   } = useSessionManager(widgetId);
 
-  // LiveKit join room mutation for getting token
-  const joinRoomMutation = trpc.livekit.joinRoom.useMutation();
-
-  // Handle screen share button click
+  // Handle screen share button click (placeholder - video coming soon)
   const handleShareScreen = useCallback(async () => {
     if (!sessionId) {
-      console.error('No active session');
+      logger.error('No active session for screen share');
       return;
     }
 
-    setMode('transitioning');
-
-    try {
-      // Step 1: Transition session to video mode (creates room name)
-      const result = await transitionToVideo();
-      setLivekitUrl(result.livekitUrl);
-      setRoomName(result.roomName);
-
-      // Step 2: Get access token to join the room
-      const joinResult = await joinRoomMutation.mutateAsync({
-        roomName: result.roomName,
-        participantName: `user-${sessionId.slice(0, 8)}`,
-      });
-
-      setLivekitToken(joinResult.token);
-      setMode('video');
-    } catch (error) {
-      console.error('Failed to transition to video:', error);
-      setMode('chat');
-    }
-  }, [sessionId, transitionToVideo, joinRoomMutation]);
+    // Video functionality placeholder - Janus Gateway integration coming soon
+    logger.info('Video feature coming soon', { sessionId });
+    // For now, just show a message via mode change
+    setMode('chat');
+  }, [sessionId]);
 
   // Handle end screen share
   const handleEndScreenShare = useCallback(() => {

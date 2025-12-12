@@ -11,7 +11,6 @@ import { authRouter } from './routers/auth';
 import { chatRouter } from './routers/chat';
 import { healthRouter } from './routers/health';
 import { knowledgeRouter } from './routers/knowledge';
-import { livekitRouter } from './routers/livekit';
 import { mfaRouter } from './routers/mfa';
 import { sessionsRouter } from './routers/sessions';
 import { usersRouter } from './routers/users';
@@ -21,6 +20,7 @@ import { verificationRouter } from './routers/verification';
 import { surveysRouter } from './routers/surveys';
 import { escalationsRouter } from './routers/escalations';
 import { problemsRouter } from './routers/problems';
+import { chatwootRouter } from './routers/chatwoot';
 // Phase 12 Enterprise Routers (Re-enabled 2025-11-25 after schema alignment)
 import { crmRouter } from './routers/crm'; // Phase 12 Week 5
 import { ticketingRouter } from './routers/ticketing'; // Phase 12 Week 6
@@ -42,7 +42,6 @@ export const appRouter = router({
   knowledge: knowledgeRouter,
   sessions: sessionsRouter,
   chat: chatRouter,
-  livekit: livekitRouter,
   mfa: mfaRouter, // Phase 8 Day 6-7
   apiKeys: apiKeysRouter, // Phase 8 Day 8-10
   aiPersonalities: aiPersonalitiesRouter, // Phase 4 Enhancement
@@ -52,6 +51,7 @@ export const appRouter = router({
   surveys: surveysRouter, // Phase 11 Week 2 (In-widget feedback)
   escalations: escalationsRouter, // Phase 11 Week 4 (Human agent handoff)
   problems: problemsRouter, // Phase 11 Week 4 (Semantic deduplication)
+  chatwoot: chatwootRouter, // Chatwoot SSO integration
   // Phase 12 Enterprise Routers (Re-enabled 2025-11-25)
   crm: crmRouter, // Phase 12 Week 5
   ticketing: ticketingRouter, // Phase 12 Week 6
