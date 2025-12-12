@@ -4,9 +4,12 @@
  */
 
 import { ArrowRight, Building2, Clock, Mail, MessageSquare, Send } from 'lucide-react';
-import { useState } from 'react';
+import { useForm, ValidationError } from '@formspree/react';
 import { Button, Input, Label } from '@platform/ui';
 import { useComingSoon } from '../context/ComingSoonContext';
+
+// Formspree form ID - receives messages at abrahaamveliz@gmail.com
+const FORMSPREE_FORM_ID = 'xayrongy';
 
 const CONTACT_OPTIONS = [
   {
@@ -33,25 +36,7 @@ const CONTACT_OPTIONS = [
 
 export function ContactPage() {
   const { openModal } = useComingSoon();
-  const [formState, setFormState] = useState({
-    name: '',
-    email: '',
-    company: '',
-    message: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate form submission - integrate with email service
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    setIsSubmitting(false);
-    setSubmitted(true);
-  };
+  const [state, handleSubmit] = useForm(FORMSPREE_FORM_ID);
 
   return (
     <div className="min-h-screen bg-[#08080a] text-white pt-24 pb-20">
@@ -84,7 +69,7 @@ export function ContactPage() {
           {/* Contact Form */}
           <div className="lg:col-span-3">
             <div className="rounded-[24px] bg-white/[0.02] border border-white/[0.06] p-8">
-              {submitted ? (
+              {state.succeeded ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
                     <Send className="w-7 h-7 text-emerald-400" />
@@ -94,10 +79,7 @@ export function ContactPage() {
                     Thanks for reaching out. We'll get back to you within 24 hours.
                   </p>
                   <Button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setFormState({ name: '', email: '', company: '', message: '' });
-                    }}
+                    onClick={() => window.location.reload()}
                     className="bg-white/[0.06] text-white hover:bg-white/[0.1] border border-white/[0.08]"
                   >
                     Send Another Message
@@ -116,24 +98,24 @@ export function ContactPage() {
                         <Label htmlFor="name" className="text-[13px] text-white/60">Name *</Label>
                         <Input
                           id="name"
-                          value={formState.name}
-                          onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                          name="name"
                           placeholder="John Doe"
                           required
                           className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
                         />
+                        <ValidationError prefix="Name" field="name" errors={state.errors} className="text-red-400 text-[12px]" />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email" className="text-[13px] text-white/60">Email *</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
-                          value={formState.email}
-                          onChange={(e) => setFormState({ ...formState, email: e.target.value })}
                           placeholder="john@example.com"
                           required
                           className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
                         />
+                        <ValidationError prefix="Email" field="email" errors={state.errors} className="text-red-400 text-[12px]" />
                       </div>
                     </div>
 
@@ -141,8 +123,7 @@ export function ContactPage() {
                       <Label htmlFor="company" className="text-[13px] text-white/60">Company</Label>
                       <Input
                         id="company"
-                        value={formState.company}
-                        onChange={(e) => setFormState({ ...formState, company: e.target.value })}
+                        name="company"
                         placeholder="Acme Inc."
                         className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20"
                       />
@@ -152,21 +133,21 @@ export function ContactPage() {
                       <Label htmlFor="message" className="text-[13px] text-white/60">Message *</Label>
                       <textarea
                         id="message"
-                        value={formState.message}
-                        onChange={(e) => setFormState({ ...formState, message: e.target.value })}
+                        name="message"
                         placeholder="Tell us about your project and how we can help..."
                         required
                         rows={5}
                         className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-4 py-3 text-[14px] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none resize-none transition-colors"
                       />
+                      <ValidationError prefix="Message" field="message" errors={state.errors} className="text-red-400 text-[12px]" />
                     </div>
 
                     <Button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={state.submitting}
                       className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px]"
                     >
-                      {isSubmitting ? (
+                      {state.submitting ? (
                         <span className="flex items-center gap-2">
                           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

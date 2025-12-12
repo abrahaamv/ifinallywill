@@ -12,8 +12,10 @@
     "clean": "rm -rf dist node_modules .turbo"
   },
   "dependencies": {
+    "@formspree/react": "^3.0.0",
     "@platform/auth": "workspace:*",
     "@platform/ui": "workspace:*",
+    "framer-motion": "11.15.0",
     "lucide-react": "0.468.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
