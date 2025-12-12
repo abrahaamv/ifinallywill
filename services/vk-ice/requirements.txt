@@ -1,0 +1,26 @@
+# VK-ICE Dependencies
+# VisualKit ICE Credential Service
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.3
+
+# HTTP Client
+aiohttp==3.11.10
+
+# XMPP (for XEP-0215)
+slixmpp==1.8.5
+
+# Async utilities
+anyio==4.7.0
+
+# Development
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1
+
+# Type checking
+mypy==1.13.0
+types-aiohttp==3.11.2

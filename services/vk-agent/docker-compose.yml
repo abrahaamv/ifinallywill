@@ -1,0 +1,62 @@
+# VK-Agent Docker Compose
+# Development setup with Janus Gateway
+
+version: "3.8"
+
+services:
+  # ============================================================
+  # VK-Agent: Voice AI Bridge
+  # ============================================================
+  vk-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vk-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - VK_AGENT_JANUS_WS_URL=ws://janus:8188
+      # TODO: Using static IP for demo - Janus needs IP, not hostname for RTP
+      - VK_AGENT_RTP_HOST=172.21.0.3
+      - VK_AGENT_RTP_PORT=5004
+    ports:
+      - "5004:5004/udp"  # RTP audio
+      - "3004:3004"      # API server
+    networks:
+      vk-network:
+        # TODO: Static IP for demo - ensures consistent RTP config
+        ipv4_address: 172.21.0.3
+    depends_on:
+      - janus
+
+  # ============================================================
+  # Janus Gateway: WebRTC Media Server
+  # ============================================================
+  janus:
+    image: canyan/janus-gateway:latest
+    container_name: janus
+    restart: unless-stopped
+    # TODO: Mount paths may need adjustment for production
+    volumes:
+      - ./janus/janus.jcfg:/usr/local/etc/janus/janus.jcfg:ro
+      - ./janus/janus.plugin.audiobridge.jcfg:/usr/local/etc/janus/janus.plugin.audiobridge.jcfg:ro
+      - ./janus/janus.transport.websockets.jcfg:/usr/local/etc/janus/janus.transport.websockets.jcfg:ro
+    ports:
+      # WebSocket (API)
+      - "8188:8188"
+      # HTTP (Admin)
+      - "8088:8088"
+      # RTP/RTCP range (for WebRTC clients)
+      - "10000-10100:10000-10100/udp"
+    networks:
+      vk-network:
+        # TODO: Static IP for demo
+        ipv4_address: 172.21.0.2
+
+networks:
+  vk-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

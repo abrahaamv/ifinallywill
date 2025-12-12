@@ -1,0 +1,71 @@
+# Janus Gateway Configuration
+# Optimized for VK-Agent AudioBridge usage
+
+general: {
+    configs_folder = "/usr/local/etc/janus"
+    plugins_folder = "/usr/local/lib/janus/plugins"
+    transports_folder = "/usr/local/lib/janus/transports"
+    events_folder = "/usr/local/lib/janus/events"
+    loggers_folder = "/usr/local/lib/janus/loggers"
+
+    debug_level = 4
+    debug_timestamps = true
+    debug_colors = true
+
+    # Session timeout (seconds)
+    session_timeout = 60
+
+    # Token authentication (disabled for development)
+    token_auth = false
+
+    # Admin secret (change in production!)
+    admin_secret = "janusadmin"
+}
+
+# Certificate paths (for DTLS/WebRTC)
+# Let Janus auto-generate self-signed certs for development
+certificates: {
+    # cert_pem and cert_key commented out to allow auto-generation
+}
+
+# NAT configuration
+nat: {
+    # STUN server for ICE
+    stun_server = "stun.l.google.com"
+    stun_port = 19302
+
+    # TODO: Remove for production - localhost mapping for Docker demo
+    # This allows browser on host to connect to Janus in Docker container
+    nat_1_1_mapping = "127.0.0.1"
+
+    # TODO: Remove for production - ICE Lite simplifies NAT traversal for demo
+    ice_lite = true
+
+    # ICE options
+    nice_debug = false
+    full_trickle = true
+
+    # RTP port range
+    rtp_port_range = "10000-10100"
+}
+
+# Media settings
+media: {
+    # Enable IPv6
+    ipv6 = false
+
+    # Max NACK queue size
+    max_nack_queue = 500
+
+    # RTP extensions
+    rtp_extensions = true
+
+    # TODO: For demo - disable media timeout to keep connections alive
+    # Default is 1 second, which can cause disconnections during silence
+    no_media_timer = 0
+}
+
+# Events (for monitoring)
+events: {
+    broadcast = true
+}

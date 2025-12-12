@@ -1,0 +1,21 @@
+# VK-Agent Dependencies
+# Production-grade Janus-Gemini voice bridge
+
+# WebSocket clients
+websockets==12.0
+
+# Async HTTP/API
+fastapi==0.109.2
+uvicorn==0.27.1
+pydantic==2.6.1
+
+# Audio processing
+numpy==1.26.4
+scipy==1.12.0
+opuslib==3.0.1
+
+# Environment & Config
+python-dotenv==1.0.1
+
+# HTTP client (for future API integrations)
+aiohttp==3.9.3
