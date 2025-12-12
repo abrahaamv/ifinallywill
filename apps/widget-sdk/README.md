@@ -4,55 +4,54 @@
 
 ## Features
 
-- 🎨 **Shadow DOM Isolation** - Complete style encapsulation from parent page
-- 💰 **Cost-Optimized AI** - 75-85% cost reduction via smart provider routing
-- 📱 **Responsive Design** - Works flawlessly on all screen sizes
-- ⚡ **Lightweight** - 52KB UMD / 86KB ES gzipped (48% under budget)
-- 🚀 **High Performance** - Lighthouse 98/100, all Core Web Vitals green
-- ♿ **Accessible** - WCAG 2.1 AAA compliance, screen reader support
-- 🔒 **Secure** - CSP compatible, XSS protected, HTTPS only
-- 🌐 **Framework Agnostic** - Works with React, Vue, Angular, vanilla JS
-- 📦 **Dual Format** - ESM + UMD for maximum compatibility
-- 🎯 **TypeScript** - Full type definitions included
+- **Shadow DOM Isolation** - Complete style encapsulation from parent page
+- **Cost-Optimized AI** - 75-85% cost reduction via smart provider routing
+- **Responsive Design** - Works flawlessly on all screen sizes
+- **Lightweight** - 52KB UMD / 86KB ES gzipped
+- **High Performance** - Lighthouse 98/100, all Core Web Vitals green
+- **Framework Agnostic** - Works with React, Vue, Angular, vanilla JS
+- **TypeScript** - Full type definitions included
 
-## Performance
+## CDN Installation (Recommended)
 
-- **Load Time**: <200ms on 3G networks
-- **Core Web Vitals**: LCP <2.5s, FID <100ms, CLS = 0
-- **Lighthouse**: 98/100 performance score
-- **Memory**: <600KB after 100 messages
-- **Frame Rate**: Consistent 55-60 FPS
-
-## Quick Start
-
-### CDN (Recommended)
+### Basic Setup
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@platform/widget-sdk@1/dist/widget-sdk.umd.js"></script>
+<!-- Load React (required peer dependency) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-<div id="my-widget"></div>
+<!-- Load Widget SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@platform/widget-sdk@latest/dist/widget-sdk.umd.js"></script>
+
+<!-- Initialize Widget -->
+<div id="widget"></div>
 <script>
-  new PlatformWidget('my-widget', {
+  new PlatformWidget('widget', {
     apiKey: 'your-api-key',
-    tenantId: 'your-tenant-id',
+    apiUrl: 'https://api.your-domain.com/trpc',
     position: 'bottom-right',
     theme: 'auto'
   });
 </script>
 ```
 
-### NPM
+## NPM Installation
 
 ```bash
 npm install @platform/widget-sdk
+# or
+pnpm add @platform/widget-sdk
 ```
+
+### ES Module
 
 ```javascript
 import { PlatformWidget } from '@platform/widget-sdk';
 
-const widget = new PlatformWidget('my-widget', {
+const widget = new PlatformWidget('widget', {
   apiKey: 'your-api-key',
-  tenantId: 'your-tenant-id',
+  apiUrl: 'https://api.your-domain.com/trpc',
   position: 'bottom-right',
   theme: 'auto',
   primaryColor: '#6366f1'
@@ -68,7 +67,7 @@ function App() {
   return (
     <Widget
       apiKey="your-api-key"
-      tenantId="your-tenant-id"
+      apiUrl="https://api.your-domain.com/trpc"
       position="bottom-right"
       theme="auto"
     />
@@ -76,76 +75,75 @@ function App() {
 }
 ```
 
-## Documentation
+## Configuration Options
 
-- [Complete API Reference](../../docs/reference/widget-sdk.md)
-- [Performance Analysis](../../docs/reference/widget-performance.md)
-- [React Integration Guide](../../docs/guides/widget-integration-react.md)
-- [Vue 3 Integration Guide](../../docs/guides/widget-integration-vue.md)
-- [Angular Integration Guide](../../docs/guides/widget-integration-angular.md)
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | string | required | Your API key for authentication |
+| `apiUrl` | string | required | Your tRPC API endpoint URL |
+| `position` | string | `'bottom-right'` | Widget position: `bottom-right`, `bottom-left`, `top-right`, `top-left` |
+| `theme` | string | `'auto'` | Color theme: `light`, `dark`, `auto` |
+| `primaryColor` | string | `'#6366f1'` | Primary color (hex) |
+| `title` | string | `'AI Assistant'` | Widget title |
+| `placeholder` | string | `'Type your message...'` | Input placeholder text |
+| `greeting` | string | `'Hello! How can I help you today?'` | Initial greeting message |
+| `shadowMode` | string | `'open'` | Shadow DOM mode: `open`, `closed` |
+
+## API Methods
+
+```javascript
+const widget = new PlatformWidget('widget', config);
+
+// Update configuration
+widget.updateConfig({ theme: 'dark' });
+
+// Open/close programmatically
+widget.open();
+widget.close();
+widget.isOpen(); // returns boolean
+
+// Get Shadow DOM reference (for debugging)
+widget.getShadowRoot();
+
+// Clean up
+widget.destroy();
+```
 
 ## Browser Support
 
-- Chrome/Edge: Last 2 versions ✅
-- Firefox: Last 2 versions ✅
-- Safari: Last 2 versions ✅
-- iOS Safari: 12+ ✅
-- Android Chrome: Last 2 versions ✅
+- Chrome/Edge: Last 2 versions
+- Firefox: Last 2 versions
+- Safari: Last 2 versions
+- iOS Safari: 12+
+- Android Chrome: Last 2 versions
 
-## Publishing
+## Performance
 
-### NPM Publishing
-
-```bash
-# Build library
-pnpm --filter @platform/widget-sdk build:lib
-
-# Publish to NPM
-pnpm --filter @platform/widget-sdk publish --access public
-```
-
-### GitHub Actions
-
-Automatically publishes to NPM when you push a git tag:
-
-```bash
-git tag widget-sdk-v1.0.0
-git push origin widget-sdk-v1.0.0
-```
-
-## Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm --filter @platform/widget-sdk dev
-
-# Build library
-pnpm --filter @platform/widget-sdk build:lib
-
-# Type checking
-pnpm --filter @platform/widget-sdk typecheck
-
-# Linting
-pnpm --filter @platform/widget-sdk lint
-```
+- **Load Time**: <200ms on 3G
+- **Core Web Vitals**: LCP <2.5s, FID <100ms, CLS = 0
+- **Memory**: <600KB after 100 messages
+- **Frame Rate**: 55-60 FPS
 
 ## Security
 
 - Content Security Policy compatible
 - XSS protection via Shadow DOM
 - HTTPS-only API communication
-- No third-party dependencies with known vulnerabilities
-- Privacy mode for GDPR compliance
+- CSRF protection built-in
+
+## Development
+
+```bash
+# Start development server
+pnpm --filter @platform/widget-sdk dev
+
+# Build library
+pnpm --filter @platform/widget-sdk build:lib
+
+# Type check
+pnpm --filter @platform/widget-sdk typecheck
+```
 
 ## License
 
-MIT © Platform AI Assistant
-
-## Support
-
-- 📖 [Documentation](https://github.com/yourusername/platform/tree/main/docs)
-- 🐛 [Report Issues](https://github.com/yourusername/platform/issues)
-- 💬 [Discussions](https://github.com/yourusername/platform/discussions)
+MIT

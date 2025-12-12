@@ -29,7 +29,7 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'PlatformWidget',
       formats: ['es', 'umd'],
-      fileName: (format) => `widget-sdk.${format}`,
+      fileName: (format) => `widget-sdk.${format}.js`,
     },
     rollupOptions: {
       external: [
@@ -49,12 +49,10 @@ export default defineConfig({
           react: 'React',
           'react-dom': 'ReactDOM',
         },
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'style.css';
-          return assetInfo.name ?? 'asset';
-        },
+        assetFileNames: 'widget-sdk.[ext]',
       },
     },
+    // Extract CSS to separate file for CDN delivery
     cssCodeSplit: false,
     minify: 'terser',
     terserOptions: {
