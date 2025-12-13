@@ -113,25 +113,36 @@ const AUTH_RATE_LIMIT: RateLimitConfig = {
  */
 export async function rateLimitPlugin(fastify: FastifyInstance): Promise<void> {
   // Create Redis client for rate limit storage
-  const redis = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-    db: 1, // Use DB 1 for rate limiting (DB 0 for sessions/cache)
-    maxRetriesPerRequest: 3,
-    retryStrategy(times: number) {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
-    },
-    reconnectOnError(err: Error) {
-      const targetError = 'READONLY';
-      if (err.message.includes(targetError)) {
-        // Only reconnect when the error contains "READONLY"
-        return true;
-      }
-      return false;
-    },
-  });
+  // Support both REDIS_URL (Upstash/production) and REDIS_HOST/REDIS_PORT (local)
+  const redisUrl = process.env.REDIS_URL;
+
+  const redis = redisUrl
+    ? new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        retryStrategy(times: number) {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+        // Upstash uses TLS (rediss://) - connection settings handled by URL
+      })
+    : new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: Number.parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD,
+        db: 1, // Use DB 1 for rate limiting (DB 0 for sessions/cache)
+        maxRetriesPerRequest: 3,
+        retryStrategy(times: number) {
+          const delay = Math.min(times * 50, 2000);
+          return delay;
+        },
+        reconnectOnError(err: Error) {
+          const targetError = 'READONLY';
+          if (err.message.includes(targetError)) {
+            return true;
+          }
+          return false;
+        },
+      });
 
   // Log Redis connection status
   redis.on('connect', () => {

@@ -14,7 +14,11 @@ build/
 .env
 .env.local
 .env.*.local
+.env.production
 envs/
+
+# Infrastructure secrets (never commit production credentials)
+infrastructure/**/.env*
 
 # Python
 venv/

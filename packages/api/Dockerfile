@@ -81,6 +81,9 @@ COPY packages/ai-core/package.json ./packages/ai-core/
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
 
+# Install tsx for running ESM modules
+RUN npm install -g tsx@4.19.2
+
 # Copy built files from builder
 COPY --from=builder --chown=nodejs:nodejs /app/packages/api/dist ./packages/api/dist
 COPY --from=builder --chown=nodejs:nodejs /app/packages/api-contract/dist ./packages/api-contract/dist
@@ -113,5 +116,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the API server
-CMD ["node", "packages/api/dist/server.js"]
+# Start the API server (tsx handles ESM module resolution)
+CMD ["tsx", "packages/api/dist/server.js"]

@@ -17,8 +17,7 @@
  * - Logs rotation for audit trail
  */
 
-import { serviceDb as db } from '@platform/db';
-import { authSessions } from '@platform/db/src/schema';
+import { serviceDb as db, authSessions } from '@platform/db';
 import { createModuleLogger } from '../utils/logger';
 import { eq } from 'drizzle-orm';
 

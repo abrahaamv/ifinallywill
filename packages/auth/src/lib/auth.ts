@@ -8,6 +8,7 @@
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import {
   accounts,
+  db,
   serviceDb,
   authSessions as sessions,
   users,
@@ -57,10 +58,15 @@ interface UserWithSessionToken {
  * See: https://authjs.dev/reference/adapter/drizzle#postgres
  */
 export function createAuthConfig(redis?: Redis): NextAuthConfig {
+  // Use serviceDb (BYPASS RLS) if available, fallback to regular db
+  // serviceDb is preferred for auth operations to bypass RLS policies
+  // Falls back to db when SERVICE_DATABASE_URL is not configured
+  const authDb = serviceDb ?? db;
+
   // Create base Drizzle adapter
   // Type cast required: DrizzleAdapter types expect SQLite but we use PostgreSQL
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const baseAdapter = DrizzleAdapter(serviceDb, {
+  const baseAdapter = DrizzleAdapter(authDb, {
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,

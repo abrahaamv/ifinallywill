@@ -64,11 +64,10 @@ export type {
   GeneratedApiKey,
 } from './services/api-key.service';
 
-// Export CSRF service (Phase 9)
+// Export CSRF service (Phase 9) - Server-side only
+// For React hooks (useCSRF, useAuthenticatedFetch), import from '@platform/auth/client'
 export { CSRFService } from './services/csrf.service';
 export type { CSRFToken } from './services/csrf.service';
-export { useCSRF, useAuthenticatedFetch } from './hooks/useCSRF';
-export type { UseCSRFResult } from './hooks/useCSRF';
 
 // Export verification code service (Fix #3)
 export { VerificationCodeService, createVerificationCodeService } from './services/verification-code.service';
