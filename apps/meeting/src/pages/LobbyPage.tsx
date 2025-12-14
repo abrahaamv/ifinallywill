@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Input, Label } from '@platform/ui';
 import { appUrls } from '../config/urls';
-import { useComingSoon } from '../context/ComingSoonContext';
 import {
   Bot,
   Eye,
@@ -109,7 +108,6 @@ const STATS = [
 const DEMO_ROOM_ID = 'demo-visualkit';
 
 export function LobbyPage() {
-  const { openModal } = useComingSoon();
   const navigate = useNavigate();
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -177,10 +175,10 @@ export function LobbyPage() {
               Pricing
             </a>
             <Button
-              onClick={openModal}
+              asChild
               className="h-9 px-4 text-[13px] rounded-xl bg-white/[0.06] border border-white/[0.08] text-white hover:bg-white/[0.1]"
             >
-              Sign In
+              <a href={`${appUrls.dashboard}/login`}>Sign In</a>
             </Button>
           </div>
         </div>
