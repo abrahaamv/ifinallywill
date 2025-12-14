@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@platform/ui';
 import { useVKAgent } from '../hooks/useVKAgent';
+import { useJanus } from '../hooks/useJanus';
 import {
   Bot,
   Copy,
@@ -83,8 +84,18 @@ export function MeetingRoom() {
     sendScreenCapture,
   } = useVKAgent(displayName);
 
+  // Janus hook for real-time voice
+  const {
+    isConnected: isVoiceConnected,
+    isConnecting: isVoiceConnecting,
+    isMuted,
+    participants,
+    connect: connectVoice,
+    disconnect: disconnectVoice,
+    toggleMute,
+  } = useJanus(displayName);
+
   // Local state
-  const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
@@ -107,12 +118,21 @@ export function MeetingRoom() {
     }
   }, [navigate]);
 
-  const handleLeave = () => {
+  // Auto-connect to voice when entering room
+  useEffect(() => {
+    if (!isVoiceConnected && !isVoiceConnecting) {
+      connectVoice();
+    }
+  }, []);
+
+  const handleLeave = async () => {
     // Stop screen share if active
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach(track => track.stop());
       screenStreamRef.current = null;
     }
+    // Disconnect from voice
+    await disconnectVoice();
     sessionStorage.removeItem('displayName');
     navigate('/');
   };
@@ -222,13 +242,33 @@ export function MeetingRoom() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Voice Status */}
+          <div className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-1.5">
+            {isVoiceConnecting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 text-yellow-400 animate-spin" />
+                <span className="text-[12px] text-yellow-400">Connecting voice...</span>
+              </>
+            ) : isVoiceConnected ? (
+              <>
+                <Mic className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-[12px] text-emerald-400">Voice connected</span>
+              </>
+            ) : (
+              <>
+                <MicOff className="h-3.5 w-3.5 text-red-400" />
+                <span className="text-[12px] text-red-400">Voice offline</span>
+              </>
+            )}
+          </div>
+          {/* Participants */}
           <div className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-1.5">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
             <Users className="h-3.5 w-3.5 text-white/50" />
-            <span className="text-[13px] text-white/60">2 participants</span>
+            <span className="text-[13px] text-white/60">{participants.length + 1} participants</span>
           </div>
           <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.04] border border-white/[0.06] text-white/50 hover:bg-white/[0.08] hover:text-white transition-all">
             <Settings className="h-4 w-4" />
@@ -343,12 +383,13 @@ export function MeetingRoom() {
           <div className="flex items-center justify-center gap-3 border-t border-white/[0.06] px-6 py-4 bg-[#08080a]">
             {/* Mute Button */}
             <button
-              onClick={() => setIsMuted(!isMuted)}
+              onClick={toggleMute}
+              disabled={!isVoiceConnected}
               className={`flex h-12 w-12 items-center justify-center rounded-full transition-all ${
                 isMuted
                   ? 'bg-red-500 text-white hover:bg-red-600'
                   : 'bg-white/[0.06] border border-white/[0.08] text-white hover:bg-white/[0.1]'
-              }`}
+              } ${!isVoiceConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
               title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
