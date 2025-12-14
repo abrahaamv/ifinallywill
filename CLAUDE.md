@@ -13,7 +13,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > **⚠️ PHASE 12 NOTE (2025-11-25)**: Enterprise routers moved to `packages/api-contract/src/_disabled/` pending schema alignment. See `docs/phases/RESUMPTION_GUIDE.md` for re-enablement steps.
 
-**Tech Stack**: React 18 + Vite 6 + Tailwind CSS v4 + shadcn/ui (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, LiveKit (WebRTC), Python LiveKit agent
+**Tech Stack**: React 18 + Vite 6 + Tailwind CSS v4 + shadcn/ui (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, Janus Gateway (WebRTC), Python VK-Agent (Gemini Live API)
+
+> **🌐 PRODUCTION DEPLOYMENT** (2025-12-14):
+> - **Server**: Hetzner VPS `178.156.151.139`
+> - **Landing**: https://visualkit.live (Cloudflare Pages)
+> - **Dashboard**: https://app.visualkit.live (Cloudflare Pages)
+> - **Meeting**: https://meet.visualkit.live (Cloudflare Pages)
+> - **API**: https://api.visualkit.live (Hetzner + Caddy)
+> - **Agent**: https://agent.visualkit.live (VK-Agent API)
+> - **Janus**: wss://janus.visualkit.live (WebRTC signaling)
+> - **Support**: https://support.visualkit.live (Chatwoot)
+> - **CDN**: https://cdn.visualkit.live (Widget SDK)
+> - See `docs/operations/INFRASTRUCTURE.md` for complete details
 
 > **🎨 UI/CSS DECISION**: Phase 4 Frontend Stack
 > - **UI Library**: shadcn/ui (copy-paste component library, full customization)
@@ -30,40 +42,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - **Fastify**: Ensure 5.3.2+ - Content-type parsing bypass
 > - **Timeline**: 7-day patch window from project start
 >
-> **💰 LiveKit DEPLOYMENT OPTIONS**:
+> **🎙️ VOICE AI ARCHITECTURE** (Janus + Gemini):
 >
-> **Option 1: Self-Hosted (RECOMMENDED - 95-97% cost savings)**
-> - Docker Compose setup with livekit-server + Redis
-> - Cloud deployment: AWS EC2, Kubernetes (EKS/GKE/AKS), DigitalOcean, Hetzner
-> - Cost: $130-500/month (~$1.6K-6K/year) vs Enterprise $60K-120K+/year
-> - Full feature parity with Enterprise
-> - See Phase 5 Week 2 implementation doc for setup guide
+> **WebRTC Stack**: Janus Gateway (self-hosted, free)
+> - AudioBridge plugin for room-based audio mixing
+> - Plain RTP participant mode for AI agent
+> - WebSocket signaling at `wss://janus.visualkit.live`
 >
-> **Option 2: LiveKit Enterprise (Premium)**
-> - Managed service with guaranteed uptime and support
-> - $5K-10K+/month minimum ($60K-120K+/year)
-> - Required for 40-100 worker pool (4 cores + 8GB RAM each)
-> - Turnkey solution with no infrastructure management
+> **AI Agent**: VK-Agent (Python, Gemini Live API)
+> - Real-time bidirectional audio via RTP
+> - Native Puck voice synthesis (sub-500ms latency)
+> - Visual AI via screen frame upload (`/screen` endpoint)
+> - API at `https://agent.visualkit.live`
 >
-> **Decision**: Self-hosted option implemented in Phase 5 Week 2
+> **Cost**: ~$0.40/1M tokens (vs $60K+/year for LiveKit Enterprise)
+> - Gemini Live API: $0.075/1M input, $0.30/1M output
+> - Self-hosted Janus: Free (open source)
 
-> **📌 IMPORTANT: Multi-App Architecture**
+> **📌 IMPORTANT: Multi-App Architecture** (DEPLOYED)
 >
-> **Phase 1 (Current State)** - 4 app placeholders:
-> - `apps/landing` - Public marketing (port 5173) → **www.platform.com**
-> - `apps/dashboard` - Admin portal (port 5174) → **dashboard.platform.com**
-> - `apps/meeting` - Meeting rooms (port 5175) → **meet.platform.com**
-> - `apps/widget-sdk` - Embeddable widget (port 5176) → Customer websites
-> - `packages/ui` - Shared components across all apps
-> - All apps/packages contain placeholder implementations only
+> **Production Apps** (Cloudflare Pages):
+> - `apps/landing` → **https://visualkit.live** (Marketing, pricing)
+> - `apps/dashboard` → **https://app.visualkit.live** (Tenant admin portal)
+> - `apps/meeting` → **https://meet.visualkit.live** (Video meetings with AI)
+> - `apps/widget-sdk` → **https://cdn.visualkit.live** (Embeddable widget)
 >
-> **Implementation Strategy** (Phases 2-7):
-> - **Landing**: Public marketing, signup, pricing (Next.js or Astro - TBD)
-> - **Dashboard**: Knowledge uploads, RAG config, team management, analytics
-> - **Meeting**: LiveKit integration, real-time chat, AI assistant interface
-> - **Widget**: NPM package + CDN, minimal bundle, Shadow DOM isolation
+> **Backend Services** (Hetzner VPS):
+> - Platform API → **https://api.visualkit.live** (tRPC backend)
+> - VK-Agent → **https://agent.visualkit.live** (Voice AI)
+> - Janus Gateway → **wss://janus.visualkit.live** (WebRTC)
+> - Chatwoot → **https://support.visualkit.live** (Support chat)
 >
-> Follow `docs/guides/roadmap.md` for phased implementation. Each app is independently deployable.
+> See `docs/operations/INFRASTRUCTURE.md` for complete deployment details.
 
 ## Essential Commands
 
@@ -98,48 +108,49 @@ pnpm build                             # Build all packages
 pnpm clean                             # Clean build artifacts
 ```
 
-### Python LiveKit Agent (Phase 5 - COMPLETE)
+### VK-Agent (Voice AI - Janus + Gemini)
 
-**Status**: ✅ Native Gemini Live API integration (200 lines, 85% code reduction)
+**Status**: ✅ Production deployed at `https://agent.visualkit.live`
 
-**Current Architecture: Gemini Live API** (2025-11-26):
-- **Model**: `gemini-2.0-flash-live-001` (stable Live API model)
-- **Voice**: Native Puck voice (no separate TTS)
-- **Audio**: Sub-500ms latency (vs 2-5s with manual STT→LLM→TTS)
-- **Video**: Screen share at 1 FPS via `RoomOptions(video_input=True)`
-- **Interruption**: Built-in support for natural conversation flow
+**Architecture**: Janus Gateway + Gemini Live API
+- **WebRTC**: Janus AudioBridge plugin for room-based audio
+- **AI**: Gemini Live API (`gemini-2.0-flash-exp`) with native Puck voice
+- **Audio**: Bidirectional RTP streaming (Opus codec, 48kHz)
+- **Visual**: Screen frame upload via `/screen` API endpoint
+- **Latency**: Sub-500ms voice response
 
-**Cost Breakdown**:
-- **Input tokens**: $0.075/1M tokens
-- **Output tokens**: $0.30/1M tokens
-- **Video streaming**: ~$0.50/hour for screen sharing
-- **Audio**: Native (no separate STT/TTS costs)
+**Cost**:
+- **Gemini**: $0.075/1M input, $0.30/1M output tokens
+- **Janus**: Free (self-hosted, open source)
+- **Total**: ~$0.40/1M tokens vs $60K+/year for enterprise alternatives
 
-**Key Benefits**:
-- 85% less code than manual STT→LLM→TTS pipeline
-- Direct audio streaming to/from Gemini servers
-- Built-in voice activity detection
-- Natural conversation with interruption support
+**API Endpoints** (`https://agent.visualkit.live`):
+- `GET /health` - Health check
+- `GET /status` - Detailed bridge status
+- `POST /text` - Send text prompt to Gemini
+- `POST /screen` - Send screen frame (base64 JPEG) for visual AI
+- `POST /mute` - Mute/unmute agent audio
 
+**Local Development**:
 ```bash
-cd livekit-agent
+cd services/vk-agent
 
 # Setup virtual environment
 python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env with LiveKit and Google AI credentials
+# Edit .env with GEMINI_API_KEY
 
 # Run agent
-python agent.py dev
+python -m src.main
 ```
 
-**Legacy Architecture**: Backup files (`_backup_*.py`) contain the three-tier routing with pHash deduplication if manual control is needed.
+**Production Deployment**: Docker container on Hetzner VPS, connects to Janus via internal network.
 
 ## Architecture Highlights
 
@@ -150,20 +161,22 @@ python agent.py dev
 ```
 platform/
 ├── apps/
-│   ├── landing/          # @platform/landing - Public marketing (www)
-│   ├── dashboard/        # @platform/dashboard - Admin portal
-│   ├── meeting/          # @platform/meeting - Meeting rooms
-│   └── widget-sdk/       # @platform/widget-sdk - Embeddable widget
+│   ├── landing/          # @platform/landing → visualkit.live
+│   ├── dashboard/        # @platform/dashboard → app.visualkit.live
+│   ├── meeting/          # @platform/meeting → meet.visualkit.live
+│   └── widget-sdk/       # @platform/widget-sdk → cdn.visualkit.live
 ├── packages/
 │   ├── api/              # @platform/api - Fastify + tRPC server
 │   ├── realtime/         # @platform/realtime - WebSocket + Redis Streams
 │   ├── db/               # @platform/db - Drizzle ORM schemas
-│   ├── auth/             # @platform/auth - Auth.js (NextAuth.js) authentication
+│   ├── auth/             # @platform/auth - Auth.js authentication
 │   ├── api-contract/     # @platform/api-contract - tRPC router definitions
 │   ├── ai-core/          # @platform/ai-core - AI provider abstractions
 │   ├── knowledge/        # @platform/knowledge - RAG system
 │   └── shared/           # @platform/shared - Common utilities
-└── livekit-agent/        # Python LiveKit agent (Phase 5 - COMPLETE, 1000+ lines production code)
+└── services/
+    ├── vk-agent/         # Python Voice AI (Janus + Gemini) → agent.visualkit.live
+    └── vk-ice/           # ICE server utilities
 ```
 
 ### Key Architectural Patterns
@@ -205,9 +218,9 @@ platform/
 **4. Real-time Communication Stack**
 - **WebSocket**: Bidirectional chat messages via `packages/realtime`
 - **Redis Streams**: Multi-instance message broadcasting with consumer groups
-- **Sticky Sessions**: Load balancer configuration for WebSocket persistence
-- **LiveKit**: WebRTC video/audio/screen sharing
-- **Python Agent**: Multi-modal AI processing (voice, vision, text)
+- **Janus Gateway**: WebRTC video/audio via AudioBridge plugin
+- **VK-Agent**: Python bridge between Janus (RTP) and Gemini Live API
+- **Visual AI**: Screen frames sent to Gemini via `/screen` endpoint
 
 **5. Knowledge Enhancement (RAG)**
 - Voyage Multimodal-3 embeddings
@@ -450,37 +463,34 @@ Turborepo handles build dependencies automatically. Key patterns:
 - **Imports**: Use package aliases (`@platform/*`)
 - **File Size**: Keep modules under 500 lines
 
-### LiveKit Agent Integration (Phase 5 - COMPLETE)
+### Voice AI Integration (VK-Agent - DEPLOYED)
 
-**Implementation Status**: ✅ Production implementation complete (1000+ lines, fully tested)
+**Implementation Status**: ✅ Production deployed at `https://agent.visualkit.live`
 
-**💰 BUDGET REQUIREMENT**: LiveKit Enterprise plan mandatory
-- **Minimum Cost**: $5K-10K+/month ($60K-120K+/year)
-- **Infrastructure**: 40-100 worker pool (4 cores + 8GB RAM each)
-- **Why Required**: Build/Scale plans have cold starts, limited agents (production insufficient)
-- **Budget Approval**: Required BEFORE Phase 5 implementation
+**Architecture**: Janus Gateway + Gemini Live API (NO LiveKit required)
+- **Cost**: ~$0.40/1M tokens (vs $60K+/year for LiveKit Enterprise)
+- **WebRTC**: Self-hosted Janus Gateway (free, open source)
+- **AI**: Google Gemini Live API with native voice synthesis
 
-**Implementation Guide**: See `docs/reference/livekit-agent-implementation.md` for production implementation plan
+**Components**:
+1. **Janus Gateway** (`janus.visualkit.live`):
+   - AudioBridge plugin for room-based audio
+   - WebSocket signaling for browsers
+   - RTP audio transport to VK-Agent
 
-**Reference Implementation**: See `docs/reference/livekit-agent/` for playground/experimental code that serves as reference
+2. **VK-Agent** (`agent.visualkit.live`):
+   - Python async bridge (Janus ↔ Gemini)
+   - Opus codec encoding/decoding
+   - PCM resampling (48kHz ↔ 16kHz/24kHz)
+   - Visual AI via `/screen` endpoint
 
-The production Python agent will integrate with the TypeScript backend:
+3. **Frontend Integration**:
+   - Janus.js library for WebRTC
+   - Screen capture → base64 JPEG → `/screen` API
+   - Chat UI for text interaction
 
-1. **Backend Integration**:
-   - Fetch tenant context from tRPC API
-   - Track usage to `costEvents` table
-   - Query knowledge base via RAG endpoints
-
-2. **LiveKit Agent Features**:
-   - 1 FPS screen capture (96% cost reduction vs 30 FPS)
-   - Multi-modal AI (voice, vision, text)
-   - Temporal frame context for vision analysis
-
-3. **Requirements** (when implemented):
-   - Python 3.11+ virtual environment
-   - Backend API running
-   - LiveKit Cloud Enterprise credentials
-   - Budget approval confirmation
+**Source Code**: `services/vk-agent/`
+**Infrastructure Docs**: `docs/operations/INFRASTRUCTURE.md`
 
 ## Common Workflows
 

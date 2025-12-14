@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Input, Label } from '@platform/ui';
 import { appUrls } from '../config/urls';
 import { useComingSoon } from '../context/ComingSoonContext';
@@ -19,6 +20,7 @@ import {
   X,
   Zap,
   ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 
 // Private Beta Banner Component
@@ -103,12 +105,33 @@ const STATS = [
   { value: '99/100', label: 'Security Score' },
 ];
 
+// Demo Room ID
+const DEMO_ROOM_ID = 'demo-visualkit';
+
 export function LobbyPage() {
   const { openModal } = useComingSoon();
+  const navigate = useNavigate();
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [roomId, setRoomId] = useState('');
 
   // Banner height offset
   const bannerOffset = bannerDismissed ? '0px' : '40px';
+
+  // Handle joining the demo room
+  const handleJoinDemo = () => {
+    const name = displayName.trim() || 'Demo User';
+    sessionStorage.setItem('displayName', name);
+    navigate(`/${DEMO_ROOM_ID}`);
+  };
+
+  // Handle joining with custom room
+  const handleJoinRoom = () => {
+    if (!roomId.trim()) return;
+    const name = displayName.trim() || 'Guest';
+    sessionStorage.setItem('displayName', name);
+    navigate(`/${roomId.trim()}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#08080a] text-white">
@@ -236,8 +259,8 @@ export function LobbyPage() {
                       id="displayName"
                       placeholder="e.g., Alex from Marketing"
                       className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl"
-                      readOnly
-                      onFocus={openModal}
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
                     />
                     <p className="text-[11px] text-white/30">This is how you'll appear to others</p>
                   </div>
@@ -259,15 +282,16 @@ export function LobbyPage() {
                       id="roomId"
                       placeholder="Paste room link or ID here"
                       className="h-11 bg-white/[0.04] border-white/[0.08] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-indigo-500/20 rounded-xl font-mono"
-                      readOnly
-                      onFocus={openModal}
+                      value={roomId}
+                      onChange={(e) => setRoomId(e.target.value)}
                     />
                   </div>
 
                   <Button
                     type="button"
-                    onClick={openModal}
-                    className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px]"
+                    onClick={handleJoinRoom}
+                    disabled={!roomId.trim()}
+                    className="w-full h-12 bg-white text-[#08080a] hover:bg-white/90 font-semibold rounded-xl text-[15px] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Join Meeting
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -278,18 +302,21 @@ export function LobbyPage() {
                       <span className="w-full border-t border-white/[0.06]" />
                     </div>
                     <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                      <span className="bg-[#08080a] px-3 text-white/30">or</span>
+                      <span className="bg-[#08080a] px-3 text-white/30">or try our demo</span>
                     </div>
                   </div>
 
                   <Button
                     type="button"
-                    onClick={openModal}
+                    onClick={handleJoinDemo}
                     className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl text-[15px] border-0"
                   >
-                    <Video className="w-4 h-4 mr-2" />
-                    Create New Room
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Try AI Demo Room
                   </Button>
+                  <p className="text-center text-[11px] text-white/30">
+                    Experience our AI assistant with screen sharing
+                  </p>
                 </div>
               </div>
             </div>

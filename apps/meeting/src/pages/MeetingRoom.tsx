@@ -1,12 +1,13 @@
 /**
  * Meeting Room Page - Professional Dark Theme
- * AI-powered video meeting room with Visual AI assistant
- * Matches the VisualKit landing page design system
+ * AI-powered video meeting room with Visual AI assistant (VK-Agent)
+ * Connects to real Gemini AI via agent.visualkit.live
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@platform/ui';
+import { useVKAgent } from '../hooks/useVKAgent';
 import {
   Bot,
   Copy,
@@ -24,6 +25,10 @@ import {
   Video,
   VideoOff,
   X,
+  Camera,
+  Loader2,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 
 // Private Beta Banner Component (compact version for meeting room)
@@ -67,21 +72,34 @@ export function MeetingRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const displayName = sessionStorage.getItem('displayName') || 'Guest';
+
+  // VK-Agent hook for real AI
+  const {
+    messages,
+    isAgentOnline,
+    isSending,
+    isCapturing,
+    sendMessage,
+    sendScreenCapture,
+  } = useVKAgent(displayName);
+
+  // Local state
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [copied, setCopied] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [messages, setMessages] = useState<Array<{ sender: string; text: string; isAI?: boolean; timestamp: Date }>>([
-    {
-      sender: 'AI Assistant',
-      text: "Hello! I'm your AI meeting assistant. I can see your screen when you share it and help with any questions. Try sharing your screen and ask me what you see!",
-      isAI: true,
-      timestamp: new Date(),
-    },
-  ]);
   const [chatInput, setChatInput] = useState('');
+
+  // Screen share stream ref
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     if (!sessionStorage.getItem('displayName')) {
@@ -90,44 +108,60 @@ export function MeetingRoom() {
   }, [navigate]);
 
   const handleLeave = () => {
+    // Stop screen share if active
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
     sessionStorage.removeItem('displayName');
     navigate('/');
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || isSending) return;
 
-    setMessages((prev) => [...prev, { sender: displayName, text: chatInput, timestamp: new Date() }]);
-
-    const userMessage = chatInput;
+    const message = chatInput.trim();
     setChatInput('');
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: 'AI Assistant',
-          text: getAIResponse(userMessage),
-          isAI: true,
-          timestamp: new Date(),
-        },
-      ]);
-    }, 1000);
+    await sendMessage(message);
   };
 
-  const getAIResponse = (message: string): string => {
-    const lower = message.toLowerCase();
-    if (lower.includes('share') || lower.includes('screen')) {
-      return 'Click the "Share Screen" button in the control bar below. Once you start sharing, I\'ll be able to see what\'s on your screen and help you with visual questions!';
+  const handleScreenShare = async () => {
+    if (isScreenSharing) {
+      // Stop screen share
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(track => track.stop());
+        screenStreamRef.current = null;
+      }
+      setIsScreenSharing(false);
+    } else {
+      // Start screen share
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 1 }, // Low framerate for cost efficiency
+          audio: false,
+        });
+
+        screenStreamRef.current = stream;
+        setIsScreenSharing(true);
+
+        // Handle user stopping share via browser UI
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.onended = () => {
+            setIsScreenSharing(false);
+            screenStreamRef.current = null;
+          };
+        }
+      } catch (error) {
+        console.error('Screen share error:', error);
+      }
     }
-    if (lower.includes('help')) {
-      return 'I can help you with:\n• Screen sharing assistance\n• Visual troubleshooting\n• Meeting notes & summaries\n• Technical questions\n\nJust share your screen and describe what you need!';
-    }
-    if (lower.includes('hello') || lower.includes('hi')) {
-      return `Hello ${displayName}! I'm here to help with your meeting. Feel free to share your screen and I'll provide visual guidance.`;
-    }
-    return "I'm here to assist! Share your screen and I can provide visual guidance, or ask me any questions about your meeting.";
+  };
+
+  const handleCaptureAndAnalyze = async () => {
+    if (!screenStreamRef.current || isCapturing) return;
+    await sendScreenCapture(screenStreamRef.current, 'Please analyze what you see on this screen and describe it.');
   };
 
   const copyRoomLink = async () => {
@@ -169,6 +203,21 @@ export function MeetingRoom() {
             >
               {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
             </button>
+          </div>
+
+          {/* Agent Status */}
+          <div className="flex items-center gap-2 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-1.5">
+            {isAgentOnline ? (
+              <>
+                <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-[12px] text-emerald-400">AI Online</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3.5 w-3.5 text-red-400" />
+                <span className="text-[12px] text-red-400">AI Offline</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -227,21 +276,25 @@ export function MeetingRoom() {
                     <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600">
                       <Bot className="h-12 w-12 text-white" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 border-2 border-[#08080a]">
-                      <Check className="h-4 w-4 text-white" />
+                    <div className={`absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#08080a] ${isAgentOnline ? 'bg-emerald-500' : 'bg-gray-500'}`}>
+                      {isAgentOnline ? <Check className="h-4 w-4 text-white" /> : <X className="h-4 w-4 text-white" />}
                     </div>
                   </div>
-                  <span className="text-[17px] font-medium text-white">AI Assistant</span>
-                  <span className="text-[13px] text-indigo-300">Visual AI • Ready to help</span>
+                  <span className="text-[17px] font-medium text-white">Jimmy (AI)</span>
+                  <span className="text-[13px] text-indigo-300">
+                    {isAgentOnline ? 'Gemini Live • Ready to help' : 'Connecting...'}
+                  </span>
                 </div>
 
                 {/* AI Status */}
                 <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-indigo-500/20 backdrop-blur-sm px-3 py-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
+                  <span className={`relative flex h-2 w-2 ${isAgentOnline ? '' : 'opacity-50'}`}>
+                    <span className={`absolute inline-flex h-full w-full rounded-full ${isAgentOnline ? 'animate-ping bg-indigo-400 opacity-75' : 'bg-gray-400'}`}></span>
+                    <span className={`relative inline-flex h-2 w-2 rounded-full ${isAgentOnline ? 'bg-indigo-500' : 'bg-gray-500'}`}></span>
                   </span>
-                  <span className="text-[12px] font-medium text-indigo-200">AI Agent Active</span>
+                  <span className="text-[12px] font-medium text-indigo-200">
+                    {isAgentOnline ? 'AI Agent Active' : 'AI Connecting...'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -256,18 +309,33 @@ export function MeetingRoom() {
                 </div>
                 <div>
                   <span className="text-[14px] font-medium text-emerald-300">Screen sharing active</span>
-                  <p className="text-[12px] text-emerald-400/60">AI can see your display</p>
+                  <p className="text-[12px] text-emerald-400/60">Click capture to send to AI</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200 rounded-lg"
-                onClick={() => setIsScreenSharing(false)}
-              >
-                <MonitorOff className="h-4 w-4 mr-2" />
-                Stop Sharing
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleCaptureAndAnalyze}
+                  disabled={isCapturing}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg"
+                >
+                  {isCapturing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4 mr-2" />
+                  )}
+                  {isCapturing ? 'Analyzing...' : 'Capture & Analyze'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-emerald-300 hover:bg-emerald-500/20 hover:text-emerald-200 rounded-lg"
+                  onClick={() => handleScreenShare()}
+                >
+                  <MonitorOff className="h-4 w-4 mr-2" />
+                  Stop
+                </Button>
+              </div>
             </div>
           )}
 
@@ -301,7 +369,7 @@ export function MeetingRoom() {
 
             {/* Screen Share Button */}
             <button
-              onClick={() => setIsScreenSharing(!isScreenSharing)}
+              onClick={handleScreenShare}
               className={`flex h-12 w-12 items-center justify-center rounded-full transition-all ${
                 isScreenSharing
                   ? 'bg-emerald-500 text-white hover:bg-emerald-600'
@@ -349,7 +417,9 @@ export function MeetingRoom() {
                 </div>
                 <div>
                   <h3 className="text-[14px] font-semibold text-white">AI Chat</h3>
-                  <p className="text-[11px] text-white/40">Visual AI assistant</p>
+                  <p className="text-[11px] text-white/40">
+                    {isAgentOnline ? 'Powered by Gemini' : 'Connecting...'}
+                  </p>
                 </div>
               </div>
               <button
@@ -362,10 +432,10 @@ export function MeetingRoom() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.isAI ? '' : 'items-end'}`}>
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex flex-col ${msg.isAI ? '' : 'items-end'}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[11px] font-medium ${msg.isAI ? 'text-indigo-400' : 'text-white/50'}`}>
+                    <span className={`text-[11px] font-medium ${msg.isAI ? (msg.isError ? 'text-red-400' : 'text-indigo-400') : 'text-white/50'}`}>
                       {msg.sender}
                     </span>
                     <span className="text-[10px] text-white/30">{formatTime(msg.timestamp)}</span>
@@ -373,7 +443,9 @@ export function MeetingRoom() {
                   <div
                     className={`rounded-[16px] px-4 py-3 max-w-[280px] ${
                       msg.isAI
-                        ? 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-100'
+                        ? msg.isError
+                          ? 'bg-red-500/10 border border-red-500/20 text-red-200'
+                          : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-100'
                         : 'bg-white/[0.06] border border-white/[0.06] text-white'
                     }`}
                   >
@@ -381,6 +453,7 @@ export function MeetingRoom() {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Chat Input */}
@@ -390,15 +463,20 @@ export function MeetingRoom() {
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask AI anything..."
-                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[13px] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all"
+                  placeholder={isAgentOnline ? "Ask AI anything..." : "AI connecting..."}
+                  disabled={isSending}
+                  className="flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-[13px] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none transition-all disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  disabled={!chatInput.trim()}
+                  disabled={!chatInput.trim() || isSending}
                   className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white transition-colors hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <Send className="h-4 w-4" />
+                  {isSending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </form>

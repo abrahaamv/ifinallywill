@@ -29,14 +29,27 @@ pnpm db:up
 pnpm dev
 ```
 
-### Access Points
+### Production URLs (Live)
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Landing | https://visualkit.live | Marketing site |
+| Dashboard | https://app.visualkit.live | Tenant admin portal |
+| Meeting | https://meet.visualkit.live | Video rooms with AI agent |
+| API | https://api.visualkit.live | tRPC backend |
+| Agent | https://agent.visualkit.live | Voice AI (VK-Agent) |
+| Janus | wss://janus.visualkit.live | WebRTC signaling |
+| Widget CDN | https://cdn.visualkit.live | Embeddable widget |
+| Support | https://support.visualkit.live | Chatwoot |
+
+### Local Development
 
 | Service | URL | Description |
 |---------|-----|-------------|
 | Landing | http://localhost:5173 | Marketing site |
-| Dashboard | http://localhost:5174 | Admin portal with AI chat |
-| Meeting | http://localhost:5175 | Video rooms with AI agent |
-| Widget SDK | http://localhost:5176 | Embeddable widget demo |
+| Dashboard | http://localhost:5174 | Admin portal |
+| Meeting | http://localhost:5175 | Video rooms |
+| Widget SDK | http://localhost:5176 | Widget demo |
 | API | http://localhost:3001 | tRPC backend |
 | Realtime | http://localhost:3002 | WebSocket server |
 
@@ -87,8 +100,9 @@ platform/
 
 ### Real-time Capabilities
 
+- Janus Gateway for WebRTC video/audio
+- VK-Agent for Gemini Live API voice AI
 - WebSocket + Redis Streams for chat
-- LiveKit WebRTC for video/audio
 - Shadow DOM widget isolation
 
 ---

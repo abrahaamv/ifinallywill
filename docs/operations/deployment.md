@@ -1,14 +1,30 @@
-# Production Deployment Guide
+# Deployment Guide
 
-**Enterprise AI Assistant Platform**
+**VisualKit AI Assistant Platform**
 
-This guide covers all deployment strategies from simple PaaS platforms to enterprise Kubernetes clusters.
+> **📍 Current Production**: See [infrastructure.md](infrastructure.md) for our live Hetzner + Cloudflare deployment.
+
+This guide covers alternative deployment strategies and general deployment information.
 
 ---
 
-## 🎯 Deployment Strategy Overview
+## 🌐 Current Production Setup
 
-**Blue-Green Deployments**: Zero-downtime releases with instant rollback
+**Live at**: https://visualkit.live
+
+| Component | Service |
+|-----------|---------|
+| Server | Hetzner VPS (178.156.151.139) |
+| Reverse Proxy | Caddy (auto SSL) |
+| DNS/CDN | Cloudflare |
+| Frontend | Cloudflare Pages |
+| Voice AI | VK-Agent (Janus + Gemini) |
+
+See [infrastructure.md](infrastructure.md) for complete details.
+
+---
+
+## Alternative Deployment Options
 
 **Infrastructure Options**:
 1. **Quick Start** - Railway/Fly.io PaaS (recommended for MVP)
