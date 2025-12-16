@@ -300,7 +300,7 @@ class JanusClient:
             "body": {
                 "request": "destroy",
                 "room": self.config.room_id,
-                "admin_key": "audiobridge_admin",
+                "admin_key": "platform_audiobridge_admin_2024",
             },
         }
         await self._send(destroy_msg)
@@ -332,7 +332,7 @@ class JanusClient:
                 "audio_level_average": 25,
                 "record": False,
                 "allow_rtp_participants": True,  # Critical for plain RTP
-                "admin_key": "audiobridge_admin",
+                "admin_key": "platform_audiobridge_admin_2024",
             },
         }
         await self._send(create_msg)
@@ -411,12 +411,26 @@ class JanusClient:
                     # Extract Janus RTP target from response
                     rtp_info = plugindata.get("rtp", {})
                     if rtp_info:
-                        self.session.rtp_target_ip = rtp_info.get("ip")
+                        janus_rtp_ip = rtp_info.get("ip")
                         self.session.rtp_target_port = rtp_info.get("port")
-                        logger.info(
-                            f"Janus RTP target: "
-                            f"{self.session.rtp_target_ip}:{self.session.rtp_target_port}"
-                        )
+
+                        # IMPORTANT: When VK-Agent and Janus are on the same host,
+                        # Janus returns its public IP but we must use 127.0.0.1
+                        # because Janus creates connected sockets expecting localhost.
+                        # The RTP host we registered with (127.0.0.1) must match
+                        # the address we send TO.
+                        if self.config.rtp_host == "127.0.0.1":
+                            self.session.rtp_target_ip = "127.0.0.1"
+                            logger.info(
+                                f"Janus returned RTP target {janus_rtp_ip}:{self.session.rtp_target_port}, "
+                                f"overriding to 127.0.0.1 (same host mode)"
+                            )
+                        else:
+                            self.session.rtp_target_ip = janus_rtp_ip
+                            logger.info(
+                                f"Janus RTP target: "
+                                f"{self.session.rtp_target_ip}:{self.session.rtp_target_port}"
+                            )
 
                     # Track initial participants
                     for p in plugindata.get("participants", []):
@@ -529,7 +543,7 @@ class JanusClient:
                 "codec": "opus",
                 "ptype": 111,
                 "ssrc": 12345678,
-                "admin_key": "audiobridge_admin",
+                "admin_key": "platform_audiobridge_admin_2024",
             },
         }
         await self._send(msg)

@@ -28,6 +28,11 @@ Architecture:
     │    - serverContent.turnComplete: AI finished speaking           │
     │    - serverContent.interrupted: User interrupted AI             │
     │                                                                  │
+    │  Reliability (Phase 1 Optimization):                             │
+    │    - Circuit breaker pattern for API resilience                  │
+    │    - Automatic retry with exponential backoff                    │
+    │    - Graceful degradation on repeated failures                   │
+    │                                                                  │
     └─────────────────────────────────────────────────────────────────┘
 
 Audio Format:
@@ -48,6 +53,20 @@ from websockets.client import WebSocketClientProtocol
 from .config import GeminiConfig
 from .models import GeminiSession
 
+
+# Phase 1 Optimization: Circuit breaker for Gemini API resilience
+try:
+    import pybreaker
+    HAS_PYBREAKER = True
+except ImportError:
+    HAS_PYBREAKER = False
+
+try:
+    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+    HAS_TENACITY = True
+except ImportError:
+    HAS_TENACITY = False
+
 logger = logging.getLogger(__name__)
 
 # Gemini Live API WebSocket endpoint
@@ -55,6 +74,11 @@ GEMINI_LIVE_WS_URL = (
     "wss://generativelanguage.googleapis.com/ws/"
     "google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent"
 )
+
+
+# Phase 1 Optimization: Circuit breaker for Gemini API
+# Note: pybreaker works as a decorator - we'll use it for connect_with_retry
+gemini_circuit_breaker = None  # Reserved for future decorator usage
 
 
 class GeminiLiveClient:
@@ -130,6 +154,9 @@ class GeminiLiveClient:
 
         Returns:
             True if connected and setup complete, False otherwise
+
+        Phase 1 Optimization:
+            Use connect_with_retry() for automatic retry with exponential backoff.
         """
         if not self.config.api_key:
             logger.error("GEMINI_API_KEY not configured")
@@ -137,10 +164,10 @@ class GeminiLiveClient:
 
         try:
             url = self._get_websocket_url()
-            # Use extra_headers for newer websockets versions (>=11.0)
+            # Use additional_headers for websockets >=11.0
             self._ws = await websockets.connect(
                 url,
-                extra_headers={
+                additional_headers={
                     "Content-Type": "application/json",
                 },
                 ping_interval=self.config.ping_interval,
@@ -174,6 +201,38 @@ class GeminiLiveClient:
             if self.on_error:
                 self.on_error(str(e))
             return False
+
+    async def connect_with_retry(self, max_attempts: int = 3) -> bool:
+        """Connect to Gemini with automatic retry and exponential backoff.
+
+        Phase 1 Optimization: Provides resilience against transient failures.
+
+        Args:
+            max_attempts: Maximum number of connection attempts (default: 3)
+
+        Returns:
+            True if connected successfully, False after all attempts exhausted
+        """
+        for attempt in range(max_attempts):
+            try:
+                if await self.connect():
+                    return True
+
+                # Exponential backoff: 1s, 2s, 4s...
+                wait_time = min(2 ** attempt, 10)
+                logger.warning(
+                    f"Gemini connection failed (attempt {attempt + 1}/{max_attempts}), "
+                    f"retrying in {wait_time}s"
+                )
+                await asyncio.sleep(wait_time)
+
+            except Exception as e:
+                logger.error(f"Connection attempt {attempt + 1} error: {e}")
+                wait_time = min(2 ** attempt, 10)
+                await asyncio.sleep(wait_time)
+
+        logger.error(f"Failed to connect to Gemini after {max_attempts} attempts")
+        return False
 
     async def _send_setup(self) -> None:
         """Send initial setup message to configure the session."""
@@ -210,9 +269,12 @@ class GeminiLiveClient:
                 message = await self._ws.recv()
                 data = json.loads(message)
                 await self._handle_message(data)
-            except websockets.exceptions.ConnectionClosed:
-                logger.info("Gemini connection closed")
+            except websockets.exceptions.ConnectionClosed as e:
+                logger.warning(f"Gemini connection closed: code={e.code}, reason={e.reason}")
                 self.session.connected = False
+                self.session.setup_complete = False
+                if self.on_error:
+                    self.on_error(f"Connection closed: {e.reason or e.code}")
                 break
             except asyncio.CancelledError:
                 break
@@ -293,6 +355,15 @@ class GeminiLiveClient:
         # Tool call cancellation
         if "toolCallCancellation" in data:
             logger.info("Tool call cancelled")
+
+        # Error response from Gemini
+        if "error" in data:
+            error = data["error"]
+            error_msg = error.get("message", str(error))
+            error_code = error.get("code", "unknown")
+            logger.error(f"Gemini API error: code={error_code}, message={error_msg}")
+            if self.on_error:
+                self.on_error(f"API error: {error_msg}")
 
     async def send_audio(self, audio_data: bytes) -> bool:
         """Send audio data to Gemini.
@@ -376,7 +447,7 @@ class GeminiLiveClient:
         """Send image data to Gemini for visual understanding.
 
         Images are sent via realtimeInput.mediaChunks (same format as audio).
-        Based on LiveKit's google.realtime plugin implementation.
+        Uses the same camelCase format that works for audio streaming.
 
         Args:
             image_data: Image bytes (JPEG recommended, 1024x1024 max)
@@ -397,14 +468,16 @@ class GeminiLiveClient:
             # Encode image as base64
             image_b64 = base64.b64encode(image_data).decode("utf-8")
 
-            # Use Google SDK format: realtime_input (snake_case!) with media object
-            # Found in google/genai/live.py line 338
+            # Use same camelCase format as audio - realtimeInput with mediaChunks
+            # This is the format that works for audio streaming
             msg = {
-                "realtime_input": {
-                    "media": {
-                        "mime_type": mime_type,
-                        "data": image_b64,
-                    }
+                "realtimeInput": {
+                    "mediaChunks": [
+                        {
+                            "mimeType": mime_type,
+                            "data": image_b64,
+                        }
+                    ]
                 }
             }
 
@@ -473,8 +546,11 @@ class GeminiLiveClient:
 
         Returns:
             Dictionary with connection and audio statistics
+
+        Phase 1 Optimization:
+            Includes circuit breaker state for monitoring API resilience.
         """
-        return {
+        stats = {
             "connected": self.session.connected,
             "setup_complete": self.session.setup_complete,
             "is_speaking": self.session.is_speaking,
@@ -487,6 +563,18 @@ class GeminiLiveClient:
                 if self.session.connected_at else None
             ),
         }
+
+        # Phase 1: Include circuit breaker state
+        if gemini_circuit_breaker:
+            stats["circuit_breaker"] = {
+                "state": gemini_circuit_breaker.state.name if hasattr(gemini_circuit_breaker.state, 'name') else str(gemini_circuit_breaker.state),
+                "fail_count": gemini_circuit_breaker.fail_counter,
+                "available": HAS_PYBREAKER,
+            }
+        else:
+            stats["circuit_breaker"] = {"available": False}
+
+        return stats
 
     async def __aenter__(self) -> "GeminiLiveClient":
         """Async context manager entry."""

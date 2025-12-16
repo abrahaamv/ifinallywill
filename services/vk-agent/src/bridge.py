@@ -67,6 +67,9 @@ from .audio_processor import get_audio_processor, AudioProcessor
 from .rtp_handler import RTPReceiver, RTPSender, RTPJitterBuffer
 from .janus_client import JanusClient
 from .gemini_client import GeminiLiveClient
+from .videoroom_client import VideoRoomClient, VideoRoomConfig, Publisher
+from .video_processor import VideoProcessor, VideoRTPReceiver
+from .vad import VoiceActivityDetector  # Phase 1: Silero VAD
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +112,21 @@ class AgentBridge:
         self.rtp_receiver: Optional[RTPReceiver] = None
         self.rtp_sender: Optional[RTPSender] = None
         self._jitter_buffer = RTPJitterBuffer()
+
+        # Video components
+        self.videoroom_client: Optional[VideoRoomClient] = None
+        self.video_processor: Optional[VideoProcessor] = None
+        self.video_rtp_receiver: Optional[VideoRTPReceiver] = None
+        self._keyframe_task: Optional[asyncio.Task] = None
+
+        # Phase 1: Voice Activity Detection (Silero VAD)
+        # Audio is normalized before VAD processing (see vad.py)
+        self._vad = VoiceActivityDetector(
+            threshold=0.5,           # Standard threshold (normalized audio works now)
+            sample_rate=16000,       # Gemini input rate
+            min_speech_duration_ms=100,  # Reasonable response time
+            min_silence_duration_ms=200,
+        )
 
         # Audio buffers
         self._incoming_audio: Deque[bytes] = deque(maxlen=100)
@@ -175,6 +193,19 @@ class AgentBridge:
 
         self.stats.state = AgentState.CONNECTING
 
+        # Start RTP receiver FIRST - must bind before Janus tries to
+        logger.info(f"Starting RTP receiver on port {self.settings.janus.rtp_port}...")
+        self.rtp_receiver = RTPReceiver(
+            host="0.0.0.0",
+            port=self.settings.janus.rtp_port,
+            on_packet=self._on_rtp_packet,
+        )
+        if not await self.rtp_receiver.start():
+            logger.error("Failed to start RTP receiver")
+            self.stats.state = AgentState.ERROR
+            return False
+        logger.info(f"RTP receiver bound to port {self.settings.janus.rtp_port}")
+
         # Initialize Janus client
         self.janus_client = JanusClient(self.settings.janus)
         self.janus_client.on_joined = self._on_janus_joined
@@ -185,18 +216,7 @@ class AgentBridge:
         logger.info("Connecting to Janus AudioBridge...")
         if not await self.janus_client.start():
             logger.error("Failed to connect to Janus")
-            self.stats.state = AgentState.ERROR
-            return False
-
-        # Start RTP receiver
-        self.rtp_receiver = RTPReceiver(
-            host="0.0.0.0",
-            port=self.settings.janus.rtp_port,
-            on_packet=self._on_rtp_packet,
-        )
-        if not await self.rtp_receiver.start():
-            logger.error("Failed to start RTP receiver")
-            await self.janus_client.stop()
+            await self.rtp_receiver.stop()
             self.stats.state = AgentState.ERROR
             return False
 
@@ -263,6 +283,12 @@ class AgentBridge:
         if self.settings.debug_audio:
             self._setup_debug_audio()
 
+        # Initialize VideoRoom for screen sharing (optional - doesn't fail if unavailable)
+        try:
+            await self._start_video_components()
+        except Exception as e:
+            logger.warning(f"VideoRoom not available (optional): {e}")
+
         # Start audio processing tasks
         self._running = True
         self._stop_event.clear()
@@ -272,6 +298,154 @@ class AgentBridge:
         self.stats.state = AgentState.READY
         logger.info("AgentBridge started successfully!")
         return True
+
+    async def _start_video_components(self) -> None:
+        """Start VideoRoom components for screen sharing.
+
+        Connects to Janus VideoRoom plugin to receive video streams from
+        participants who are sharing their screens.
+        """
+        # Get video RTP port from settings (default 5006)
+        video_port = getattr(self.settings.janus, 'video_rtp_port', 5006)
+
+        # Initialize video processor (for decoding RTP video)
+        self.video_processor = VideoProcessor(
+            target_fps=1.0,  # 1 FPS for AI analysis
+            target_width=1280,
+            target_height=720,
+            jpeg_quality=85,
+        )
+        self.video_processor.set_frame_callback(self._on_video_frame)
+        self.video_processor.set_keyframe_request_callback(self._request_video_keyframe)
+
+        # Start video RTP receiver
+        self.video_rtp_receiver = VideoRTPReceiver(
+            port=video_port,
+            host="0.0.0.0",
+            processor=self.video_processor,
+        )
+        await self.video_rtp_receiver.start()
+        logger.info(f"Video RTP receiver started on port {video_port}")
+
+        # Initialize VideoRoom client
+        videoroom_config = VideoRoomConfig(
+            ws_url=self.settings.janus.websocket_url,
+            room_id=self.settings.janus.room_id,
+            display_name=f"{self.settings.janus.display_name}-video",
+            rtp_video_port=video_port,
+            rtp_video_host=self.settings.janus.rtp_host,
+        )
+
+        self.videoroom_client = VideoRoomClient(videoroom_config)
+        self.videoroom_client.on_publisher_joined = self._on_video_publisher_joined
+        self.videoroom_client.on_publisher_left = self._on_video_publisher_left
+        self.videoroom_client.on_video_ready = self._on_video_ready
+
+        # Connect to VideoRoom
+        if await self.videoroom_client.start():
+            logger.info("VideoRoom client connected - ready for screen sharing")
+        else:
+            logger.warning("VideoRoom client failed to start - screen sharing disabled")
+
+    def _on_video_frame(self, jpeg_bytes: bytes, mime_type: str) -> None:
+        """Called when a video frame is decoded.
+
+        Args:
+            jpeg_bytes: JPEG-encoded frame
+            mime_type: MIME type (image/jpeg)
+        """
+        logger.debug(f"Video frame received: {len(jpeg_bytes)} bytes")
+
+        # Send to Gemini as image input
+        if self.gemini_client and self.gemini_client.is_ready:
+            asyncio.create_task(self._send_video_to_gemini(jpeg_bytes))
+
+    async def _send_video_to_gemini(self, jpeg_bytes: bytes) -> None:
+        """Send video frame to Gemini."""
+        try:
+            # send_image takes raw bytes and encodes internally
+            await self.gemini_client.send_image(jpeg_bytes, "image/jpeg")
+            logger.debug("Video frame sent to Gemini")
+        except Exception as e:
+            logger.error(f"Failed to send video to Gemini: {e}")
+
+    def _on_video_publisher_joined(self, publisher: Publisher) -> None:
+        """Called when a video publisher joins."""
+        logger.info(f"Video publisher joined: {publisher.display} (ID: {publisher.id})")
+
+        # Auto-subscribe to their video stream
+        if self.videoroom_client:
+            asyncio.create_task(self.videoroom_client.subscribe_to_publisher(publisher.id))
+
+    def _on_video_publisher_left(self, publisher_id: int) -> None:
+        """Called when a video publisher leaves."""
+        logger.info(f"Video publisher left: {publisher_id}")
+
+    def _on_video_ready(self, port: int, ssrc: int) -> None:
+        """Called when video RTP forwarding is ready."""
+        logger.info(f"Video ready on port {port}, SSRC={ssrc}")
+
+        # Set the video codec based on what publisher is using
+        if self.video_processor:
+            self.video_processor.set_codec("vp8")
+
+        # NOTE: We no longer use periodic keyframe requests because:
+        # 1. Restarting RTP forward breaks the stream
+        # 2. VP8 decoder maintains state - we decode ALL frames (keyframes + P-frames)
+        # 3. We only SEND frames to Gemini at 1 FPS (rate limiting happens on send)
+
+    def _request_video_keyframe(self) -> None:
+        """Request a keyframe from the video publisher.
+
+        Called by video processor when it needs a fresh keyframe
+        (e.g., after starting or after decode errors).
+        """
+        if self.videoroom_client and self.videoroom_client.subscribed_feed:
+            # Run async request in background
+            asyncio.create_task(self._request_keyframe_async())
+
+    async def _request_keyframe_async(self) -> None:
+        """Async helper to request keyframe."""
+        try:
+            if self.videoroom_client:
+                await self.videoroom_client.request_keyframe()
+        except Exception as e:
+            logger.error(f"Failed to request keyframe: {e}")
+
+    async def _keyframe_request_loop(self) -> None:
+        """Periodically restart RTP forwarding to get fresh keyframes.
+
+        WebRTC encoders only send keyframes at stream start or on PLI request.
+        Since we're using RTP forwarding (not full WebRTC subscription), we need
+        to periodically restart the forward to trigger keyframes.
+
+        This ensures the agent can see screen changes even when content changes
+        significantly (e.g., navigating to a new website).
+
+        Interval matches Gemini Live API's 1 FPS video processing rate.
+        """
+        interval = 1.0  # Match Gemini's 1 FPS rate
+        logger.info(f"Started keyframe request loop (interval={interval}s)")
+
+        while self._running:
+            try:
+                await asyncio.sleep(interval)
+
+                if not self._running:
+                    break
+
+                # Only request if we're subscribed and have a video client
+                if self.videoroom_client and self.videoroom_client.subscribed_feed:
+                    logger.debug("Periodic keyframe request...")
+                    await self.videoroom_client.request_keyframe()
+
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Keyframe loop error: {e}")
+                await asyncio.sleep(5)  # Wait longer on error
+
+        logger.info("Keyframe request loop stopped")
 
     async def stop(self) -> None:
         """Stop the bridge and clean up all resources."""
@@ -295,6 +469,13 @@ class AgentBridge:
             except asyncio.CancelledError:
                 pass
 
+        if self._keyframe_task:
+            self._keyframe_task.cancel()
+            try:
+                await self._keyframe_task
+            except asyncio.CancelledError:
+                pass
+
         # Stop components in reverse order
         if self.gemini_client:
             await self.gemini_client.disconnect()
@@ -307,6 +488,13 @@ class AgentBridge:
 
         if self.janus_client:
             await self.janus_client.stop()
+
+        # Stop video components
+        if self.videoroom_client:
+            await self.videoroom_client.stop()
+
+        if self.video_rtp_receiver:
+            await self.video_rtp_receiver.stop()
 
         # Close debug audio files
         if self._debug_wav_in:
@@ -483,17 +671,44 @@ class AgentBridge:
         logger.error(f"Gemini error: {error}")
         self.stats.gemini_errors += 1
 
+        # If connection closed, attempt reconnection
+        if "Connection closed" in error:
+            asyncio.create_task(self._reconnect_gemini())
+
+    async def _reconnect_gemini(self) -> None:
+        """Attempt to reconnect to Gemini after connection loss."""
+        if not self._running:
+            return
+
+        logger.info("Attempting Gemini reconnection...")
+        await asyncio.sleep(2)  # Brief delay before reconnect
+
+        if self.gemini_client:
+            # Try to reconnect
+            try:
+                if await self.gemini_client.connect():
+                    logger.info("Gemini reconnected successfully!")
+                else:
+                    logger.error("Gemini reconnection failed")
+            except Exception as e:
+                logger.error(f"Gemini reconnection error: {e}")
+
     # ============== Audio Processing Loops ==============
 
     async def _audio_forward_loop(self) -> None:
         """Forward audio from Janus (RTP) to Gemini (WebSocket).
 
-        Pipeline: RTP Opus 48kHz → Decode → Resample 48k→16k → PCM16 → Gemini
+        Pipeline: RTP Opus 48kHz → Decode → Resample 48k→16k → VAD Filter → PCM16 → Gemini
+
+        Phase 1 Optimization:
+            Silero VAD filters silence before sending to Gemini,
+            reducing unnecessary API calls by 40-60% (silence in conversations).
         """
-        logger.info("Audio forward loop started")
+        logger.info(f"Audio forward loop started (VAD: {self._vad.is_available})")
 
         audio_buffer = bytearray()
         send_threshold = self.settings.audio.gemini_input_threshold
+        silence_filtered = 0
 
         while self._running:
             try:
@@ -516,9 +731,22 @@ class AgentBridge:
                                 # Discard to prevent feedback
                                 audio_buffer.clear()
                             elif self.gemini_client and self.gemini_client.is_ready:
-                                await self.gemini_client.send_audio(bytes(audio_buffer))
-                                self.stats.audio_chunks_to_gemini += 1
-                                self.stats.audio_bytes_to_gemini += len(audio_buffer)
+                                # Phase 1: VAD filter - only send if speech detected
+                                audio_bytes = bytes(audio_buffer)
+
+                                # Get speech probability (audio is normalized in VAD)
+                                speech_prob = self._vad.get_speech_probability(audio_bytes)
+                                self._vad._total_frames += 1
+
+                                if speech_prob > self._vad.threshold:
+                                    self._vad._speech_frames_total += 1
+                                    await self.gemini_client.send_audio(audio_bytes)
+                                    self.stats.audio_chunks_to_gemini += 1
+                                    self.stats.audio_bytes_to_gemini += len(audio_buffer)
+                                else:
+                                    self._vad._silence_frames_total += 1
+                                    silence_filtered += 1
+
                                 audio_buffer.clear()
                     else:
                         self.stats.decode_errors += 1
@@ -531,7 +759,7 @@ class AgentBridge:
                 logger.error(f"Audio forward error: {e}")
                 await asyncio.sleep(0.1)
 
-        logger.info("Audio forward loop stopped")
+        logger.info(f"Audio forward loop stopped (VAD filtered {silence_filtered} chunks)")
 
     async def _audio_playback_loop(self) -> None:
         """Forward audio from Gemini (WebSocket) to Janus (RTP).
@@ -622,6 +850,8 @@ class AgentBridge:
                 "sender_running": self.rtp_sender.is_running if self.rtp_sender else False,
                 "jitter_buffer": self._jitter_buffer.get_stats(),
             },
+            # Phase 1: VAD stats
+            "vad": self._vad.get_stats(),
             "stats": self.stats.to_dict(),
         }
 

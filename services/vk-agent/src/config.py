@@ -71,6 +71,10 @@ class JanusConfig:
     rtp_port: int = field(
         default_factory=lambda: int(os.getenv("VK_AGENT_RTP_PORT", "5004"))
     )
+    # Video RTP port for VideoRoom plugin
+    video_rtp_port: int = field(
+        default_factory=lambda: int(os.getenv("VK_AGENT_VIDEO_RTP_PORT", "5006"))
+    )
 
     # Connection settings
     keepalive_interval: int = 30
@@ -85,6 +89,7 @@ class JanusConfig:
             "display_name": self.display_name,
             "rtp_host": self.rtp_host,
             "rtp_port": self.rtp_port,
+            "video_rtp_port": self.video_rtp_port,
         }
 
 
