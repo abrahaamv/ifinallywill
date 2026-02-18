@@ -81,7 +81,8 @@ apps/chatwoot/*
 !apps/chatwoot/docker-compose.platform.yml
 !apps/chatwoot/bin/setup-platform
 
-# Claude Flow generated files
+# Claude Code / Claude Flow generated files
+.claude/checkpoints/
 .claude/settings.local.json
 .mcp.json
 claude-flow.config.json

@@ -1,5 +1,0 @@
-# Deprecated code archive
-# Contains previous implementations that have been replaced
-
-## Contents:
-# - livekit-agent/ - Replaced by services/vk-agent (Janus + Gemini Live)

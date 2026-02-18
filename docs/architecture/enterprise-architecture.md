@@ -81,7 +81,7 @@
 │  Completion:        92% (11/12 Phases)                          │
 │  Security Score:    99/100                                       │
 │  Build Status:      All 13 packages passing                     │
-│  Database:          28 tables, 76+ RLS policies                 │
+│  Database:          50 tables, 76+ RLS policies                 │
 │  Test Coverage:     77/77 security tests passing                │
 │  Production Ready:  Yes (Phases 1-11 complete)                  │
 └─────────────────────────────────────────────────────────────────┘
@@ -189,7 +189,7 @@
 │  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────────┐   │  │
 │  │  │ PostgreSQL 16+  │  │ Redis 7.4+      │  │ Cloud Storage (S3/GCS) │   │  │
 │  │  │ + pgvector      │  │ Streams/Cache   │  │ Documents & Media      │   │  │
-│  │  │ 28 tables       │  │ Sessions        │  │                        │   │  │
+│  │  │ 50 tables       │  │ Sessions        │  │                        │   │  │
 │  │  │ 76+ RLS policies│  │ Rate limiting   │  │                        │   │  │
 │  │  └─────────────────┘  └─────────────────┘  └─────────────────────────┘   │  │
 │  └───────────────────────────────────────────────────────────────────────────┘  │

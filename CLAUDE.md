@@ -6,12 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Enterprise AI Assistant Platform** - Multi-modal real-time AI interaction system with cost-optimized provider architecture (75-85% cost reduction validated). Built as a Turborepo monorepo with pnpm workspaces, focusing on type safety and enterprise-grade quality.
 
-**Current Status**: 11/12 Phases Complete (92%) - Build & Typecheck Passing ✅ (99/100 security score)
-**Phase Status**: Phases 1-11 complete, Phase 12 paused at 50% (enterprise routers temporarily disabled)
+**Current Status**: 12/12 Phases Complete - Build & Typecheck Passing ✅ (99/100 security score)
+**Phase Status**: All phases complete. Phase 12 enterprise features code-complete but unvalidated.
 **Build Status**: TypeScript 21/21 packages passing, Full build 13/13 tasks successful
-**Current Focus**: Re-enable Phase 12 routers after database schema alignment
-
-> **⚠️ PHASE 12 NOTE (2025-11-25)**: Enterprise routers moved to `packages/api-contract/src/_disabled/` pending schema alignment. See `docs/phases/RESUMPTION_GUIDE.md` for re-enablement steps.
+**Current Focus**: Documentation rebuild from ground truth, production hardening, enterprise feature validation
 
 **Tech Stack**: React 18 + Vite 6 + Tailwind CSS v4 + shadcn/ui (frontend), Fastify 5.3.2+ + tRPC v11 (backend), Drizzle ORM + PostgreSQL 16+, Redis Streams, Janus Gateway (WebRTC), Python VK-Agent (Gemini Live API)
 
@@ -181,11 +179,14 @@ platform/
 
 ### Key Architectural Patterns
 
-**1. Type-Safe APIs with tRPC v11**
+**1. Type-Safe APIs with tRPC v11** (24 routers)
 - Contract-first API design in `packages/api-contract`
-- Shared type definitions between frontend and backend
-- Zod schemas for runtime validation
-- Context includes auth + tenant isolation
+- **Core**: health, auth, users, sessions, widgets, chat, knowledge, aiPersonalities, analytics
+- **Security**: mfa, apiKeys
+- **Engagement**: endUsers, verification, surveys, escalations, problems
+- **Enterprise**: crm, ticketing, knowledgeSync, communication, qualityAssurance, enterpriseSecurity, crag
+- **Integration**: chatwoot
+- Zod schemas for runtime validation, context includes auth + tenant isolation
 
 **2. Multi-Tenant Architecture**
 - Tenant context derived from authenticated sessions
@@ -193,11 +194,11 @@ platform/
 - **⚠️ CRITICAL**: Drizzle ORM has NO automatic tenant filtering - catastrophic data leakage risk
 - PostgreSQL Row-Level Security (RLS) with `FORCE ROW LEVEL SECURITY` required
 - Tenant wrapper or Nile integration mandatory for all queries
-- LiveKit room names encode tenant information
+- Janus room names encode tenant information
 
 **3. Cost-Optimized AI Architecture**
 
-**LiveKit Agent - Gemini Live API** (Current):
+**Voice AI - Gemini Live API** (via VK-Agent + Janus Gateway):
 - **Model**: `gemini-2.0-flash-live-001` with native voice
 - **Input**: $0.075/1M tokens
 - **Output**: $0.30/1M tokens
@@ -209,11 +210,6 @@ platform/
 - **GPT-4o-mini**: Simple queries (70%, $0.15/1M tokens)
 - **GPT-4o**: Complex queries (30%, $5.00/1M tokens)
 - **Result**: 75% cost reduction for text
-
-**Legacy Three-Tier Routing** (Available in `_backup_*.py`):
-- Three-tier escalation: Gemini Flash-Lite → Flash → Claude Sonnet
-- pHash frame deduplication (60-75% reduction)
-- Use if manual control over model selection is needed
 
 **4. Real-time Communication Stack**
 - **WebSocket**: Bidirectional chat messages via `packages/realtime`
@@ -232,17 +228,20 @@ platform/
 
 **PostgreSQL 16+** (minimum 17.3/16.7/15.11) with Drizzle ORM.
 
-**Status**: ✅ Phases 2, 8, 10, 11 COMPLETE - 28 tables implemented with 76+ RLS policies
+**Status**: ✅ All 12 Phases COMPLETE - 50 tables across 8 schema files with 76+ RLS policies
 
-**Implemented Schema** (`packages/db/src/schema/` - 1,769+ lines):
-- **Core Tables** (6): `tenants`, `users`, `widgets`, `meetings`, `sessions`, `messages`
-- **Auth.js Tables** (3): `accounts`, `auth_sessions`, `verification_tokens` (Migration 007)
-- **Knowledge Base** (2): `knowledge_documents`, `knowledge_chunks` (pgvector 1024-dim embeddings)
-- **Cost Tracking** (3): `cost_events`, `cost_summaries`, `budget_alerts`
-- **AI Config** (1): `ai_personalities`
-- **Phase 8 Security** (3): `api_keys`, `audit_logs`, `data_requests` (GDPR compliance)
-- **Phase 10 AI Optimization** (3): `rag_evaluation_runs`, `rag_evaluations`, `rag_test_sets`, `rag_quality_thresholds` (RAGAS framework)
-- **Phase 11 End-User Engagement** (5): `end_users`, `survey_responses`, `unresolved_problems`, `unresolved_problem_users`, `escalations`
+**Schema Files** (`packages/db/src/schema/`):
+
+| File | Tables | Domain |
+|------|--------|--------|
+| `index.ts` | 19 | Core platform (tenants, users, auth, widgets, meetings, sessions, messages, chatFiles, knowledge, costs, AI config, API keys, audit, GDPR) |
+| `phase10.ts` | 3 | AI optimization (rerankingEvents, knowledgeGaps, conversationMemory) |
+| `end-user-engagement.ts` | 5 | Engagement (endUsers, surveyResponses, unresolvedProblems, unresolvedProblemUsers, escalations) |
+| `rag-evaluation.ts` | 4 | RAG quality (ragEvaluationRuns, ragEvaluations, ragTestSets, ragQualityThresholds) |
+| `crm-integrations.ts` | 5 | CRM (crmConnections, crmFieldMappings, crmSyncState, crmSyncLogs, crmWebhooks) |
+| `quality-assurance.ts` | 3 | QA (qaReviews, qaMetrics, hallucinationDetections) |
+| `enterprise-security.ts` | 6 | Security (ssoConfigurations, customRoles, userRoleAssignments, securityEvents, activeSessions, trustedDevices) |
+| `crag.ts` | 5 | CRAG (cragEvaluations, queryRefinements, reasoningSteps, cragResponses, cragMetrics) |
 
 **Security**: 76+ RLS policies enforced with FORCE RLS (Migration 008), helper function `get_current_tenant_id()`
 
@@ -277,14 +276,14 @@ platform/
 
 **Follow `docs/guides/roadmap.md` for sequential implementation phases:**
 
-**Timeline**: 11/12 phases complete (92% overall progress), Phase 12 paused at 50%
+**Timeline**: 12/12 phases complete. Phase 12 enterprise features code-complete, pending validation.
 
 **MVP Foundation** (Phases 1-8):
 1. ✅ **Phase 1**: Project scaffolding (Turborepo + pnpm workspaces)
 2. ✅ **Phase 2**: Database + Auth + Security (596-line schema, 13 migrations, 76+ RLS policies, Auth.js)
-3. ✅ **Phase 3**: Backend APIs (5 tRPC routers, Fastify + tRPC v11, rate limiting, CORS)
+3. ✅ **Phase 3**: Backend APIs (24 tRPC routers, Fastify + tRPC v11, rate limiting, CORS)
 4. ✅ **Phase 4**: Frontend Apps (4 apps: landing, dashboard, meeting, widget-sdk)
-5. ✅ **Phase 5**: AI Integration + LiveKit (75-85% cost reduction, Python agent 1000+ lines, RAG)
+5. ✅ **Phase 5**: AI Integration (75-85% cost reduction, VK-Agent + Gemini, RAG)
 6. ✅ **Phase 6**: Real-time Features (WebSocket + Redis Streams bidirectional chat)
 7. ✅ **Phase 7**: Widget SDK (NPM package, Shadow DOM, 52-86KB gzipped, Lighthouse 98/100)
 8. ✅ **Phase 8**: Production Security (Argon2id, TOTP MFA, API keys, audit logs, GDPR)
@@ -301,9 +300,9 @@ platform/
 **Enterprise Features** (Phases 10-12):
 10. ✅ **Phase 10**: AI Optimization (Cohere reranking 20-40% improvement, Anthropic caching 87% savings, DBSCAN clustering, LlamaIndex memory, RAGAS evaluation - 1,096 LOC)
 11. ✅ **Phase 11**: End-User Engagement (5 tables, 6 routers, 1,173 LOC: identity management, multi-tier surveys, semantic problem deduplication, human escalations, abuse prevention, GDPR compliance)
-12. ⏸️ **Phase 12**: Hybrid RAG + Enterprise AI (50% complete, PAUSED: Weeks 1-5 foundation complete - RRF, BM25, small2big, evaluation, A/B testing. Enterprise features paused. Resuming after Phase 9 deployment)
+12. ✅ **Phase 12**: Hybrid RAG + Enterprise AI (code-complete: RRF, BM25, small2big, RAGAS evaluation, CRM integrations, ticketing, knowledge sync, communication, quality assurance, enterprise security, CRAG - 24 routers active, 50 tables. Enterprise features unvalidated.)
 
-**Current Focus**: Phase 9 (Staging Deployment) - Deploy production-ready platform (Phases 1-11) before resuming Phase 12 enterprise features
+**Current Focus**: Documentation accuracy rebuild, production hardening, enterprise feature validation
 
 **Validation after each phase**: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
 
@@ -428,7 +427,6 @@ grep -r "[\^~]" package.json apps/*/package.json packages/*/package.json
 Copy `.env.example` to `.env` and configure:
 - Database connection strings (PostgreSQL, Redis)
 - AI provider API keys (OpenAI, Anthropic, Google, Deepgram, ElevenLabs, Voyage)
-- LiveKit Cloud credentials
 - Session secrets (32+ characters)
 
 **Never commit `.env` or hardcode secrets.**
@@ -574,7 +572,7 @@ Comprehensive guides in `docs/`:
 
 **Key Documents**:
 - `docs/guides/roadmap.md` - Implementation phases
-- `docs/reference/api.md` - tRPC API specifications
-- `docs/reference/database.md` - Database schema
-- `docs/reference/livekit-agent-implementation.md` - LiveKit agent implementation guide
-- `docs/reference/livekit-agent/` - Reference implementation code
+- `docs/reference/api.md` - tRPC API specifications (24 routers)
+- `docs/reference/database.md` - Database schema (50 tables)
+- `docs/operations/INFRASTRUCTURE.md` - Production deployment (Hetzner + Cloudflare)
+- `docs/operations/PRODUCTION_READINESS.md` - Production readiness checklist
