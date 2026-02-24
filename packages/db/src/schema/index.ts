@@ -799,6 +799,10 @@ export * from './enterprise-security';
 
 export * from './crag';
 
+// ==================== IFINALLYILL (ESTATE PLANNING) ====================
+
+export * from './willsystem';
+
 // ==================== INDEXES ====================
 // Indexes are defined via SQL migration files in packages/db/migrations/
 // Standalone index exports cause runtime errors in Drizzle 0.44.6

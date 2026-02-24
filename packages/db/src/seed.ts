@@ -233,6 +233,46 @@ export async function seed() {
 
     logger.info('✅ Created AI personality', { personalityId: personality.id });
 
+    // ==================== IFinallyWill Seed Data ====================
+
+    // Seed asset classes (reference data — 20 types)
+    const assetClassValues = [
+      { classNumber: 1, name: 'Real Estate - Primary Residence', fieldSchema: [{ name: 'address', label: 'Address', type: 'text' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 2, name: 'Real Estate - Investment Property', fieldSchema: [{ name: 'address', label: 'Address', type: 'text' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 3, name: 'Real Estate - Vacation Property', fieldSchema: [{ name: 'address', label: 'Address', type: 'text' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 4, name: 'Vehicle - Car', fieldSchema: [{ name: 'make', label: 'Make', type: 'text' as const, required: true }, { name: 'model', label: 'Model', type: 'text' as const, required: true }, { name: 'year', label: 'Year', type: 'number' as const }, { name: 'vin', label: 'VIN', type: 'text' as const }] },
+      { classNumber: 5, name: 'Vehicle - Other', fieldSchema: [{ name: 'description', label: 'Description', type: 'text' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 6, name: 'Bank Account - Chequing', fieldSchema: [{ name: 'institution', label: 'Financial Institution', type: 'text' as const, required: true }, { name: 'accountType', label: 'Account Type', type: 'text' as const }] },
+      { classNumber: 7, name: 'Bank Account - Savings', fieldSchema: [{ name: 'institution', label: 'Financial Institution', type: 'text' as const, required: true }, { name: 'accountType', label: 'Account Type', type: 'text' as const }] },
+      { classNumber: 8, name: 'Investment - RRSP', fieldSchema: [{ name: 'institution', label: 'Financial Institution', type: 'text' as const, required: true }, { name: 'accountNumber', label: 'Account Number', type: 'text' as const }] },
+      { classNumber: 9, name: 'Investment - TFSA', fieldSchema: [{ name: 'institution', label: 'Financial Institution', type: 'text' as const, required: true }, { name: 'accountNumber', label: 'Account Number', type: 'text' as const }] },
+      { classNumber: 10, name: 'Investment - Non-Registered', fieldSchema: [{ name: 'institution', label: 'Financial Institution', type: 'text' as const, required: true }, { name: 'description', label: 'Description', type: 'text' as const }] },
+      { classNumber: 11, name: 'Life Insurance', fieldSchema: [{ name: 'provider', label: 'Insurance Provider', type: 'text' as const, required: true }, { name: 'policyNumber', label: 'Policy Number', type: 'text' as const }, { name: 'faceValue', label: 'Face Value', type: 'currency' as const }] },
+      { classNumber: 12, name: 'Business Interest', fieldSchema: [{ name: 'businessName', label: 'Business Name', type: 'text' as const, required: true }, { name: 'ownershipPct', label: 'Ownership %', type: 'number' as const }, { name: 'businessType', label: 'Type', type: 'text' as const }] },
+      { classNumber: 13, name: 'Jewelry & Precious Items', fieldSchema: [{ name: 'description', label: 'Description', type: 'textarea' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 14, name: 'Art & Collectibles', fieldSchema: [{ name: 'description', label: 'Description', type: 'textarea' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+      { classNumber: 15, name: 'Furniture & Household Items', fieldSchema: [{ name: 'description', label: 'Description', type: 'textarea' as const, required: true }] },
+      { classNumber: 16, name: 'Digital Assets', fieldSchema: [{ name: 'platform', label: 'Platform/Service', type: 'text' as const, required: true }, { name: 'description', label: 'Description', type: 'text' as const }] },
+      { classNumber: 17, name: 'Cryptocurrency', fieldSchema: [{ name: 'currency', label: 'Currency', type: 'text' as const, required: true }, { name: 'exchange', label: 'Exchange/Wallet', type: 'text' as const }] },
+      { classNumber: 18, name: 'Pension', fieldSchema: [{ name: 'employer', label: 'Employer', type: 'text' as const, required: true }, { name: 'pensionType', label: 'Type', type: 'select' as const, options: ['Defined Benefit', 'Defined Contribution'] }] },
+      { classNumber: 19, name: 'Intellectual Property', fieldSchema: [{ name: 'description', label: 'Description', type: 'textarea' as const, required: true }, { name: 'registrationNumber', label: 'Registration #', type: 'text' as const }] },
+      { classNumber: 20, name: 'Other Asset', fieldSchema: [{ name: 'description', label: 'Description', type: 'textarea' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
+    ];
+
+    await db.insert(schema.assetClasses).values(assetClassValues);
+    logger.info('✅ Seeded 20 asset classes');
+
+    // Seed document types (4 types with pricing)
+    const documentTypeValues = [
+      { name: 'primaryWill', displayName: 'Last Will & Testament', description: 'Your primary will covering the distribution of your estate', basePrice: 8900, province: null, country: 'Canada' },
+      { name: 'secondaryWill', displayName: 'Secondary Will', description: 'A secondary will for private company shares and other assets', basePrice: 6900, province: null, country: 'Canada' },
+      { name: 'poaProperty', displayName: 'Power of Attorney for Property', description: 'Designate someone to manage your financial affairs', basePrice: 4900, province: null, country: 'Canada' },
+      { name: 'poaHealth', displayName: 'Power of Attorney for Health', description: 'Designate someone to make health care decisions on your behalf', basePrice: 4900, province: null, country: 'Canada' },
+    ];
+
+    await db.insert(schema.documentTypes).values(documentTypeValues);
+    logger.info('✅ Seeded 4 document types');
+
     // Re-enable RLS for all tables after seeding
     await db.execute(sql`ALTER TABLE tenants ENABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE users ENABLE ROW LEVEL SECURITY`);

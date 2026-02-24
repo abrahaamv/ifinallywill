@@ -1,0 +1,32 @@
+/**
+ * IFinallyWill Landing / Public Page Styles
+ *
+ * Navy + Gold branding for marketing pages.
+ * Applied to WelcomePage, HowItWorks, Compare, etc.
+ */
+
+.ifw-landing {
+  --landing-bg: var(--ifw-primary-700);
+  --landing-text: oklch(0.98 0 0);
+  --landing-accent: var(--ifw-accent-500);
+}
+
+.ifw-landing-hero {
+  background: linear-gradient(
+    135deg,
+    var(--ifw-primary-900) 0%,
+    var(--ifw-primary-700) 50%,
+    var(--ifw-primary-600) 100%
+  );
+  color: var(--landing-text);
+}
+
+.ifw-landing-cta {
+  background: var(--ifw-accent-500);
+  color: var(--ifw-primary-900);
+  font-weight: 600;
+}
+
+.ifw-landing-cta:hover {
+  background: var(--ifw-accent-400);
+}

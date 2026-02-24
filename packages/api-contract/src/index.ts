@@ -128,6 +128,44 @@ export { qualityAssuranceRouter } from './routers/quality-assurance';
 export { enterpriseSecurityRouter } from './routers/enterprise-security';
 export { cragRouter } from './routers/crag';
 
+// Export IFinallyWill Zod schemas (shared between routers and frontend forms)
+export {
+	personalInfoSchema,
+	spouseInfoSchema,
+	executorsSchema,
+	executorEntrySchema,
+	residueSchema,
+	residueBeneficiarySchema,
+	wipeoutSchema,
+	wipeoutBeneficiarySchema,
+	trustingSchema,
+	trustingEntrySchema,
+	guardiansSchema,
+	guardianEntrySchema,
+	petsSchema,
+	petEntrySchema,
+	additionalSchema,
+	finalDetailsSchema,
+	maritalStatusSchema,
+	documentTypeSchema,
+	documentStatusSchema,
+	createEstateDocumentSchema,
+	updateEstateDocumentStatusSchema,
+	updateWillSectionSchema,
+} from './schemas/estate-documents';
+export {
+	keyNameSchema,
+	createKeyNameSchema,
+	updateKeyNameSchema,
+	relationshipSchema,
+} from './schemas/key-names';
+export {
+	createAssetSchema,
+	updateAssetSchema,
+	bequestShareSchema,
+	setBequestSchema,
+} from './schemas/assets';
+
 // Export error handling utilities (Production Readiness - 2025-10-27)
 export {
   createError,

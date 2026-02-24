@@ -29,6 +29,19 @@ import { communicationRouter } from './routers/communication'; // Phase 12 Week 
 import { qualityAssuranceRouter } from './routers/quality-assurance'; // Phase 12 Week 9
 import { enterpriseSecurityRouter } from './routers/enterprise-security'; // Phase 12 Week 10
 import { cragRouter } from './routers/crag'; // Phase 12 Week 11
+// IFinallyWill Estate Planning Routers
+import { estateDocumentsRouter } from './routers/estate-documents';
+import { willDataRouter } from './routers/will-data';
+import { poaDataRouter } from './routers/poa-data';
+import { keyNamesRouter } from './routers/key-names';
+import { estateAssetsRouter } from './routers/estate-assets';
+import { assetClassesRouter } from './routers/asset-classes';
+import { bequestsRouter } from './routers/bequests';
+import { documentOrdersRouter } from './routers/document-orders';
+import { templateVersionsRouter } from './routers/template-versions';
+import { documentGenerationRouter } from './routers/document-generation';
+import { wilfredRouter } from './routers/wilfred';
+import { partnersRouter } from './routers/partners';
 import { router } from './trpc';
 
 /**
@@ -60,6 +73,19 @@ export const appRouter = router({
   qualityAssurance: qualityAssuranceRouter, // Phase 12 Week 9
   enterpriseSecurity: enterpriseSecurityRouter, // Phase 12 Week 10
   crag: cragRouter, // Phase 12 Week 11
+  // IFinallyWill Estate Planning
+  estateDocuments: estateDocumentsRouter,
+  willData: willDataRouter,
+  poaData: poaDataRouter,
+  keyNames: keyNamesRouter,
+  estateAssets: estateAssetsRouter,
+  assetClasses: assetClassesRouter,
+  bequests: bequestsRouter,
+  documentOrders: documentOrdersRouter,
+  templateVersions: templateVersionsRouter,
+  documentGeneration: documentGenerationRouter,
+  wilfred: wilfredRouter,
+  partners: partnersRouter,
 });
 
 /**
