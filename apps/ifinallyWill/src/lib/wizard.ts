@@ -252,7 +252,8 @@ export function getStepsByCategory(
 ): { category: WizardCategory; label: string; steps: StepConfig[] }[] {
   const visible = getVisibleSteps(ctx);
   return CATEGORIES.map((cat) => ({
-    ...cat,
+    category: cat.key,
+    label: cat.label,
     steps: visible.filter((s) => s.category === cat.key),
   })).filter((cat) => cat.steps.length > 0);
 }
@@ -274,7 +275,7 @@ export function findNextStep(
   const visible = getVisibleSteps(ctx);
   const currentIndex = visible.findIndex((s) => s.id === currentId);
   if (currentIndex === -1 || currentIndex >= visible.length - 1) return null;
-  return visible[currentIndex + 1];
+  return visible[currentIndex + 1] ?? null;
 }
 
 /**

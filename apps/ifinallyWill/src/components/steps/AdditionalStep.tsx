@@ -16,7 +16,7 @@ import { additionalSchema } from '@platform/api-contract/schemas';
 import type { z } from 'zod';
 import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 type FormData = z.infer<typeof additionalSchema>;
 

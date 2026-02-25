@@ -8,7 +8,7 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { WizardShell } from './components/wizard/WizardShell';
+import { PersonalShell } from './components/wizard/PersonalShell';
 import { PoaWizardShell } from './components/wizard/PoaWizardShell';
 import { AppLayout } from './layouts/AppLayout';
 import { LandingLayout } from './layouts/LandingLayout';
@@ -71,7 +71,7 @@ export function App() {
                 <Route path="admin/payments" element={<AdminPaymentsPage />} />
               </Route>
 
-              {/* Will wizard — full-width layout */}
+              {/* Will wizard — category-based dashboard shell */}
               <Route
                 path="/app/documents/:docId"
                 element={
@@ -80,8 +80,8 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<WizardShell />} />
-                <Route path=":stepId" element={<WizardShell />} />
+                <Route index element={<PersonalShell />} />
+                <Route path=":stepId" element={<PersonalShell />} />
               </Route>
 
               {/* POA wizard — full-width layout */}

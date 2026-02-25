@@ -14,7 +14,7 @@
 import { useState, useMemo } from 'react';
 import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 type BequestShare = { keyNameId: string; percentage: number };
 

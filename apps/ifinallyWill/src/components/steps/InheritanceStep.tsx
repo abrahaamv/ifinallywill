@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { trpc } from '../../utils/trpc';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 interface TrustEntry {
   childKeyNameId: string;

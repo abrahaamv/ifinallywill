@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { StepLayout } from '../shared/StepLayout';
 import { PersonSelector } from '../shared/PersonSelector';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 interface ExecutorEntry {
   keyNameId: string;

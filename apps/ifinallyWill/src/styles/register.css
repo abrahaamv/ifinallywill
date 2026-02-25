@@ -1,0 +1,1354 @@
+/**
+ * IFinallyWill Registration Design System
+ *
+ * Ported from v6 Register.css.
+ * All styles scoped under .register-scope to prevent leaking.
+ * Uses CSS custom properties for the registration color palette.
+ */
+
+:root {
+    /* ============================================ */
+    /* REGISTRATION DESIGN SYSTEM - COLORS          */
+    /* ============================================ */
+    --color-background: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-hover: #F5F5F5;
+    --color-text-primary: #000000;
+    --color-text-secondary: #64748B;
+    --color-text-muted: #64748B;
+    --color-brand-primary: #0A1E86;
+    --color-brand-primary-hover: #081668;
+    --color-brand-secondary: #FFBF00;
+    --color-brand-accent: #FFBF00;
+    --color-brand-navy: #0C1F3C;
+    --color-brand-yellow: #FFBF00;
+    --color-brand-blue: #0A1E86;
+    --color-success: #047857;
+    --color-warning: #C27803;
+    --color-error: #CC2222;
+    --color-info: #0A1E86;
+    --color-border: #E5E7EB;
+    --color-border-focus: #0A1E86;
+    --color-shadow: rgba(12, 31, 60, 0.12);
+    --color-overlay: rgba(12, 31, 60, 0.7);
+
+    /* ============================================ */
+    /* TYPOGRAPHY                                    */
+    /* ============================================ */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    --font-size-h1: 2rem;
+    --font-size-h2: 1.5rem;
+    --font-size-h3: 1.25rem;
+    --font-size-body: 1rem;
+    --font-size-body-sm: 0.875rem;
+    --font-size-caption: 0.75rem;
+    --font-size-label: 0.875rem;
+
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.2;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.6;
+
+    --letter-spacing-tight: -0.01em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-wide: 0.5px;
+
+    /* ============================================ */
+    /* SPACING                                       */
+    /* ============================================ */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* ============================================ */
+    /* BORDERS & RADIUS                              */
+    /* ============================================ */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --border-radius-full: 9999px;
+}
+
+/* ============================================ */
+/* GLOBAL RESET WITHIN SCOPE                     */
+/* ============================================ */
+.register-scope * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================================ */
+/* EPILOGUE INPUT FOCUS OVERRIDES                */
+/* ============================================ */
+input.epilogue-input:focus,
+input.epilogue-input:focus-visible,
+input.epilogue-input:focus-within,
+input.epilogue-input:active {
+    outline: none !important;
+    outline-width: 0 !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-bottom: 2px solid var(--color-text-primary) !important;
+}
+
+.epilogue-input {
+    --tw-ring-offset-shadow: 0 0 transparent !important;
+    --tw-ring-shadow: 0 0 transparent !important;
+    --tw-shadow: 0 0 transparent !important;
+}
+
+input[type="text"].epilogue-input,
+input[type="email"].epilogue-input,
+input[type="password"].epilogue-input,
+input[type="tel"].epilogue-input,
+input.epilogue-input {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+input[type="text"].epilogue-input::-webkit-outer-spin-button,
+input[type="text"].epilogue-input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+/* ============================================ */
+/* BASE SCOPE                                    */
+/* ============================================ */
+.register-scope {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    line-height: 1.7;
+    font-weight: 500;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+}
+
+/* ============================================ */
+/* ANIMATIONS                                    */
+/* ============================================ */
+@keyframes slideInRight {
+    from { transform: translateX(30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    from { transform: translateX(-30px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes stepEnter {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes stepExit {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-20px); }
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.register-scope .step-enter {
+    animation: stepEnter 0.3s ease-out;
+}
+
+.register-scope .step-exit {
+    animation: stepExit 0.3s ease-out;
+}
+
+/* ============================================ */
+/* BUTTONS                                       */
+/* ============================================ */
+
+/* Primary - Navy gradient, rounded-full, box-shadow */
+.register-scope .btn-primary {
+    background: linear-gradient(135deg, #0A1E86 0%, #081668 100%);
+    color: white;
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.125rem;
+    letter-spacing: 0.01em;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(10, 30, 134, 0.25);
+    min-width: 160px;
+    min-height: 56px;
+}
+
+.register-scope .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #081668 0%, #060f4a 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(10, 30, 134, 0.3);
+}
+
+.register-scope .btn-primary:disabled {
+    background: linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%);
+    background-color: #6B6B6B !important;
+    color: #CCCCCC !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
+
+.register-scope .btn-primary:disabled:hover {
+    background: linear-gradient(135deg, #9CA3AF 0%, #6B7280 100%);
+    transform: none;
+    box-shadow: 0 4px 15px rgba(156, 163, 175, 0.25);
+}
+
+/* Back button - white bg, border, rounded-full */
+.register-scope .btn-back {
+    background: white;
+    color: var(--color-text-primary);
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    min-height: 56px;
+    justify-content: center;
+}
+
+.register-scope .btn-back:hover {
+    color: var(--color-brand-primary);
+    border-color: var(--color-brand-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 30, 134, 0.1);
+}
+
+/* Secondary button */
+.register-scope .btn-secondary {
+    background: white;
+    color: var(--color-text-primary);
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    min-height: 56px;
+    justify-content: center;
+}
+
+.register-scope .btn-secondary:hover {
+    background-color: var(--color-surface-hover);
+    border-color: #0A1E86;
+    color: #0A1E86;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(10, 30, 134, 0.1);
+}
+
+/* ============================================ */
+/* CARD OPTIONS                                  */
+/* ============================================ */
+.register-scope .card-option {
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: 0.75rem;
+    padding: 1.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+.register-scope .card-option h3 {
+    font-weight: 700 !important;
+    font-size: 1.25rem !important;
+    color: var(--color-text-primary) !important;
+    margin: 0 !important;
+}
+
+.register-scope .card-option p {
+    font-weight: 500 !important;
+    font-size: 1rem !important;
+    color: var(--color-text-secondary) !important;
+    margin-top: 0.5rem !important;
+}
+
+.register-scope .card-option:hover {
+    border-color: var(--color-brand-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--color-shadow);
+}
+
+.register-scope .card-option.selected {
+    border-color: var(--color-brand-primary);
+    background-color: rgba(10, 30, 134, 0.04);
+    box-shadow: 0 0 0 4px rgba(10, 30, 134, 0.08);
+}
+
+.register-scope .card-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ============================================ */
+/* EPILOGUE INPUT (bottom-border only)           */
+/* ============================================ */
+.register-scope .epilogue-input-group {
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.register-scope .epilogue-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-align: left;
+}
+
+.register-scope .epilogue-input {
+    width: 100%;
+    padding: 1rem 0;
+    border: none !important;
+    border-bottom: 2px solid var(--color-border) !important;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: transparent;
+    transition: border-color 0.2s ease;
+    outline: none !important;
+    box-shadow: none !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: 0.01em;
+}
+
+.register-scope .epilogue-input:focus {
+    border: none !important;
+    border-bottom: 2px solid var(--color-text-primary) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.register-scope .epilogue-input:hover {
+    border: none !important;
+    border-bottom: 2px solid var(--color-border) !important;
+}
+
+.register-scope .epilogue-input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.register-scope .epilogue-input::placeholder {
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    font-weight: 400;
+}
+
+.register-scope .epilogue-input[readonly] {
+    color: #6B7280;
+    cursor: not-allowed;
+    background: #F9FAFB;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.register-scope .epilogue-input-readonly {
+    cursor: not-allowed !important;
+    user-select: none !important;
+    pointer-events: none !important;
+    opacity: 0.85;
+}
+
+.register-scope .epilogue-input-readonly:focus {
+    outline: none !important;
+    border-bottom-color: var(--color-border) !important;
+}
+
+.register-scope .epilogue-input-readonly:hover {
+    border-bottom-color: var(--color-border) !important;
+}
+
+/* ============================================ */
+/* FLOATING LABEL PATTERN                        */
+/* ============================================ */
+.register-scope .epilogue-floating-label-group {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-top: 1rem;
+}
+
+.register-scope .epilogue-floating-input {
+    width: 100%;
+    padding: 0.75rem 0;
+    border: none !important;
+    border-bottom: 2px solid var(--color-border) !important;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    background: transparent;
+    transition: border-color 0.2s ease;
+    outline: none !important;
+    box-shadow: none !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.register-scope .epilogue-floating-input:focus {
+    border-bottom-color: var(--color-text-primary) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.register-scope .epilogue-floating-input:focus-visible,
+.register-scope .epilogue-floating-input:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.register-scope .epilogue-floating-label {
+    position: absolute;
+    left: 0;
+    top: 1.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    transform-origin: left top;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* When input has focus or has value, float the label up */
+.register-scope .epilogue-floating-input:focus ~ .epilogue-floating-label,
+.register-scope .epilogue-floating-input:not(:placeholder-shown) ~ .epilogue-floating-label {
+    top: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================ */
+/* AUTOCOMPLETE / DROPDOWN                       */
+/* ============================================ */
+.register-scope .epilogue-autocomplete-wrapper {
+    position: relative;
+}
+
+.register-scope .epilogue-search-indicator {
+    position: absolute;
+    right: 0;
+    top: 1rem;
+    font-size: 0.875rem;
+    color: var(--color-brand-primary);
+    font-weight: 600;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.register-scope .epilogue-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px -5px rgba(12, 31, 60, 0.1), 0 10px 10px -5px rgba(12, 31, 60, 0.04);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 50;
+}
+
+.register-scope .epilogue-dropdown-item {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.register-scope .epilogue-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.register-scope .epilogue-dropdown-item:hover {
+    background: rgba(10, 30, 134, 0.04);
+}
+
+.register-scope .epilogue-dropdown-item:active {
+    background: rgba(10, 30, 134, 0.08);
+}
+
+.register-scope .epilogue-city-name {
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 0.125rem;
+    font-size: 1.05rem;
+}
+
+.register-scope .epilogue-city-details {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+/* ============================================ */
+/* PROGRESS BAR (dot-based)                      */
+/* ============================================ */
+.register-scope .progress-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 2.5rem auto !important;
+    padding: 1rem 0 !important;
+    background: transparent !important;
+    border: none !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    height: auto !important;
+    position: relative !important;
+}
+
+.register-scope .progress-step {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+    border-radius: 50% !important;
+    background: var(--color-border) !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    transition: all 0.3s ease !important;
+    flex-shrink: 0 !important;
+    z-index: 2 !important;
+    margin: 0 !important;
+    cursor: default !important;
+    font-size: 0 !important;
+    overflow: hidden !important;
+}
+
+.register-scope .progress-step * {
+    display: none !important;
+    visibility: hidden !important;
+    font-size: 0 !important;
+}
+
+.register-scope .progress-step.active {
+    width: 10px !important;
+    height: 10px !important;
+    background: var(--color-brand-primary) !important;
+    border: none !important;
+    box-shadow: 0 0 0 4px rgba(10, 30, 134, 0.15) !important;
+}
+
+.register-scope .progress-step.completed {
+    width: 10px !important;
+    height: 10px !important;
+    background: var(--color-brand-primary) !important;
+    border: none !important;
+}
+
+.register-scope .progress-line {
+    width: 70px !important;
+    height: 2px !important;
+    background: var(--color-border) !important;
+    position: relative !important;
+    margin: 0 !important;
+    border: none !important;
+    z-index: 1 !important;
+    flex-shrink: 0 !important;
+}
+
+.register-scope .progress-line.completed {
+    background: var(--color-brand-primary) !important;
+}
+
+/* ============================================ */
+/* HELP PANEL (fixed right, slide-in)            */
+/* ============================================ */
+.register-scope .help-panel {
+    position: fixed;
+    right: -400px;
+    top: 80px;
+    width: 400px;
+    height: calc(100vh - 80px);
+    background: var(--color-surface);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+    transition: right 0.35s ease-out;
+    z-index: 40;
+    overflow-y: auto;
+}
+
+.register-scope .help-panel.open {
+    right: 0;
+}
+
+/* Help button (floating circle, bottom-right) */
+.register-scope .help-button {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-brand-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(10, 30, 134, 0.3);
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.register-scope .help-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(10, 30, 134, 0.4);
+}
+
+/* ============================================ */
+/* LAYOUT                                        */
+/* ============================================ */
+.register-scope .container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.register-scope .content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1rem;
+    max-width: 100%;
+}
+
+.register-scope .question-title {
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--spacing-md);
+    color: var(--color-text-primary);
+    letter-spacing: var(--letter-spacing-tight);
+    line-height: var(--line-height-tight);
+    font-family: var(--font-family);
+}
+
+.register-scope .question-subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--letter-spacing-normal);
+    line-height: var(--line-height-relaxed);
+    font-family: var(--font-family);
+}
+
+.register-scope .navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    padding: 1.5rem 0;
+    width: 100%;
+    gap: 1rem;
+}
+
+.register-scope .options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* ============================================ */
+/* GOOGLE SIGN-IN BUTTON                         */
+/* ============================================ */
+.register-scope .google-signin-btn {
+    width: 100%;
+    margin-bottom: 1rem;
+    background: white;
+    color: var(--color-text-primary);
+    border: 2px solid var(--color-border);
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.register-scope .google-signin-btn:hover {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-brand-primary);
+    transform: translateY(-1px);
+}
+
+/* ============================================ */
+/* FEATURE CARDS                                 */
+/* ============================================ */
+.register-scope .feature-card {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.register-scope .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.register-scope .feature-icon.purple {
+    background: rgba(10, 30, 134, 0.1);
+}
+
+.register-scope .feature-icon.red {
+    background: rgba(255, 191, 0, 0.15);
+}
+
+.register-scope .feature-icon.green {
+    background: #D1FAE5;
+}
+
+.register-scope .feature-icon.blue {
+    background: rgba(10, 30, 134, 0.1);
+}
+
+.register-scope .feature-icon.yellow {
+    background: rgba(255, 191, 0, 0.2);
+}
+
+/* ============================================ */
+/* STEP CARD & FORM CONTAINER                    */
+/* ============================================ */
+.register-scope .epilogue-step-card {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.register-scope .epilogue-step-card .epilogue-form-container {
+    max-width: 100%;
+    margin: 1.5rem 0 3rem 0;
+    padding: 0;
+}
+
+.register-scope .epilogue-step-card .navigation-buttons {
+    margin-top: 0;
+}
+
+.register-scope .epilogue-form-container {
+    max-width: 500px;
+    margin: 3rem auto;
+    padding: 0;
+}
+
+/* ============================================ */
+/* FAQ (help panel)                              */
+/* ============================================ */
+.register-scope .faq-item {
+    border-bottom: 1px solid var(--color-border);
+    padding: 1rem 0;
+}
+
+.register-scope .faq-question {
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-primary);
+}
+
+.register-scope .faq-answer {
+    margin-top: 0.75rem;
+    color: var(--color-text-secondary);
+    display: none;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.register-scope .faq-answer.open {
+    display: block;
+}
+
+/* ============================================ */
+/* HEADER / NAV                                  */
+/* ============================================ */
+.register-scope .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+}
+
+.register-scope .logo {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+}
+
+.register-scope .nav-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.register-scope .nav-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: color 0.2s ease;
+    letter-spacing: 0.01em;
+}
+
+.register-scope .nav-link:hover {
+    color: var(--color-brand-primary);
+}
+
+/* ============================================ */
+/* ILLUSTRATION                                  */
+/* ============================================ */
+.register-scope .illustration {
+    width: 300px;
+    height: 300px;
+    margin: 1rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================ */
+/* MODAL                                         */
+/* ============================================ */
+.register-scope .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.register-scope .modal-overlay.active {
+    display: flex;
+}
+
+.register-scope .modal-content {
+    background: var(--color-surface);
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* ============================================ */
+/* SUMMARY                                       */
+/* ============================================ */
+.register-scope .summary-card {
+    background: var(--color-surface);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px var(--color-shadow);
+}
+
+.register-scope .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.register-scope .summary-row:last-child {
+    border-bottom: none;
+}
+
+.register-scope .edit-button {
+    margin-left: 0.5rem;
+    color: var(--color-brand-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.register-scope .edit-button:hover {
+    color: var(--color-brand-primary-hover);
+}
+
+/* ============================================ */
+/* RATING STARS                                  */
+/* ============================================ */
+.register-scope .rating-stars {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    color: var(--color-warning);
+}
+
+/* ============================================ */
+/* CHECKBOX                                      */
+/* ============================================ */
+.register-scope .epilogue-checkbox-group {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.register-scope .epilogue-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.register-scope .epilogue-checkbox {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    margin-top: 2px;
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-image 0.2s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+}
+
+.register-scope .epilogue-checkbox:checked {
+    background-color: var(--color-surface);
+    border-color: var(--color-brand-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A1E86' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+    background-size: 18px 18px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.register-scope .epilogue-checkbox:focus {
+    outline: none;
+}
+
+.register-scope .epilogue-checkbox:hover {
+    border-color: var(--color-brand-primary);
+}
+
+.register-scope .epilogue-checkbox-text {
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* ============================================ */
+/* HELPER TEXT                                   */
+/* ============================================ */
+.register-scope .epilogue-helper-text {
+    margin-top: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+/* ============================================ */
+/* PARTNER NAME GRID                             */
+/* ============================================ */
+.register-scope .partner-name-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+/* ============================================ */
+/* INFO BOX                                      */
+/* ============================================ */
+.register-scope .epilogue-info-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--color-surface);
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.register-scope .epilogue-info-box p {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.register-scope .epilogue-info-box strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+/* ============================================ */
+/* EPILOGUE WRAPPER / MAIN                       */
+/* ============================================ */
+.register-scope .epilogue-wrapper {
+    min-height: calc(100vh - 80px);
+    background-color: var(--color-background);
+}
+
+.register-scope .epilogue-main {
+    background-color: var(--color-background);
+    min-height: calc(100vh - 64px);
+}
+
+/* ============================================ */
+/* WIZARD CONTENT                                */
+/* ============================================ */
+.register-scope .wizard-content {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 1rem;
+}
+
+/* ============================================ */
+/* INPUT FIELD (bordered variant)                */
+/* ============================================ */
+.register-scope .input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    background: var(--color-surface);
+}
+
+.register-scope .input-field:focus {
+    outline: none;
+    border-color: var(--color-text-primary);
+}
+
+.register-scope .input-field:hover {
+    border-color: var(--color-border);
+}
+
+/* ============================================ */
+/* POA OPTIONS                                   */
+/* ============================================ */
+.register-scope .poa-options-container {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 2rem 0;
+}
+
+.register-scope .poa-option-button {
+    min-width: 200px;
+    padding: 1.5rem 2rem;
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.register-scope .poa-option-button:hover {
+    border-color: var(--color-brand-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(10, 30, 134, 0.1);
+}
+
+.register-scope .poa-option-button:focus {
+    outline: none !important;
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 4px 12px rgba(10, 30, 134, 0.1) !important;
+}
+
+.register-scope .poa-option-button.selected {
+    border-color: var(--color-brand-primary);
+    background-color: rgba(10, 30, 134, 0.04);
+    box-shadow: 0 0 0 4px rgba(10, 30, 134, 0.08);
+    transform: scale(1.02);
+}
+
+.register-scope .poa-option-button:focus-visible {
+    outline: none !important;
+}
+
+/* ============================================ */
+/* RESPONSIVE: TABLET (max-width: 768px)         */
+/* ============================================ */
+@media (max-width: 768px) {
+    .register-scope .epilogue-form-container {
+        padding: 0 1.5rem;
+    }
+
+    .register-scope .navigation-buttons {
+        padding: 1rem 1.5rem;
+    }
+
+    .register-scope .question-title {
+        font-size: 1.5rem;
+    }
+
+    .register-scope .progress-bar {
+        margin: 2rem auto !important;
+        max-width: 300px !important;
+    }
+
+    .register-scope .progress-step {
+        width: 8px !important;
+        height: 8px !important;
+        min-width: 8px !important;
+        min-height: 8px !important;
+    }
+
+    .register-scope .progress-step.active,
+    .register-scope .progress-step.completed {
+        width: 8px !important;
+        height: 8px !important;
+        min-width: 8px !important;
+        min-height: 8px !important;
+    }
+
+    .register-scope .progress-line {
+        width: 50px !important;
+    }
+
+    .register-scope .partner-name-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .register-scope .package-cards-mobile { display: block; }
+    .register-scope .package-table-desktop { display: none; }
+}
+
+/* Package selection responsive visibility */
+.register-scope .package-cards-mobile { display: none; }
+.register-scope .package-table-desktop { display: block; }
+
+/* ============================================ */
+/* RESPONSIVE: MOBILE (max-width: 640px)         */
+/* ============================================ */
+@media (max-width: 640px) {
+    .register-scope .container { max-width: 100%; padding: 0 1rem; }
+    .register-scope .header { gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .register-scope .logo { font-size: 1.5rem; }
+    .register-scope .nav-links { gap: 0.75rem; flex-wrap: wrap; }
+
+    .register-scope .content-area { padding: 1.25rem 0.5rem; }
+    .register-scope .wizard-content { padding: 0 0.5rem; }
+
+    /* Mobile Typography */
+    .register-scope .question-title { font-size: 1.5rem; line-height: 1.2; }
+    .register-scope .question-subtitle { font-size: 1rem; line-height: 1.5; }
+
+    .register-scope .options-grid { grid-template-columns: 1fr; gap: 0.75rem; max-width: 520px; width: 100%; }
+    .register-scope .navigation-buttons { flex-direction: column; gap: 0.75rem; max-width: 100%; padding: 1rem 0; }
+    .register-scope .btn-primary, .register-scope .btn-back, .register-scope .btn-secondary { width: 100%; min-height: 52px; }
+
+    .register-scope .illustration { width: 220px; height: 220px; }
+    .register-scope .progress-bar { margin: 1.5rem auto !important; max-width: 300px !important; }
+    .register-scope .progress-step, .register-scope .progress-step.active, .register-scope .progress-step.completed { width: 8px !important; height: 8px !important; min-width: 8px !important; min-height: 8px !important; }
+    .register-scope .progress-line { width: 50px !important; }
+
+    .register-scope .help-panel { width: 100vw; right: -100vw; top: 80px; height: calc(100vh - 80px); }
+    .register-scope .help-panel.open { right: 0; }
+    .register-scope .help-button { right: 1rem; bottom: 1rem; width: 48px; height: 48px; }
+
+    .register-scope .modal-content { width: 92%; max-width: 480px; padding: 1.5rem; }
+    .register-scope .epilogue-input { font-size: 1.05rem; }
+}
+
+/* ============================================ */
+/* RESPONSIVE: SMALL PHONE (max-width: 360px)    */
+/* ============================================ */
+@media (max-width: 360px) {
+    .register-scope .logo { font-size: 1.25rem; }
+    .register-scope .question-title { font-size: 1.25rem; }
+    .register-scope .question-subtitle { font-size: 0.95rem; }
+    .register-scope .btn-primary, .register-scope .btn-back, .register-scope .btn-secondary { min-height: 48px; padding: 0.75rem 1rem; }
+    .register-scope .container { padding: 0 0.75rem; }
+}
+
+/* ============================================ */
+/* ACCESSIBILITY                                 */
+/* ============================================ */
+
+/* Enhanced focus states */
+.register-scope *:focus {
+    outline: 3px solid var(--color-brand-primary) !important;
+    outline-offset: 2px !important;
+}
+
+.register-scope button:focus-visible {
+    outline: 3px solid var(--color-brand-primary) !important;
+    outline-offset: 4px !important;
+}
+
+/* Remove focus outline for wizard help panel tab buttons */
+.wizard-help-content button:focus,
+.wizard-help-content button:focus-visible,
+.wizard-help-content button:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --color-text-primary: #000000;
+        --color-text-secondary: #1A1A1A;
+        --color-background: #FFFFFF;
+        --color-border: #000000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================ */
+/* REGISTER FORM CONTAINER                       */
+/* ============================================ */
+.register-scope .register-form-container {
+    padding-top: 2rem;
+    transform: translateY(0%);
+}
+
+@media (min-width: 768px) {
+    .register-scope .register-form-container {
+        padding-top: 0;
+        transform: translateY(-15%);
+    }
+}
+
+.register-scope .register-form-container.form-details-step {
+    padding-top: 2rem;
+    transform: translateY(0%);
+}
+
+@media (min-width: 768px) {
+    .register-scope .register-form-container.form-details-step {
+        padding-top: 4rem;
+        transform: translateY(0%);
+    }
+}
+
+/* ============================================ */
+/* ERROR STYLES                                  */
+/* ============================================ */
+.register-scope .error-text {
+    color: var(--color-error);
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.register-scope .epilogue-floating-input.has-error {
+    border-bottom-color: var(--color-error) !important;
+}
+
+.register-scope .epilogue-input.has-error {
+    border-bottom-color: var(--color-error) !important;
+}

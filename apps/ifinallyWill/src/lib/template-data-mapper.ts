@@ -84,8 +84,8 @@ export function mapWillToTemplateData(
     const guardian = lookupPerson(pet.guardianKeyNameId, people);
     const backup = lookupPerson(pet.backupKeyNameId, people);
     return {
-      name: pet.name,
-      type: pet.type,
+      name: pet.name ?? '',
+      type: pet.type ?? '',
       guardian: guardian.fullName,
       backup: backup.fullName || undefined,
       amount: pet.amount ? `$${pet.amount}` : undefined,
@@ -97,7 +97,7 @@ export function mapWillToTemplateData(
   const trusting = (willData.trusting ?? []).map((t) => {
     const child = lookupPerson(t.childKeyNameId, people);
     return {
-      age: t.age,
+      age: t.age ?? 0,
       shares: t.shares,
       firstName: child.firstName ?? '',
       lastName: child.lastName ?? '',
@@ -161,7 +161,10 @@ export function mapWillToTemplateData(
     residueInfo: willData.residue
       ? {
           selected: willData.residue.selected,
-          beneficiary: willData.residue.beneficiary,
+          beneficiary: willData.residue.beneficiary?.map((b) => ({
+            ...b,
+            beneficiary: b.beneficiary ?? '',
+          })),
           clause: willData.residue.clause,
         }
       : {},
@@ -169,7 +172,10 @@ export function mapWillToTemplateData(
       ? {
           selectedCategory: willData.wipeout.selectedCategory,
           selectedOption: willData.wipeout.selectedOption,
-          table_dataBequest: willData.wipeout.table_dataBequest,
+          table_dataBequest: willData.wipeout.table_dataBequest?.map((b) => ({
+            ...b,
+            beneficiary: b.beneficiary ?? '',
+          })),
           availableShares: willData.wipeout.availableShares,
         }
       : {},

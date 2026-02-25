@@ -1,56 +1,53 @@
 /**
- * Step 2: Province selection
- * Province determines which template is used for document generation
+ * Step 2: Location — city autocomplete with province/country auto-fill
+ * Ported from v6 LocationStep.jsx
  */
 
-import { PROVINCES } from '../../config/provinces';
 import type { RegistrationData } from '../../hooks/useRegistrationWizard';
+import { CityAutocomplete } from './primitives/CityAutocomplete';
+import { NavButtons } from './primitives/NavButtons';
+import { SectionTitle } from './primitives/SectionTitle';
+import { StepSubtitle } from './primitives/StepSubtitle';
 
 interface Props {
   data: RegistrationData;
   onUpdate: (partial: Partial<RegistrationData>) => void;
   onNext: () => void;
-  onPrev: () => void;
+  onBack: () => void;
 }
 
-export function LocationStep({ data, onUpdate, onNext, onPrev }: Props) {
-  const select = (province: string) => {
-    onUpdate({ province });
-    onNext();
+export function LocationStep({ data, onUpdate, onNext, onBack }: Props) {
+  const handleCityChange = (city: string, province: string, country: string) => {
+    onUpdate({ city, province, country });
   };
 
+  const isComplete =
+    data.city.trim() !== '' &&
+    data.province.trim() !== '' &&
+    data.country.trim() !== '';
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-3 text-center">Where do you live?</h1>
-      <p className="text-[var(--ifw-neutral-500)] mb-8 text-center">
-        Estate laws vary by province. We&apos;ll use the right templates for your location.
-      </p>
+    <div className="epilogue-step-card animate-slide-in-right">
+      <SectionTitle>Where do you currently live?</SectionTitle>
+      <StepSubtitle>
+        We&apos;ll use your province to ensure your documents comply with local laws.
+      </StepSubtitle>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {PROVINCES.map((p) => (
-          <button
-            key={p.code}
-            type="button"
-            onClick={() => select(p.code)}
-            className={`border rounded-lg px-4 py-3 text-left text-sm transition-all hover:border-[var(--ifw-primary-500)] ${
-              data.province === p.code
-                ? 'border-[var(--ifw-primary-700)] bg-[var(--ifw-primary-50)] font-medium'
-                : 'border-[var(--ifw-neutral-200)]'
-            }`}
-          >
-            {p.name}
-          </button>
-        ))}
-      </div>
+      <div className="epilogue-form-container">
+        <CityAutocomplete
+          value={data.city}
+          province={data.province}
+          country={data.country}
+          onCityChange={handleCityChange}
+          label="City"
+        />
 
-      <div className="mt-8 flex justify-between">
-        <button
-          type="button"
-          onClick={onPrev}
-          className="px-6 py-2 text-sm border rounded-lg hover:bg-[var(--ifw-neutral-100)]"
-        >
-          Back
-        </button>
+        <NavButtons
+          onBack={onBack}
+          onNext={onNext}
+          nextLabel="Continue &rarr;"
+          nextDisabled={!isComplete}
+        />
       </div>
     </div>
   );

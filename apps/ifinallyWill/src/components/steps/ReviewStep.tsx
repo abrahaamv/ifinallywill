@@ -5,7 +5,7 @@
 import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
 import { PROVINCES } from '../../config/provinces';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 export function ReviewStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
   const { data: people } = trpc.keyNames.list.useQuery();

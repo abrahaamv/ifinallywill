@@ -7,7 +7,7 @@ import { StepLayout } from '../shared/StepLayout';
 import { PersonSelector } from '../shared/PersonSelector';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { trpc } from '../../utils/trpc';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 interface GuardianEntry {
   keyNameId: string;

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 const STATUSES = [
   { value: 'single', label: 'Single', icon: '👤', description: 'Not married or in a common-law relationship' },

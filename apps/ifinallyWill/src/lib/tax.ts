@@ -186,7 +186,7 @@ export function getTaxRateForProvince(province: string): TaxRateInfo {
   const key = Object.keys(CANADIAN_TAX_RATES).find(
     (k) => k.toLowerCase() === province.toLowerCase(),
   );
-  return key ? CANADIAN_TAX_RATES[key] : DEFAULT_TAX_RATE;
+  return (key ? CANADIAN_TAX_RATES[key] : undefined) ?? DEFAULT_TAX_RATE;
 }
 
 export function getTaxLabel(province: string): string {

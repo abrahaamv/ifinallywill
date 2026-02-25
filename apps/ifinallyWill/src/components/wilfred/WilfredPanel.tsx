@@ -15,9 +15,11 @@ interface Props {
   province?: string;
   documentType?: string;
   completedSteps?: string[];
+  /** When true, renders as floating button + panel instead of sidebar */
+  floatingMode?: boolean;
 }
 
-export function WilfredPanel({ estateDocId, stepId, province, documentType, completedSteps }: Props) {
+export function WilfredPanel({ estateDocId, stepId, province, documentType, completedSteps, floatingMode }: Props) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -73,8 +75,52 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
     timestamp: m.timestamp,
   }));
 
-  // Desktop: always-visible sidebar panel
-  // Mobile: toggle-able bottom sheet
+  // Floating mode: always shows as floating button + popup panel
+  // Default mode: desktop sidebar + mobile bottom sheet
+  if (floatingMode) {
+    return (
+      <>
+        {/* Floating button */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="fixed bottom-4 right-4 z-40 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white"
+          style={{ backgroundColor: 'var(--ifw-primary-700)' }}
+        >
+          {isOpen ? '✕' : '🎩'}
+        </button>
+
+        {/* Floating panel */}
+        {isOpen && (
+          <div className="fixed bottom-20 right-4 z-30 w-80 bg-white border border-[var(--ifw-border)] rounded-xl shadow-xl flex flex-col" style={{ maxHeight: '60vh' }}>
+            <div className="px-4 py-3 border-b border-[var(--ifw-border)] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎩</span>
+                <span className="text-sm font-medium text-[var(--ifw-primary-700)]">Wilfred</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-600)]">
+                  AI
+                </span>
+              </div>
+              {stepId && (
+                <span className="text-[10px] text-[var(--ifw-neutral-400)]">
+                  {stepId.replace(/-/g, ' ')}
+                </span>
+              )}
+            </div>
+
+            <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
+            <WilfredInput
+              onSend={handleSend}
+              disabled={sendMessage.isPending || !sessionId}
+              suggestions={suggestionsResult?.suggestions}
+            />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Default mode: desktop sidebar + mobile bottom sheet
   return (
     <>
       {/* Desktop panel */}

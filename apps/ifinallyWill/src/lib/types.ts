@@ -132,6 +132,19 @@ export interface EstateDocument {
 // Step Props — used by all wizard step components
 // ---------------------------------------------------------------------------
 
+/**
+ * Legacy step props — willData as Record for backward compat with step components.
+ * Prefer WillStepProps for new code.
+ */
+export interface StepProps {
+  estateDocId: string;
+  willData: Record<string, unknown>;
+  onNext: () => void;
+  onPrev: () => void;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+}
+
 export interface WillStepProps {
   estateDocId: string;
   willData: WillData;

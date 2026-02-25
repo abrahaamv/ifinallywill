@@ -9,7 +9,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { trpc } from '../../utils/trpc';
 import { useWizardNavigation } from '../../hooks/useWizardNavigation';
 import { buildWizardContext } from '../../lib/wizard';
-import type { WillData, WillStepProps } from '../../lib/types';
+import type { WillData, StepProps } from '../../lib/types';
 import { WizardSidebar } from './WizardSidebar';
 import { WizardProgress } from './WizardProgress';
 import { ProfileBanner } from './ProfileBanner';
@@ -33,18 +33,8 @@ import { AdditionalStep } from '../steps/AdditionalStep';
 import { FinalDetailsStep } from '../steps/FinalDetailsStep';
 import { ReviewStep } from '../steps/ReviewStep';
 
-/**
- * @deprecated Use WillStepProps from lib/types.ts instead.
- * Kept for backward compatibility with step components that haven't migrated yet.
- */
-export interface StepProps {
-  estateDocId: string;
-  willData: Record<string, unknown>;
-  onNext: () => void;
-  onPrev: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-}
+/** Re-export for backward compat */
+export type { StepProps } from '../../lib/types';
 
 const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   'personal-info': PersonalInfoStep,

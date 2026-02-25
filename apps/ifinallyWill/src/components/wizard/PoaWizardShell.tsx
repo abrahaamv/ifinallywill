@@ -9,7 +9,6 @@ import { useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { trpc } from '../../utils/trpc';
 import { getPoaSteps } from '../../config/poaWizardConfig';
-import type { SimpleStep } from '../../lib/wizard';
 import { WizardProgress } from './WizardProgress';
 import { ProfileBanner } from './ProfileBanner';
 import { WilfredPanel } from '../wilfred/WilfredPanel';

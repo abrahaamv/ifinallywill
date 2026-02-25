@@ -1,98 +1,194 @@
 /**
- * Registration page — multi-step wizard
+ * Registration page — dynamic multi-step wizard
+ * Orchestrates 12 steps with conditional branching based on user data.
+ * Ported from v6 Register.jsx.
  */
 
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useRegistrationWizard } from '../../hooks/useRegistrationWizard';
+import { RegistrationLayout } from '../../layouts/RegistrationLayout';
+import { WizardHelpContent } from '../../components/registration/WizardHelpContent';
+import '../../styles/register.css';
+
+// Step components
 import { WelcomeStep } from '../../components/registration/WelcomeStep';
 import { LocationStep } from '../../components/registration/LocationStep';
-import { DocumentSelectionStep } from '../../components/registration/DocumentSelectionStep';
+import { NameStep } from '../../components/registration/NameStep';
 import { AccountStep } from '../../components/registration/AccountStep';
-import { SummaryStep } from '../../components/registration/SummaryStep';
-import { useRegistrationWizard } from '../../hooks/useRegistrationWizard';
+import { SecondaryWillStep } from '../../components/registration/SecondaryWillStep';
+import { POAStep } from '../../components/registration/POAStep';
+import { PartnerStep } from '../../components/registration/PartnerStep';
+import { PartnerNameStep } from '../../components/registration/PartnerNameStep';
+import { PartnerLocationStep } from '../../components/registration/PartnerLocationStep';
+import { PlanningTogetherStep } from '../../components/registration/PlanningTogetherStep';
+import { PackageSelectionStep } from '../../components/registration/PackageSelectionStep';
+import { CheckoutStep } from '../../components/registration/CheckoutStep';
 
-const STEP_LABELS = ['Welcome', 'Location', 'Documents', 'Account', 'Review'];
+// Map step IDs to components
+const STEP_COMPONENTS: Record<
+  string,
+  React.ComponentType<{
+    data: ReturnType<typeof useRegistrationWizard>['data'];
+    onUpdate: ReturnType<typeof useRegistrationWizard>['updateData'];
+    onNext: () => void;
+    onBack: () => void;
+  }>
+> = {
+  welcome: WelcomeStep,
+  location: LocationStep,
+  name: NameStep,
+  account: AccountStep,
+  secondaryWill: SecondaryWillStep,
+  poa: POAStep,
+  partner: PartnerStep,
+  partnerName: PartnerNameStep,
+  partnerLocation: PartnerLocationStep,
+  planningTogether: PlanningTogetherStep,
+  packageSelection: PackageSelectionStep,
+  checkout: CheckoutStep,
+};
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const wizard = useRegistrationWizard();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleComplete = () => {
-    wizard.clearWizard();
-    navigate('/app/dashboard');
+  const currentStepDef = wizard.steps[wizard.step];
+  const StepComponent = currentStepDef ? STEP_COMPONENTS[currentStepDef.id] : null;
+
+  // Calculate progress (exclude non-progress steps like welcome)
+  const progressSteps = wizard.steps.filter((s) => s.showProgress);
+  const currentProgressIndex = progressSteps.findIndex((s) => s === currentStepDef);
+
+  const handleNext = () => {
+    // If this is the last step (checkout), complete registration
+    if (wizard.isLast) {
+      handleComplete();
+      return;
+    }
+
+    let nextIndex = wizard.step + 1;
+
+    // Skip package selection if flagged
+    if (
+      wizard.data.skip_package_selection &&
+      wizard.steps[nextIndex]?.id === 'packageSelection'
+    ) {
+      const checkoutIdx = wizard.steps.findIndex((s) => s.id === 'checkout');
+      if (checkoutIdx !== -1) nextIndex = checkoutIdx;
+      wizard.updateData({ skip_package_selection: false });
+    }
+
+    // Skip planning together if coming from couples plan
+    if (
+      wizard.steps[nextIndex]?.id === 'planningTogether' &&
+      wizard.data.from_couples_plan_selection
+    ) {
+      const pkgIdx = wizard.steps.findIndex((s) => s.id === 'packageSelection');
+      if (pkgIdx !== -1) nextIndex = pkgIdx;
+      wizard.updateData({ from_couples_plan_selection: false });
+    }
+
+    wizard.goToStep(nextIndex);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  return (
-    <div className="min-h-[calc(100vh-120px)] py-12 px-6">
-      {/* Progress indicator */}
-      <div className="max-w-2xl mx-auto mb-10">
-        <div className="flex items-center justify-between">
-          {STEP_LABELS.map((label, i) => (
-            <div key={label} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                    i < wizard.step
-                      ? 'bg-[var(--ifw-primary-700)] text-white'
-                      : i === wizard.step
-                        ? 'border-2 border-[var(--ifw-primary-700)] text-[var(--ifw-primary-700)]'
-                        : 'border border-[var(--ifw-neutral-300)] text-[var(--ifw-neutral-400)]'
-                  }`}
-                >
-                  {i < wizard.step ? '✓' : i + 1}
-                </div>
-                <span
-                  className={`text-xs mt-1 ${
-                    i <= wizard.step
-                      ? 'text-[var(--ifw-primary-700)] font-medium'
-                      : 'text-[var(--ifw-neutral-400)]'
-                  }`}
-                >
-                  {label}
-                </span>
-              </div>
-              {i < STEP_LABELS.length - 1 && (
-                <div
-                  className={`h-px w-12 md:w-20 mx-2 ${
-                    i < wizard.step ? 'bg-[var(--ifw-primary-700)]' : 'bg-[var(--ifw-neutral-200)]'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+  const handleBack = () => {
+    wizard.prevStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-      {/* Step content */}
-      {wizard.step === 0 && (
-        <WelcomeStep data={wizard.data} onUpdate={wizard.updateData} onNext={wizard.nextStep} />
-      )}
-      {wizard.step === 1 && (
-        <LocationStep
-          data={wizard.data}
-          onUpdate={wizard.updateData}
-          onNext={wizard.nextStep}
-          onPrev={wizard.prevStep}
-        />
-      )}
-      {wizard.step === 2 && (
-        <DocumentSelectionStep
-          data={wizard.data}
-          onUpdate={wizard.updateData}
-          onNext={wizard.nextStep}
-          onPrev={wizard.prevStep}
-        />
-      )}
-      {wizard.step === 3 && (
-        <AccountStep
-          data={wizard.data}
-          onUpdate={wizard.updateData}
-          onNext={wizard.nextStep}
-          onPrev={wizard.prevStep}
-        />
-      )}
-      {wizard.step === 4 && (
-        <SummaryStep data={wizard.data} onPrev={wizard.prevStep} onComplete={handleComplete} />
-      )}
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      // TODO: tRPC mutation for account creation
+      // const result = await trpc.auth.register.mutate({ ... });
+      wizard.clearWizard();
+      navigate('/app/will/personal');
+    } catch {
+      setLoading(false);
+    }
+  };
+
+  if (!currentStepDef || !StepComponent) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2>Error: Step not found</h2>
+        <p>Step: {wizard.step}, Total: {wizard.steps.length}</p>
+        <button type="button" onClick={() => wizard.goToStep(0)}>
+          Reset
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="register-scope">
+      <RegistrationLayout
+        showProgress={currentStepDef.showProgress}
+        currentStep={currentProgressIndex >= 0 ? currentProgressIndex : 0}
+        totalSteps={progressSteps.length}
+        isHelpOpen={isHelpOpen}
+        onToggleHelp={() => setIsHelpOpen(!isHelpOpen)}
+        helpContent={<WizardHelpContent stepName={currentStepDef.id} />}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={wizard.step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <StepComponent
+              data={wizard.data}
+              onUpdate={wizard.updateData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Loading overlay */}
+        {loading && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 60,
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '2rem 3rem',
+                textAlign: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  border: '3px solid #E5E7EB',
+                  borderTopColor: '#0A1E86',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                  margin: '0 auto 1rem',
+                }}
+              />
+              <p style={{ color: '#374151', fontWeight: 500 }}>Creating your account...</p>
+            </div>
+          </div>
+        )}
+      </RegistrationLayout>
     </div>
   );
 }

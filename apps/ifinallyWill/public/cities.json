@@ -1,0 +1,2912 @@
+[
+  {
+    "city": "Abbotsford",
+    "city_ascii": "Abbotsford",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Acton",
+    "city_ascii": "Acton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Adjala-Tosorontio",
+    "city_ascii": "Adjala-Tosorontio",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Airdrie",
+    "city_ascii": "Airdrie",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Ajax",
+    "city_ascii": "Ajax",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Alfred and Plantagenet",
+    "city_ascii": "Alfred and Plantagenet",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Alliston",
+    "city_ascii": "Alliston",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Alma",
+    "city_ascii": "Alma",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Amherst",
+    "city_ascii": "Amherst",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Amherstburg",
+    "city_ascii": "Amherstburg",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Amos",
+    "city_ascii": "Amos",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Angus",
+    "city_ascii": "Angus",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Arnprior",
+    "city_ascii": "Arnprior",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Aurora",
+    "city_ascii": "Aurora",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Baie-Comeau",
+    "city_ascii": "Baie-Comeau",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Barrie",
+    "city_ascii": "Barrie",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bathurst",
+    "city_ascii": "Bathurst",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Beaconsfield",
+    "city_ascii": "Beaconsfield",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Beamsville",
+    "city_ascii": "Beamsville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Beauharnois",
+    "city_ascii": "Beauharnois",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Beaumont",
+    "city_ascii": "Beaumont",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Bécancour",
+    "city_ascii": "Becancour",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Beckwith",
+    "city_ascii": "Beckwith",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Belleville",
+    "city_ascii": "Belleville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Beloeil",
+    "city_ascii": "Beloeil",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Binbrook",
+    "city_ascii": "Binbrook",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Blackfalds",
+    "city_ascii": "Blackfalds",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Blainville",
+    "city_ascii": "Blainville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Bois-des-Filion",
+    "city_ascii": "Bois-des-Filion",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Boisbriand",
+    "city_ascii": "Boisbriand",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Bolton",
+    "city_ascii": "Bolton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Boucherville",
+    "city_ascii": "Boucherville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Bowmanville",
+    "city_ascii": "Bowmanville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bracebridge",
+    "city_ascii": "Bracebridge",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bradford",
+    "city_ascii": "Bradford",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bradford West Gwillimbury",
+    "city_ascii": "Bradford West Gwillimbury",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brampton",
+    "city_ascii": "Brampton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brandon",
+    "city_ascii": "Brandon",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Brant",
+    "city_ascii": "Brant",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brantford",
+    "city_ascii": "Brantford",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bridgewater",
+    "city_ascii": "Bridgewater",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Brighton",
+    "city_ascii": "Brighton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brock",
+    "city_ascii": "Brock",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brockton",
+    "city_ascii": "Brockton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Brockville",
+    "city_ascii": "Brockville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Bromont",
+    "city_ascii": "Bromont",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Brooks",
+    "city_ascii": "Brooks",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Brossard",
+    "city_ascii": "Brossard",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Buckingham",
+    "city_ascii": "Buckingham",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Burlington",
+    "city_ascii": "Burlington",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Burnaby",
+    "city_ascii": "Burnaby",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Caledon",
+    "city_ascii": "Caledon",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Caledonia",
+    "city_ascii": "Caledonia",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Calgary",
+    "city_ascii": "Calgary",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Cambridge",
+    "city_ascii": "Cambridge",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Campbell River",
+    "city_ascii": "Campbell River",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Campbellton",
+    "city_ascii": "Campbellton",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Camrose",
+    "city_ascii": "Camrose",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Candiac",
+    "city_ascii": "Candiac",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Canmore",
+    "city_ascii": "Canmore",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Cantley",
+    "city_ascii": "Cantley",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Cape Breton",
+    "city_ascii": "Cape Breton",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Carignan",
+    "city_ascii": "Carignan",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Carleton Place",
+    "city_ascii": "Carleton Place",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Castlegar",
+    "city_ascii": "Castlegar",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Cavan Monaghan",
+    "city_ascii": "Cavan Monaghan",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Central Elgin",
+    "city_ascii": "Central Elgin",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Central Saanich",
+    "city_ascii": "Central Saanich",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Centre Wellington",
+    "city_ascii": "Centre Wellington",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Chambly",
+    "city_ascii": "Chambly",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Champlain",
+    "city_ascii": "Champlain",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Charlottetown",
+    "city_ascii": "Charlottetown",
+    "admin_name": "Prince Edward Island",
+    "country": "Canada"
+  },
+  {
+    "city": "Châteauguay",
+    "city_ascii": "Chateauguay",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Chatham",
+    "city_ascii": "Chatham",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Chatham",
+    "city_ascii": "Chatham",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Chester",
+    "city_ascii": "Chester",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Chestermere",
+    "city_ascii": "Chestermere",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Chicoutimi",
+    "city_ascii": "Chicoutimi",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Chilliwack",
+    "city_ascii": "Chilliwack",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Clarence-Rockland",
+    "city_ascii": "Clarence-Rockland",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Clarington",
+    "city_ascii": "Clarington",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Clearview",
+    "city_ascii": "Clearview",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Coaldale",
+    "city_ascii": "Coaldale",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Coaticook",
+    "city_ascii": "Coaticook",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Cobourg",
+    "city_ascii": "Cobourg",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Cochrane",
+    "city_ascii": "Cochrane",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Cold Lake",
+    "city_ascii": "Cold Lake",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Coldstream",
+    "city_ascii": "Coldstream",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Collingwood",
+    "city_ascii": "Collingwood",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Colwood",
+    "city_ascii": "Colwood",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Comox",
+    "city_ascii": "Comox",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Conception Bay South",
+    "city_ascii": "Conception Bay South",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Coquitlam",
+    "city_ascii": "Coquitlam",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Corman Park No. 344",
+    "city_ascii": "Corman Park No. 344",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Corner Brook",
+    "city_ascii": "Corner Brook",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Cornwall",
+    "city_ascii": "Cornwall",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Côte-Saint-Luc",
+    "city_ascii": "Cote-Saint-Luc",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Courtenay",
+    "city_ascii": "Courtenay",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Cowansville",
+    "city_ascii": "Cowansville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Cranbrook",
+    "city_ascii": "Cranbrook",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Crystal Beach",
+    "city_ascii": "Crystal Beach",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Dawson Creek",
+    "city_ascii": "Dawson Creek",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Delta",
+    "city_ascii": "Delta",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Deux-Montagnes",
+    "city_ascii": "Deux-Montagnes",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Dieppe",
+    "city_ascii": "Dieppe",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Dolbeau",
+    "city_ascii": "Dolbeau",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Dollard-des-Ormeaux",
+    "city_ascii": "Dollard-des-Ormeaux",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Donnacona",
+    "city_ascii": "Donnacona",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Dorval",
+    "city_ascii": "Dorval",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Drummondville",
+    "city_ascii": "Drummondville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Duncan",
+    "city_ascii": "Duncan",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "East Gwillimbury",
+    "city_ascii": "East Gwillimbury",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "East Kelowna",
+    "city_ascii": "East Kelowna",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "East St. Paul",
+    "city_ascii": "East St. Paul",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Edmonton",
+    "city_ascii": "Edmonton",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Edmundston",
+    "city_ascii": "Edmundston",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Elizabethtown-Kitley",
+    "city_ascii": "Elizabethtown-Kitley",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Elliot Lake",
+    "city_ascii": "Elliot Lake",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Elmira",
+    "city_ascii": "Elmira",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Embrun",
+    "city_ascii": "Embrun",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Erin",
+    "city_ascii": "Erin",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Esquimalt",
+    "city_ascii": "Esquimalt",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Essa",
+    "city_ascii": "Essa",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Essex",
+    "city_ascii": "Essex",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Estevan",
+    "city_ascii": "Estevan",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Fergus",
+    "city_ascii": "Fergus",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Fort Erie",
+    "city_ascii": "Fort Erie",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Fort McMurray",
+    "city_ascii": "Fort McMurray",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Fort Saskatchewan",
+    "city_ascii": "Fort Saskatchewan",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Fort St. John",
+    "city_ascii": "Fort St. John",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Fredericton",
+    "city_ascii": "Fredericton",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Gander",
+    "city_ascii": "Gander",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Gaspé",
+    "city_ascii": "Gaspe",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Gatineau",
+    "city_ascii": "Gatineau",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Georgetown",
+    "city_ascii": "Georgetown",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Georgian Bluffs",
+    "city_ascii": "Georgian Bluffs",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Georgina",
+    "city_ascii": "Georgina",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Gibsons",
+    "city_ascii": "Gibsons",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Glace Bay",
+    "city_ascii": "Glace Bay",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Granby",
+    "city_ascii": "Granby",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Grand Falls",
+    "city_ascii": "Grand Falls",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Grande Prairie",
+    "city_ascii": "Grande Prairie",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Gravenhurst",
+    "city_ascii": "Gravenhurst",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Greater Napanee",
+    "city_ascii": "Greater Napanee",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Grey Highlands",
+    "city_ascii": "Grey Highlands",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Grimsby",
+    "city_ascii": "Grimsby",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Guelph",
+    "city_ascii": "Guelph",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Guelph/Eramosa",
+    "city_ascii": "Guelph/Eramosa",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Halifax",
+    "city_ascii": "Halifax",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Halton Hills",
+    "city_ascii": "Halton Hills",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Hamilton",
+    "city_ascii": "Hamilton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Hamilton Township",
+    "city_ascii": "Hamilton Township",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Hanover",
+    "city_ascii": "Hanover",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Hauterive",
+    "city_ascii": "Hauterive",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Hawkesbury",
+    "city_ascii": "Hawkesbury",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "High River",
+    "city_ascii": "High River",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Hinton",
+    "city_ascii": "Hinton",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Hudson",
+    "city_ascii": "Hudson",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Huntsville",
+    "city_ascii": "Huntsville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Huron East",
+    "city_ascii": "Huron East",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Ingersoll",
+    "city_ascii": "Ingersoll",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Innisfil",
+    "city_ascii": "Innisfil",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Inverness",
+    "city_ascii": "Inverness",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Iqaluit",
+    "city_ascii": "Iqaluit",
+    "admin_name": "Nunavut",
+    "country": "Canada"
+  },
+  {
+    "city": "Joliette",
+    "city_ascii": "Joliette",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Kamloops",
+    "city_ascii": "Kamloops",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Kanata",
+    "city_ascii": "Kanata",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kawartha Lakes",
+    "city_ascii": "Kawartha Lakes",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kelowna",
+    "city_ascii": "Kelowna",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Kenora",
+    "city_ascii": "Kenora",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kentville",
+    "city_ascii": "Kentville",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Keswick",
+    "city_ascii": "Keswick",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kincardine",
+    "city_ascii": "Kincardine",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "King",
+    "city_ascii": "King",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kingston",
+    "city_ascii": "Kingston",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kingsville",
+    "city_ascii": "Kingsville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Kirkland",
+    "city_ascii": "Kirkland",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Kitchener",
+    "city_ascii": "Kitchener",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "L’Ancienne-Lorette",
+    "city_ascii": "L'Ancienne-Lorette",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "L’Assomption",
+    "city_ascii": "L'Assomption",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "L’Epiphanie",
+    "city_ascii": "L'Epiphanie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "L’Île-Perrot",
+    "city_ascii": "L'Ile-Perrot",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "La Pêche",
+    "city_ascii": "La Peche",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "La Prairie",
+    "city_ascii": "La Prairie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "La Tuque",
+    "city_ascii": "La Tuque",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "LaSalle",
+    "city_ascii": "LaSalle",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Labrador City",
+    "city_ascii": "Labrador City",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Lac-Brome",
+    "city_ascii": "Lac-Brome",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lachute",
+    "city_ascii": "Lachute",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lacombe",
+    "city_ascii": "Lacombe",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Ladner",
+    "city_ascii": "Ladner",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Ladysmith",
+    "city_ascii": "Ladysmith",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Lake Country",
+    "city_ascii": "Lake Country",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Lakeshore",
+    "city_ascii": "Lakeshore",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Lambton Shores",
+    "city_ascii": "Lambton Shores",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Langford Station",
+    "city_ascii": "Langford Station",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Langley",
+    "city_ascii": "Langley",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Laurentian Valley",
+    "city_ascii": "Laurentian Valley",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Laurentides",
+    "city_ascii": "Laurentides",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Laval",
+    "city_ascii": "Laval",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lavaltrie",
+    "city_ascii": "Lavaltrie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Leamington",
+    "city_ascii": "Leamington",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Leduc",
+    "city_ascii": "Leduc",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Leeds and the Thousand Islands",
+    "city_ascii": "Leeds and the Thousand Islands",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Les Coteaux",
+    "city_ascii": "Les Coteaux",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Les Îles-de-la-Madeleine",
+    "city_ascii": "Les Iles-de-la-Madeleine",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lethbridge",
+    "city_ascii": "Lethbridge",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Lévis",
+    "city_ascii": "Levis",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lincoln",
+    "city_ascii": "Lincoln",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Lindsay",
+    "city_ascii": "Lindsay",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Listowel",
+    "city_ascii": "Listowel",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Lloydminster",
+    "city_ascii": "Lloydminster",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Lloydminster",
+    "city_ascii": "Lloydminster",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "London",
+    "city_ascii": "London",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Longueuil",
+    "city_ascii": "Longueuil",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Lorraine",
+    "city_ascii": "Lorraine",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Loyalist",
+    "city_ascii": "Loyalist",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Magog",
+    "city_ascii": "Magog",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Malahide",
+    "city_ascii": "Malahide",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Maple Ridge",
+    "city_ascii": "Maple Ridge",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Mapleton",
+    "city_ascii": "Mapleton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Marieville",
+    "city_ascii": "Marieville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Markham",
+    "city_ascii": "Markham",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Martensville",
+    "city_ascii": "Martensville",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Mascouche",
+    "city_ascii": "Mascouche",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Matane",
+    "city_ascii": "Matane",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Meaford",
+    "city_ascii": "Meaford",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Medicine Hat",
+    "city_ascii": "Medicine Hat",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Mercier",
+    "city_ascii": "Mercier",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Middlesex Centre",
+    "city_ascii": "Middlesex Centre",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Midland",
+    "city_ascii": "Midland",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Milton",
+    "city_ascii": "Milton",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Minto",
+    "city_ascii": "Minto",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Mirabel",
+    "city_ascii": "Mirabel",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Miramichi",
+    "city_ascii": "Miramichi",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Mission",
+    "city_ascii": "Mission",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Mississauga",
+    "city_ascii": "Mississauga",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Mississippi Mills",
+    "city_ascii": "Mississippi Mills",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Mistassini",
+    "city_ascii": "Mistassini",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Moncton",
+    "city_ascii": "Moncton",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Mono",
+    "city_ascii": "Mono",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Mont-Laurier",
+    "city_ascii": "Mont-Laurier",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Mont-Royal",
+    "city_ascii": "Mont-Royal",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Mont-Saint-Hilaire",
+    "city_ascii": "Mont-Saint-Hilaire",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Mont-Tremblant",
+    "city_ascii": "Mont-Tremblant",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Montmagny",
+    "city_ascii": "Montmagny",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Montréal",
+    "city_ascii": "Montreal",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Moose Jaw",
+    "city_ascii": "Moose Jaw",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Morden",
+    "city_ascii": "Morden",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Morinville",
+    "city_ascii": "Morinville",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Mount Pearl Park",
+    "city_ascii": "Mount Pearl Park",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Nanaimo",
+    "city_ascii": "Nanaimo",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Nelson",
+    "city_ascii": "Nelson",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "New Glasgow",
+    "city_ascii": "New Glasgow",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "New Hamburg",
+    "city_ascii": "New Hamburg",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "New Tecumseth",
+    "city_ascii": "New Tecumseth",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "New Westminster",
+    "city_ascii": "New Westminster",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Newmarket",
+    "city_ascii": "Newmarket",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Niagara Falls",
+    "city_ascii": "Niagara Falls",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Niagara-on-the-Lake",
+    "city_ascii": "Niagara-on-the-Lake",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Battleford",
+    "city_ascii": "North Battleford",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "North Bay",
+    "city_ascii": "North Bay",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Cowichan",
+    "city_ascii": "North Cowichan",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "North Dumfries",
+    "city_ascii": "North Dumfries",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Dundas",
+    "city_ascii": "North Dundas",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Glengarry",
+    "city_ascii": "North Glengarry",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Grenville",
+    "city_ascii": "North Grenville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Perth",
+    "city_ascii": "North Perth",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "North Saanich",
+    "city_ascii": "North Saanich",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "North Vancouver",
+    "city_ascii": "North Vancouver",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Norwich",
+    "city_ascii": "Norwich",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Notre-Dame-de-l'Île-Perrot",
+    "city_ascii": "Notre-Dame-de-l'Ile-Perrot",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Notre-Dame-des-Prairies",
+    "city_ascii": "Notre-Dame-des-Prairies",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Oak Bay",
+    "city_ascii": "Oak Bay",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Oakville",
+    "city_ascii": "Oakville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Okotoks",
+    "city_ascii": "Okotoks",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Olds",
+    "city_ascii": "Olds",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Orangeville",
+    "city_ascii": "Orangeville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Orillia",
+    "city_ascii": "Orillia",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Oro-Medonte",
+    "city_ascii": "Oro-Medonte",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Oromocto",
+    "city_ascii": "Oromocto",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Oshawa",
+    "city_ascii": "Oshawa",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Ottawa",
+    "city_ascii": "Ottawa",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Owen Sound",
+    "city_ascii": "Owen Sound",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Paradise",
+    "city_ascii": "Paradise",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "Paris",
+    "city_ascii": "Paris",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Parksville",
+    "city_ascii": "Parksville",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Pelham",
+    "city_ascii": "Pelham",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Pembroke",
+    "city_ascii": "Pembroke",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Penetanguishene",
+    "city_ascii": "Penetanguishene",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Penticton",
+    "city_ascii": "Penticton",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Perth East",
+    "city_ascii": "Perth East",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Petawawa",
+    "city_ascii": "Petawawa",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Peterborough",
+    "city_ascii": "Peterborough",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Pickering",
+    "city_ascii": "Pickering",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Pincourt",
+    "city_ascii": "Pincourt",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Pitt Meadows",
+    "city_ascii": "Pitt Meadows",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Pointe-Claire",
+    "city_ascii": "Pointe-Claire",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Pont-Rouge",
+    "city_ascii": "Pont-Rouge",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Alberni",
+    "city_ascii": "Port Alberni",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Colborne",
+    "city_ascii": "Port Colborne",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Coquitlam",
+    "city_ascii": "Port Coquitlam",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Elgin",
+    "city_ascii": "Port Elgin",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Hope",
+    "city_ascii": "Port Hope",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Moody",
+    "city_ascii": "Port Moody",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Port Perry",
+    "city_ascii": "Port Perry",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Port-Alfred",
+    "city_ascii": "Port-Alfred",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Portage La Prairie",
+    "city_ascii": "Portage La Prairie",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Powell River",
+    "city_ascii": "Powell River",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Prévost",
+    "city_ascii": "Prevost",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Prince Albert",
+    "city_ascii": "Prince Albert",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Prince George",
+    "city_ascii": "Prince George",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Prince Rupert",
+    "city_ascii": "Prince Rupert",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Qualicum Beach",
+    "city_ascii": "Qualicum Beach",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Quebec City",
+    "city_ascii": "Quebec City",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Queens",
+    "city_ascii": "Queens",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Quesnel",
+    "city_ascii": "Quesnel",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Quinte West",
+    "city_ascii": "Quinte West",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Quispamsis",
+    "city_ascii": "Quispamsis",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Ramara",
+    "city_ascii": "Ramara",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Rawdon",
+    "city_ascii": "Rawdon",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Red Deer",
+    "city_ascii": "Red Deer",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Regina",
+    "city_ascii": "Regina",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Repentigny",
+    "city_ascii": "Repentigny",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Richmond",
+    "city_ascii": "Richmond",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Richmond Hill",
+    "city_ascii": "Richmond Hill",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Rideau Lakes",
+    "city_ascii": "Rideau Lakes",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Rimouski",
+    "city_ascii": "Rimouski",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Riverview",
+    "city_ascii": "Riverview",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Rivière-du-Loup",
+    "city_ascii": "Riviere-du-Loup",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Roberval",
+    "city_ascii": "Roberval",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Rockland",
+    "city_ascii": "Rockland",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Rosemère",
+    "city_ascii": "Rosemere",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Rouyn-Noranda",
+    "city_ascii": "Rouyn-Noranda",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Russell",
+    "city_ascii": "Russell",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Saanich",
+    "city_ascii": "Saanich",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Saguenay",
+    "city_ascii": "Saguenay",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint John",
+    "city_ascii": "Saint John",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Amable",
+    "city_ascii": "Saint-Amable",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Augustin-de-Desmaures",
+    "city_ascii": "Saint-Augustin-de-Desmaures",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Basile-le-Grand",
+    "city_ascii": "Saint-Basile-le-Grand",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Bruno-de-Montarville",
+    "city_ascii": "Saint-Bruno-de-Montarville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Charles-Borromée",
+    "city_ascii": "Saint-Charles-Borromee",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Colomban",
+    "city_ascii": "Saint-Colomban",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Constant",
+    "city_ascii": "Saint-Constant",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Eustache",
+    "city_ascii": "Saint-Eustache",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Félicien",
+    "city_ascii": "Saint-Felicien",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Georges",
+    "city_ascii": "Saint-Georges",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Hyacinthe",
+    "city_ascii": "Saint-Hyacinthe",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Jean-sur-Richelieu",
+    "city_ascii": "Saint-Jean-sur-Richelieu",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Jérôme",
+    "city_ascii": "Saint-Jerome",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Lambert",
+    "city_ascii": "Saint-Lambert",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Lazare",
+    "city_ascii": "Saint-Lazare",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Lin--Laurentides",
+    "city_ascii": "Saint-Lin--Laurentides",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Raymond",
+    "city_ascii": "Saint-Raymond",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Sauveur",
+    "city_ascii": "Saint-Sauveur",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Saint-Zotique",
+    "city_ascii": "Saint-Zotique",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Adèle",
+    "city_ascii": "Sainte-Adele",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Agathe-des-Monts",
+    "city_ascii": "Sainte-Agathe-des-Monts",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Anne-des-Plaines",
+    "city_ascii": "Sainte-Anne-des-Plaines",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Catherine",
+    "city_ascii": "Sainte-Catherine",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Julie",
+    "city_ascii": "Sainte-Julie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Julienne",
+    "city_ascii": "Sainte-Julienne",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Marie",
+    "city_ascii": "Sainte-Marie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Marthe-sur-le-Lac",
+    "city_ascii": "Sainte-Marthe-sur-le-Lac",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Sophie",
+    "city_ascii": "Sainte-Sophie",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sainte-Thérèse",
+    "city_ascii": "Sainte-Therese",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Salaberry-de-Valleyfield",
+    "city_ascii": "Salaberry-de-Valleyfield",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Salmon Arm",
+    "city_ascii": "Salmon Arm",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Sarnia",
+    "city_ascii": "Sarnia",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Saskatoon",
+    "city_ascii": "Saskatoon",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Saugeen Shores",
+    "city_ascii": "Saugeen Shores",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sault Ste. Marie",
+    "city_ascii": "Sault Ste. Marie",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Scugog",
+    "city_ascii": "Scugog",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sechelt",
+    "city_ascii": "Sechelt",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Selkirk",
+    "city_ascii": "Selkirk",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Selwyn",
+    "city_ascii": "Selwyn",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sept-Îles",
+    "city_ascii": "Sept-Iles",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Severn",
+    "city_ascii": "Severn",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Shawinigan",
+    "city_ascii": "Shawinigan",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Shediac",
+    "city_ascii": "Shediac",
+    "admin_name": "New Brunswick",
+    "country": "Canada"
+  },
+  {
+    "city": "Shelburne",
+    "city_ascii": "Shelburne",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sherbrooke",
+    "city_ascii": "Sherbrooke",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Sidney",
+    "city_ascii": "Sidney",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Simcoe",
+    "city_ascii": "Simcoe",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Smiths Falls",
+    "city_ascii": "Smiths Falls",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sooke",
+    "city_ascii": "Sooke",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Sorel-Tracy",
+    "city_ascii": "Sorel-Tracy",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "South Dundas",
+    "city_ascii": "South Dundas",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "South Frontenac",
+    "city_ascii": "South Frontenac",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "South Glengarry",
+    "city_ascii": "South Glengarry",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "South Huron",
+    "city_ascii": "South Huron",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "South Stormont",
+    "city_ascii": "South Stormont",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Springfield",
+    "city_ascii": "Springfield",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Springwater",
+    "city_ascii": "Springwater",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Spruce Grove",
+    "city_ascii": "Spruce Grove",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Squamish",
+    "city_ascii": "Squamish",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Albert",
+    "city_ascii": "St. Albert",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Andrews",
+    "city_ascii": "St. Andrews",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Catharines",
+    "city_ascii": "St. Catharines",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Clair",
+    "city_ascii": "St. Clair",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Clements",
+    "city_ascii": "St. Clements",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "St. John's",
+    "city_ascii": "St. John's",
+    "admin_name": "Newfoundland and Labrador",
+    "country": "Canada"
+  },
+  {
+    "city": "St. Thomas",
+    "city_ascii": "St. Thomas",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Stanley",
+    "city_ascii": "Stanley",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Steinbach",
+    "city_ascii": "Steinbach",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Stoneham-et-Tewkesbury",
+    "city_ascii": "Stoneham-et-Tewkesbury",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Stony Plain",
+    "city_ascii": "Stony Plain",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Stouffville",
+    "city_ascii": "Stouffville",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Stratford",
+    "city_ascii": "Stratford",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Stratford",
+    "city_ascii": "Stratford",
+    "admin_name": "Prince Edward Island",
+    "country": "Canada"
+  },
+  {
+    "city": "Strathmore",
+    "city_ascii": "Strathmore",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Strathroy",
+    "city_ascii": "Strathroy",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Strathroy-Caradoc",
+    "city_ascii": "Strathroy-Caradoc",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Sudbury",
+    "city_ascii": "Sudbury",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Summerland",
+    "city_ascii": "Summerland",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Summerside",
+    "city_ascii": "Summerside",
+    "admin_name": "Prince Edward Island",
+    "country": "Canada"
+  },
+  {
+    "city": "Surrey",
+    "city_ascii": "Surrey",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Swift Current",
+    "city_ascii": "Swift Current",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Sydney Mines",
+    "city_ascii": "Sydney Mines",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Sylvan Lake",
+    "city_ascii": "Sylvan Lake",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Taber",
+    "city_ascii": "Taber",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Taché",
+    "city_ascii": "Tache",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Tay",
+    "city_ascii": "Tay",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Tecumseh",
+    "city_ascii": "Tecumseh",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Temiskaming Shores",
+    "city_ascii": "Temiskaming Shores",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Terrace",
+    "city_ascii": "Terrace",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Terrebonne",
+    "city_ascii": "Terrebonne",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Thames Centre",
+    "city_ascii": "Thames Centre",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "The Nation / La Nation",
+    "city_ascii": "The Nation / La Nation",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Thetford Mines",
+    "city_ascii": "Thetford Mines",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Thompson",
+    "city_ascii": "Thompson",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Thorold",
+    "city_ascii": "Thorold",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Thunder Bay",
+    "city_ascii": "Thunder Bay",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Tillsonburg",
+    "city_ascii": "Tillsonburg",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Timmins",
+    "city_ascii": "Timmins",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Tiny",
+    "city_ascii": "Tiny",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Toronto",
+    "city_ascii": "Toronto",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Tottenham",
+    "city_ascii": "Tottenham",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Trail",
+    "city_ascii": "Trail",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Trent Hills",
+    "city_ascii": "Trent Hills",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Trois-Rivières",
+    "city_ascii": "Trois-Rivieres",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Truro",
+    "city_ascii": "Truro",
+    "admin_name": "Nova Scotia",
+    "country": "Canada"
+  },
+  {
+    "city": "Tsawwassen",
+    "city_ascii": "Tsawwassen",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Uxbridge",
+    "city_ascii": "Uxbridge",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Val-d’Or",
+    "city_ascii": "Val-d'Or",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Val-des-Monts",
+    "city_ascii": "Val-des-Monts",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Vancouver",
+    "city_ascii": "Vancouver",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Varennes",
+    "city_ascii": "Varennes",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Vaudreuil-Dorion",
+    "city_ascii": "Vaudreuil-Dorion",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Vaughan",
+    "city_ascii": "Vaughan",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Vernon",
+    "city_ascii": "Vernon",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Victoria",
+    "city_ascii": "Victoria",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Victoriaville",
+    "city_ascii": "Victoriaville",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "View Royal",
+    "city_ascii": "View Royal",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Wallaceburg",
+    "city_ascii": "Wallaceburg",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Warman",
+    "city_ascii": "Warman",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Wasaga Beach",
+    "city_ascii": "Wasaga Beach",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Waterloo",
+    "city_ascii": "Waterloo",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Welland",
+    "city_ascii": "Welland",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Wellesley",
+    "city_ascii": "Wellesley",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Wellington North",
+    "city_ascii": "Wellington North",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "West Grey",
+    "city_ascii": "West Grey",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "West Lincoln",
+    "city_ascii": "West Lincoln",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "West Nipissing / Nipissing Ouest",
+    "city_ascii": "West Nipissing / Nipissing Ouest",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "West Perth",
+    "city_ascii": "West Perth",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "West Vancouver",
+    "city_ascii": "West Vancouver",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Westmount",
+    "city_ascii": "Westmount",
+    "admin_name": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Wetaskiwin",
+    "city_ascii": "Wetaskiwin",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Weyburn",
+    "city_ascii": "Weyburn",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  },
+  {
+    "city": "Whistler",
+    "city_ascii": "Whistler",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Whitby",
+    "city_ascii": "Whitby",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "White Rock",
+    "city_ascii": "White Rock",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Whitecourt",
+    "city_ascii": "Whitecourt",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Whitehorse",
+    "city_ascii": "Whitehorse",
+    "admin_name": "Yukon",
+    "country": "Canada"
+  },
+  {
+    "city": "Williams Lake",
+    "city_ascii": "Williams Lake",
+    "admin_name": "British Columbia",
+    "country": "Canada"
+  },
+  {
+    "city": "Wilmot",
+    "city_ascii": "Wilmot",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Windsor",
+    "city_ascii": "Windsor",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Winkler",
+    "city_ascii": "Winkler",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Winnipeg",
+    "city_ascii": "Winnipeg",
+    "admin_name": "Manitoba",
+    "country": "Canada"
+  },
+  {
+    "city": "Wood Buffalo",
+    "city_ascii": "Wood Buffalo",
+    "admin_name": "Alberta",
+    "country": "Canada"
+  },
+  {
+    "city": "Woodstock",
+    "city_ascii": "Woodstock",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Woolwich",
+    "city_ascii": "Woolwich",
+    "admin_name": "Ontario",
+    "country": "Canada"
+  },
+  {
+    "city": "Yellowknife",
+    "city_ascii": "Yellowknife",
+    "admin_name": "Northwest Territories",
+    "country": "Canada"
+  },
+  {
+    "city": "Yorkton",
+    "city_ascii": "Yorkton",
+    "admin_name": "Saskatchewan",
+    "country": "Canada"
+  }
+]

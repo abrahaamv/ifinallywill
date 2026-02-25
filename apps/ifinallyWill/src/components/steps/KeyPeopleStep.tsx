@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
 import { PersonForm } from '../shared/PersonForm';
-import type { StepProps } from '../wizard/WizardShell';
+import type { StepProps } from '../../lib/types';
 
 export function KeyPeopleStep({ estateDocId: _estateDocId, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
   const [showForm, setShowForm] = useState(false);
