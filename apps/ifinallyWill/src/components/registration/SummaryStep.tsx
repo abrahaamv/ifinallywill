@@ -37,13 +37,20 @@ export function SummaryStep({ data, onPrev, onComplete }: Props) {
     setError(null);
 
     try {
-      await registerMutation.mutateAsync({
+      const result = await registerMutation.mutateAsync({
         email: data.email,
         password: data.password,
         name: data.fullName,
+        province: data.province,
+        documentTypes: data.selectedDocuments,
       });
 
-      onComplete();
+      // Redirect to wizard if document was created, otherwise dashboard
+      if (result.primaryDocumentId) {
+        window.location.href = `/wizard/${result.primaryDocumentId}`;
+      } else {
+        onComplete();
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Registration failed. Please try again.',

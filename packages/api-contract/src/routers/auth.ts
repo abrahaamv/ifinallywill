@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { hash, verify } from '@node-rs/argon2';
-import { serviceDb, tenants, users, verificationTokens } from '@platform/db';
+import { serviceDb, tenants, users, verificationTokens, estateDocuments, willData, poaData } from '@platform/db';
 import {
   badRequest,
   conflict,
