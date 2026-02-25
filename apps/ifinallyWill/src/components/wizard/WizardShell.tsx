@@ -8,7 +8,8 @@ import { useMemo } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { trpc } from '../../utils/trpc';
 import { useWizardNavigation } from '../../hooks/useWizardNavigation';
-import type { WizardContext } from '../../config/wizardConfig';
+import { buildWizardContext } from '../../lib/wizard';
+import type { WillData, WillStepProps } from '../../lib/types';
 import { WizardSidebar } from './WizardSidebar';
 import { WizardProgress } from './WizardProgress';
 import { ProfileBanner } from './ProfileBanner';
@@ -32,6 +33,19 @@ import { AdditionalStep } from '../steps/AdditionalStep';
 import { FinalDetailsStep } from '../steps/FinalDetailsStep';
 import { ReviewStep } from '../steps/ReviewStep';
 
+/**
+ * @deprecated Use WillStepProps from lib/types.ts instead.
+ * Kept for backward compatibility with step components that haven't migrated yet.
+ */
+export interface StepProps {
+  estateDocId: string;
+  willData: Record<string, unknown>;
+  onNext: () => void;
+  onPrev: () => void;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+}
+
 const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   'personal-info': PersonalInfoStep,
   'family-status': FamilyStatusStep,
@@ -50,15 +64,6 @@ const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   'final-details': FinalDetailsStep,
   review: ReviewStep,
 };
-
-export interface StepProps {
-  estateDocId: string;
-  willData: Record<string, unknown>;
-  onNext: () => void;
-  onPrev: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-}
 
 export function WizardShell() {
   const { docId } = useParams<{ docId: string }>();
@@ -79,26 +84,16 @@ export function WizardShell() {
   const { data: assets } = trpc.estateAssets.list.useQuery({});
 
   // Build wizard context from current data
-  const wizardContext = useMemo<WizardContext>(() => {
-    const wd = willDataResult as Record<string, unknown> | undefined;
-    const children = (keyPeople ?? []).filter(
-      (p) => p.relationship === 'child',
-    );
-    const minorChildren = children.filter((c) => {
-      if (!c.dateOfBirth) return true; // assume minor if no DOB
-      const age =
-        (Date.now() - new Date(c.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-      return age < 18;
+  const wizardContext = useMemo(() => {
+    const children = (keyPeople ?? []).filter((p) => p.relationship === 'child');
+    return buildWizardContext({
+      willData: (willDataResult as WillData) ?? null,
+      children,
+      assetCount: (assets ?? []).length,
+      isSecondaryWill: doc?.documentType === 'secondary_will',
+      isCouples: !!(doc as Record<string, unknown> | undefined)?.coupleDocId,
     });
-
-    return {
-      maritalStatus: wd?.maritalStatus as string | null | undefined,
-      hasChildren: children.length > 0,
-      hasMinorChildren: minorChildren.length > 0,
-      hasPets: Array.isArray(wd?.pets) && (wd.pets as unknown[]).length > 0,
-      hasAssets: (assets ?? []).length > 0,
-    };
-  }, [willDataResult, keyPeople, assets]);
+  }, [willDataResult, keyPeople, assets, doc]);
 
   const nav = useWizardNavigation({
     docId: docId!,
@@ -106,8 +101,8 @@ export function WizardShell() {
   });
 
   const completedSteps = useMemo(() => {
-    const wd = willDataResult as Record<string, unknown> | undefined;
-    return (wd?.completedSteps as string[] | null) ?? [];
+    const wd = willDataResult as WillData | undefined;
+    return wd?.completedSteps ?? [];
   }, [willDataResult]);
 
   // Loading state
@@ -127,12 +122,12 @@ export function WizardShell() {
   }
 
   const coupleDocId = (doc as Record<string, unknown>).coupleDocId as string | null | undefined;
-  const personalInfo = (willDataResult as Record<string, unknown> | undefined)?.personalInfo as { fullName?: string } | undefined;
+  const willData = (willDataResult as Record<string, unknown>) ?? {};
+  const personalInfo = willData.personalInfo as { fullName?: string } | undefined;
   const ownerName = personalInfo?.fullName ?? 'You';
 
   // Render current step
   const StepComponent = STEP_COMPONENTS[nav.currentStep?.id ?? ''];
-  const willData = (willDataResult as Record<string, unknown>) ?? {};
 
   return (
     <div className="flex min-h-[calc(100vh-80px)]">

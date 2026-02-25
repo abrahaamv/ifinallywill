@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getVisibleSteps, type WizardContext } from '../config/wizardConfig';
+import { getVisibleSteps, type WizardContext, type StepConfig } from '../lib/wizard';
 
 interface UseWizardNavigationOptions {
   docId: string;
@@ -25,7 +25,7 @@ export function useWizardNavigation({ docId, context }: UseWizardNavigationOptio
     return idx >= 0 ? idx : 0;
   }, [stepId, visibleSteps]);
 
-  const currentStep = visibleSteps[currentStepIndex] ?? visibleSteps[0];
+  const currentStep: StepConfig | undefined = visibleSteps[currentStepIndex] ?? visibleSteps[0];
 
   const goToStep = useCallback(
     (id: string) => {

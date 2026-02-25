@@ -9,7 +9,7 @@ import { useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { trpc } from '../../utils/trpc';
 import { getPoaSteps } from '../../config/poaWizardConfig';
-import { WizardSidebar } from './WizardSidebar';
+import type { SimpleStep } from '../../lib/wizard';
 import { WizardProgress } from './WizardProgress';
 import { ProfileBanner } from './ProfileBanner';
 import { WilfredPanel } from '../wilfred/WilfredPanel';
@@ -149,12 +149,41 @@ export function PoaWizardShell() {
           completionPct={doc.completionPct}
         />
 
-        <WizardSidebar
-          steps={visibleSteps}
-          currentStepId={currentStep?.id ?? ''}
-          completedSteps={completedSteps}
-          onStepClick={goToStep}
-        />
+        {/* POA step list (flat — no categories needed) */}
+        <nav className="space-y-0.5">
+          {visibleSteps.map((step, i) => {
+            const isCurrent = step.id === (currentStep?.id ?? '');
+            const isCompleted = step.section
+              ? completedSteps.includes(step.section)
+              : completedSteps.includes(step.id);
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => goToStep(step.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm transition-all ${
+                  isCurrent
+                    ? 'bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-700)] font-medium'
+                    : 'hover:bg-[var(--ifw-neutral-100)] text-[var(--ifw-neutral-600)]'
+                }`}
+              >
+                <span
+                  className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                    isCompleted
+                      ? 'bg-[var(--ifw-success)] text-white'
+                      : isCurrent
+                        ? 'border-2 border-[var(--ifw-primary-700)] text-[var(--ifw-primary-700)]'
+                        : 'border border-[var(--ifw-neutral-300)] text-[var(--ifw-neutral-400)]'
+                  }`}
+                >
+                  {isCompleted ? '✓' : i + 1}
+                </span>
+                <span className="truncate">{step.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </aside>
 
       {/* Content */}
