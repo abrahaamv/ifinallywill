@@ -6,7 +6,7 @@
  * This bridges our clean relational model with the legacy template system.
  */
 
-import type { WillData, PoaData, KeyName } from './types';
+import type { WillData, PoaData, KeyName, BequestShare } from './types';
 import type { TemplateData, PersonInfo } from './template-renderer';
 import { calculateTrustingAges } from './template-renderer';
 
@@ -15,6 +15,7 @@ import { calculateTrustingAges } from './template-renderer';
 // ---------------------------------------------------------------------------
 
 function keyNameToPersonInfo(person: KeyName): PersonInfo {
+  const phone = person.phone ?? undefined;
   return {
     fullName: [person.firstName, person.middleName, person.lastName]
       .filter(Boolean)
@@ -26,7 +27,8 @@ function keyNameToPersonInfo(person: KeyName): PersonInfo {
     city: person.city ?? undefined,
     province: person.province ?? undefined,
     country: person.country ?? undefined,
-    phone: person.phone ?? undefined,
+    phone,
+    telephone: phone, // v6 templates use {{attorneyOne.telephone}}
     relation: person.relationship,
   };
 }
@@ -111,9 +113,16 @@ export function mapWillToTemplateData(
     spousal_will: 'SPOUSAL',
   };
 
+  // Derive relative label for spouse
+  const spouseRelative = spouse?.relative
+    ?? (isCommon ? 'Common-law Partner' : isMarried ? 'Spouse' : '');
+
   return {
     personal: {
       fullName: pi?.fullName ?? '',
+      firstName: pi?.firstName,
+      middleName: pi?.middleName,
+      lastName: pi?.lastName,
       email: pi?.email,
       city: pi?.city,
       province: pi?.province,
@@ -125,14 +134,15 @@ export function mapWillToTemplateData(
     isCommonRelationship: isCommon,
     spouseInfo: spouse
       ? {
-          fullName: `${spouse.firstName ?? ''} ${spouse.lastName ?? ''}`.trim(),
+          fullName: `${spouse.firstName ?? ''} ${spouse.middleName ?? ''} ${spouse.lastName ?? ''}`.replace(/\s+/g, ' ').trim(),
           firstName: spouse.firstName,
+          middleName: spouse.middleName ?? undefined,
           lastName: spouse.lastName,
           city: spouse.city ?? undefined,
           province: spouse.province ?? undefined,
           country: spouse.country ?? undefined,
           phone: spouse.phone ?? undefined,
-          relation: 'Spouse',
+          relation: spouseRelative,
         }
       : { fullName: '' },
     hasKids: children.length > 0,
@@ -177,6 +187,64 @@ export function mapWillToTemplateData(
 }
 
 // ---------------------------------------------------------------------------
+// Bequest mapping — converts DB bequests to v6 template format
+// ---------------------------------------------------------------------------
+
+export interface DbBequest {
+  id: string;
+  estateDocId: string;
+  assetId: string;
+  shares: BequestShare[];
+  asset?: {
+    id: string;
+    assetClassId: number;
+    details: Record<string, unknown>;
+  };
+}
+
+export function mapBequestsToTemplateFormat(
+  dbBequests: DbBequest[],
+  people: KeyName[],
+): TemplateData['bequests'] {
+  const result: TemplateData['bequests'] = [];
+
+  for (const bequest of dbBequests) {
+    const assetName = String(
+      bequest.asset?.details?.description ?? bequest.asset?.details?.name ?? 'asset',
+    );
+    const isCustom = bequest.asset?.details?.isCustom === true;
+    const sharedUuid = bequest.shares.length > 1 ? bequest.id : undefined;
+
+    for (const share of bequest.shares) {
+      const person = people.find((p) => p.id === share.keyNameId);
+      const names = person
+        ? [person.firstName, person.lastName].filter(Boolean).join(' ')
+        : '';
+      const backupId =
+        (bequest.asset?.details?.backupKeyNameId as string) ?? undefined;
+      const backupPerson = backupId
+        ? people.find((p) => p.id === backupId)
+        : undefined;
+      const backup = backupPerson
+        ? [backupPerson.firstName, backupPerson.lastName].filter(Boolean).join(' ')
+        : undefined;
+
+      result.push({
+        id: bequest.id,
+        bequest: assetName,
+        names,
+        shares: share.percentage,
+        backup: backup ?? 'NA',
+        isCustom,
+        shared_uuid: sharedUuid,
+      });
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // POA template data
 // ---------------------------------------------------------------------------
 
@@ -194,6 +262,9 @@ export function mapPoaToTemplateData(
   const base: Partial<TemplateData> = {
     personal: {
       fullName: pi?.fullName ?? '',
+      firstName: pi?.firstName,
+      middleName: pi?.middleName,
+      lastName: pi?.lastName,
       email: pi?.email,
       city: pi?.city,
       province: pi?.province,
@@ -240,6 +311,18 @@ export function mapPoaToTemplateData(
         base.statements.mentalImpairment = {
           selected: true,
           wishes: stmts.mentalImpairment,
+        };
+      }
+      if (stmts.violentBehavior) {
+        base.statements.violentBehavior = {
+          selected: true,
+          wishes: stmts.violentBehavior,
+        };
+      }
+      if (stmts.painManagement) {
+        base.statements.painManagement = {
+          selected: true,
+          wishes: stmts.painManagement,
         };
       }
       if (stmts.otherDirectives) {

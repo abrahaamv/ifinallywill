@@ -22,6 +22,8 @@ export const poaHealthStatementsSchema = z.object({
 	terminalCondition: z.string().optional(),
 	unconsciousCondition: z.string().optional(),
 	mentalImpairment: z.string().optional(),
+	violentBehavior: z.string().optional(),
+	painManagement: z.string().optional(),
 	otherDirectives: z.string().optional(),
 });
 

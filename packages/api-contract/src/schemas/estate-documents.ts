@@ -11,6 +11,9 @@ import { z } from 'zod';
 
 export const personalInfoSchema = z.object({
 	fullName: z.string().min(1, 'Full name is required'),
+	firstName: z.string().optional(),
+	middleName: z.string().optional(),
+	lastName: z.string().optional(),
 	email: z.string().email('Invalid email'),
 	city: z.string().min(1, 'City is required'),
 	province: z.string().min(1, 'Province is required'),
@@ -24,7 +27,9 @@ export const personalInfoSchema = z.object({
 
 export const spouseInfoSchema = z.object({
 	firstName: z.string().min(1, 'First name is required'),
+	middleName: z.string().optional(),
 	lastName: z.string().min(1, 'Last name is required'),
+	relative: z.string().optional(), // e.g. "Spouse", "Common-law Partner"
 	email: z.string().email().optional(),
 	phone: z.string().optional(),
 	city: z.string().optional(),

@@ -2209,7 +2209,7 @@ Self-hosted and modified Chatwoot embedded at `dashboard.visualkit.live/conversa
 
 For premium users, screen recordings of AI conversations are stored and viewable by human agents during escalation.
 
-**Features:**
+
 - Recording stored in S3-compatible storage
 - Linked to conversation in Chatwoot
 - Thumbnail timeline for quick navigation
