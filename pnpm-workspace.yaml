@@ -1,5 +1,3 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-  # Exclude Chatwoot - it runs in Docker with its own Ruby/Node environment
-  - '!apps/chatwoot'

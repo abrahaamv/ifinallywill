@@ -21,6 +21,7 @@ export function CheckoutPage() {
   const [discountCode, setDiscountCode] = useState('');
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
 
   // Fetch documents for display
   const { data: documents } = trpc.estateDocuments.list.useQuery();
@@ -31,6 +32,7 @@ export function CheckoutPage() {
 
   const createOrder = trpc.documentOrders.create.useMutation();
   const applyCode = trpc.documentOrders.applyCode.useMutation();
+  const createCheckout = trpc.stripe.createCheckoutSession.useMutation();
   const { data: order } = trpc.documentOrders.get.useQuery(
     { id: orderId! },
     { enabled: !!orderId },
@@ -79,12 +81,23 @@ export function CheckoutPage() {
     }
   };
 
-  const handlePay = () => {
-    // In production, this would create a Stripe Checkout Session via the server
-    // and redirect to Stripe's hosted checkout page.
-    // For now, navigate to a success state.
-    if (orderId) {
+  const handlePay = async () => {
+    if (!orderId) return;
+    setPayError(null);
+
+    // If order is free after discount, go straight to success
+    if (finalPrice === 0) {
       navigate(`/app/checkout/success?order=${orderId}`);
+      return;
+    }
+
+    try {
+      const result = await createCheckout.mutateAsync({ orderId });
+      if (result.sessionUrl) {
+        window.location.href = result.sessionUrl;
+      }
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
     }
   };
 
@@ -202,10 +215,11 @@ export function CheckoutPage() {
           <button
             type="button"
             onClick={handlePay}
-            className="flex-1 px-6 py-3 text-sm font-medium text-white rounded-lg"
+            disabled={createCheckout.isPending}
+            className="flex-1 px-6 py-3 text-sm font-medium text-white rounded-lg disabled:opacity-40"
             style={{ backgroundColor: 'var(--ifw-primary-700)' }}
           >
-            Pay ${(finalPrice / 100).toFixed(2)} with Stripe
+            {createCheckout.isPending ? 'Redirecting to Stripe...' : `Pay $${(finalPrice / 100).toFixed(2)} with Stripe`}
           </button>
         )}
         <button
@@ -216,6 +230,10 @@ export function CheckoutPage() {
           Cancel
         </button>
       </div>
+
+      {payError && (
+        <p className="text-xs text-[var(--ifw-error)] mt-3 text-center">{payError}</p>
+      )}
 
       <p className="text-xs text-[var(--ifw-text-muted)] mt-4 text-center">
         Secure payment powered by Stripe. Your payment details are never stored on our servers.

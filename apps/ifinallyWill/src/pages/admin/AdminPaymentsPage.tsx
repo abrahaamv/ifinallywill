@@ -1,5 +1,5 @@
 /**
- * Admin Payments page — view all orders and revenue
+ * Admin Payments page — view all orders, revenue, and Stripe payment status
  */
 
 import { trpc } from '../../utils/trpc';
@@ -17,6 +17,8 @@ export function AdminPaymentsPage() {
 
   const totalRevenue = orders?.reduce((sum, o) => sum + o.finalPrice, 0) ?? 0;
   const totalDiscount = orders?.reduce((sum, o) => sum + o.discountAmount, 0) ?? 0;
+  const paidOrders = orders?.filter((o) => o.status !== 'pending' && o.status !== 'expired') ?? [];
+  const pendingOrders = orders?.filter((o) => o.status === 'pending') ?? [];
 
   return (
     <div>
@@ -28,7 +30,7 @@ export function AdminPaymentsPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="border rounded-lg p-4">
           <div className="text-xs text-[var(--ifw-text-muted)]">Total Revenue</div>
           <div className="text-2xl font-bold mt-1">${(totalRevenue / 100).toFixed(2)}</div>
@@ -40,6 +42,14 @@ export function AdminPaymentsPage() {
         <div className="border rounded-lg p-4">
           <div className="text-xs text-[var(--ifw-text-muted)]">Total Orders</div>
           <div className="text-2xl font-bold mt-1">{orders?.length ?? 0}</div>
+        </div>
+        <div className="border rounded-lg p-4">
+          <div className="text-xs text-[var(--ifw-text-muted)]">Paid / Pending</div>
+          <div className="text-2xl font-bold mt-1">
+            <span className="text-green-600">{paidOrders.length}</span>
+            {' / '}
+            <span className="text-yellow-600">{pendingOrders.length}</span>
+          </div>
         </div>
       </div>
 
@@ -59,6 +69,7 @@ export function AdminPaymentsPage() {
                 <th className="text-left px-4 py-3 font-medium">Status</th>
                 <th className="text-right px-4 py-3 font-medium">Amount</th>
                 <th className="text-right px-4 py-3 font-medium">Discount</th>
+                <th className="text-left px-4 py-3 font-medium">Stripe</th>
                 <th className="text-left px-4 py-3 font-medium">Date</th>
               </tr>
             </thead>
@@ -74,6 +85,15 @@ export function AdminPaymentsPage() {
                   <td className="px-4 py-3 text-right">${(order.finalPrice / 100).toFixed(2)}</td>
                   <td className="px-4 py-3 text-right text-[var(--ifw-text-muted)]">
                     {order.discountAmount > 0 ? `-$${(order.discountAmount / 100).toFixed(2)}` : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    {order.stripeSessionId ? (
+                      <span className="text-[10px] font-mono text-[var(--ifw-text-muted)]">
+                        {order.stripeSessionId.slice(0, 16)}...
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-[var(--ifw-neutral-400)]">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-[var(--ifw-text-muted)]">
                     {new Date(order.createdAt).toLocaleDateString()}

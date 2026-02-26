@@ -1,16 +1,8 @@
 /**
- * Escalations Page (DEPRECATED)
+ * Escalations Page
  *
- * @deprecated This page is deprecated. Escalations are now handled via
- * the Conversations page (/conversations) with Chatwoot integration.
- * See ConversationsPage.tsx for the new escalation workflow.
- *
- * This page is kept for backwards compatibility but will be removed
- * in a future release.
- *
- * New workflow:
- * - AI Transcripts tab: Full AI conversation history
- * - Escalated tab: Embedded Chatwoot inbox for human agents
+ * Human agent escalation management.
+ * Previously integrated with Chatwoot — now standalone.
  */
 
 import {
@@ -33,16 +25,15 @@ import {
   TableHeader,
   TableRow,
 } from '@platform/ui';
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, MessageCircle, User, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, MessageCircle, User, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 export function EscalationsPage() {
-  const navigate = useNavigate();
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('pending');
 
-  // Mock escalation data**
+  // Mock escalation data
   const escalations = [
     {
       id: 'esc-001',
@@ -147,25 +138,6 @@ export function EscalationsPage() {
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
-      {/* Deprecation Banner */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <div>
-              <h3 className="font-semibold text-amber-900">This page is deprecated</h3>
-              <p className="text-sm text-amber-800">
-                Escalations are now managed through the Conversations page with Chatwoot integration.
-              </p>
-            </div>
-          </div>
-          <Button onClick={() => navigate('/conversations')} className="gap-2">
-            Go to Conversations
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -277,7 +249,7 @@ export function EscalationsPage() {
       {/* Escalations Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Active Escalations*</CardTitle>
+          <CardTitle>Active Escalations</CardTitle>
           <CardDescription>
             {filteredEscalations.length} escalation{filteredEscalations.length !== 1 ? 's' : ''}{' '}
             found
@@ -356,66 +328,6 @@ export function EscalationsPage() {
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      {/* Escalation Guidelines */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Escalation Guidelines***</CardTitle>
-          <CardDescription>Automated escalation triggers and SLA targets</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                Automatic Escalation Triggers
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>AI confidence score below 60%</li>
-                <li>Customer explicitly requests human agent</li>
-                <li>Security or compliance keywords detected</li>
-                <li>Billing disputes or refund requests</li>
-                <li>Three failed AI resolution attempts</li>
-              </ul>
-            </div>
-
-            <div className="p-4 rounded-lg border">
-              <h4 className="font-semibold mb-2 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                Response Time SLAs
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Critical: 15 minutes</li>
-                <li>High: 1 hour</li>
-                <li>Medium: 4 hours</li>
-                <li>Low: 24 hours</li>
-                <li>Resolution time tracked for all priorities</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer Annotations */}
-      <Card className="border-dashed">
-        <CardContent className="pt-6">
-          <h4 className="font-semibold mb-3 text-sm">Data Annotations:</h4>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>
-              * Mock data - Real escalations will be triggered automatically by AI confidence
-              thresholds and explicit user requests
-            </p>
-            <p>
-              ** Escalation reasons - AI analyzes conversation context to determine escalation
-              category and suggested priority
-            </p>
-            <p>
-              *** SLA tracking - Production system will monitor response times and alert when SLAs
-              are at risk of being missed
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

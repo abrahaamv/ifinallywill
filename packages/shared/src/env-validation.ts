@@ -88,6 +88,11 @@ const envSchema = z.object({
   VOYAGE_API_KEY: z.string().optional(), // Embeddings
   COHERE_API_KEY: z.string().optional(), // Reranking
 
+  // Stripe Payment Processing
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+
   // LiveKit Configuration
   LIVEKIT_API_KEY: z.string().optional(),
   LIVEKIT_API_SECRET: z.string().optional(),

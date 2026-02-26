@@ -6,6 +6,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 interface User {
   id: string;
   email: string;
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      const csrfResponse = await fetch('/api/auth/csrf', {
+      const csrfResponse = await fetch(`${API_URL}/api/auth/csrf`, {
         credentials: 'include',
       });
 
@@ -55,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { csrfToken } = await csrfResponse.json();
 
-      await fetch('/api/auth/signout', {
+      await fetch(`${API_URL}/api/auth/signout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ csrfToken }),

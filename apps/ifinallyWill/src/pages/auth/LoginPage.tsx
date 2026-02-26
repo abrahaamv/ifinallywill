@@ -1,5 +1,9 @@
 /**
  * Login page — email/password + Google OAuth
+ *
+ * Uses Auth.js credentials callback to create a session cookie.
+ * All auth requests go through the Vite proxy (/api → localhost:3001)
+ * so cookies are set on the same origin.
  */
 
 import { useState } from 'react';
@@ -7,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
-import { trpc } from '../../utils/trpc';
+import { useAuth } from '../../providers/AuthProvider';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -16,17 +20,19 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
-
-  const loginMutation = trpc.auth.login.useMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { refreshSession } = useAuth();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
@@ -35,20 +41,48 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
+    setIsSubmitting(true);
     try {
-      await loginMutation.mutateAsync({
-        email: data.email,
-        password: data.password,
+      // 1. Get CSRF token from Auth.js
+      const csrfRes = await fetch(`${API_URL}/api/auth/csrf`, {
+        credentials: 'include',
       });
-      const redirect = sessionStorage.getItem('redirectAfterLogin') || from;
-      sessionStorage.removeItem('redirectAfterLogin');
-      navigate(redirect, { replace: true });
+      if (!csrfRes.ok) throw new Error('Failed to initialize login');
+      const { csrfToken } = await csrfRes.json();
+
+      // 2. Call Auth.js credentials callback to create session cookie
+      const res = await fetch(`${API_URL}/api/auth/callback/credentials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          email: data.email,
+          password: data.password,
+          csrfToken,
+          redirect: 'false',
+          json: 'true',
+        }),
+        credentials: 'include',
+        redirect: 'manual',
+      });
+
+      // Auth.js returns a redirect (302) on success, or an error page
+      // With redirect: 'manual', we get an opaque redirect response (type: 'opaqueredirect')
+      // or a 200 with json: true
+      if (res.type === 'opaqueredirect' || res.ok || res.status === 302 || res.status === 200) {
+        // Session cookie should now be set — refresh auth state
+        await refreshSession();
+        const redirect = sessionStorage.getItem('redirectAfterLogin') || from;
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirect, { replace: true });
+      } else {
+        setError('Invalid email or password');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid email or password');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const API_URL = import.meta.env.VITE_API_URL || '';
 
   return (
     <div className="min-h-[calc(100vh-120px)] flex items-center justify-center p-6">

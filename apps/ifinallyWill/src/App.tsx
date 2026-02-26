@@ -61,8 +61,8 @@ export function App() {
               >
                 <Route index element={<Navigate to="/app/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="checkout" element={<CheckoutPage />} />
-                <Route path="checkout/success" element={<CheckoutSuccessPage />} />
+                <Route path="checkout" element={<ErrorBoundary section="Checkout"><CheckoutPage /></ErrorBoundary>} />
+                <Route path="checkout/success" element={<ErrorBoundary section="Checkout"><CheckoutSuccessPage /></ErrorBoundary>} />
                 <Route path="partners" element={<PartnerDashboardPage />} />
                 {/* Admin routes (role guard in each page) */}
                 <Route path="admin" element={<AdminDashboardPage />} />
@@ -80,8 +80,8 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<PersonalShell />} />
-                <Route path=":stepId" element={<PersonalShell />} />
+                <Route index element={<ErrorBoundary section="Will Wizard"><PersonalShell /></ErrorBoundary>} />
+                <Route path=":stepId" element={<ErrorBoundary section="Will Wizard"><PersonalShell /></ErrorBoundary>} />
               </Route>
 
               {/* POA wizard — full-width layout */}
@@ -93,8 +93,8 @@ export function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<PoaWizardShell />} />
-                <Route path=":stepId" element={<PoaWizardShell />} />
+                <Route index element={<ErrorBoundary section="POA Wizard"><PoaWizardShell /></ErrorBoundary>} />
+                <Route path=":stepId" element={<ErrorBoundary section="POA Wizard"><PoaWizardShell /></ErrorBoundary>} />
               </Route>
 
               {/* Catch-all */}

@@ -2,12 +2,15 @@
  * Wilfred AI Panel — right sidebar (desktop) / bottom sheet (mobile)
  *
  * Manages session lifecycle, message sending, and context injection.
+ * Persists session ID per estateDocId in localStorage.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { trpc } from '../../utils/trpc';
 import { WilfredMessages } from './WilfredMessages';
 import { WilfredInput } from './WilfredInput';
+
+const SESSION_STORAGE_PREFIX = 'ifw-wilfred-session-';
 
 interface Props {
   estateDocId: string;
@@ -20,8 +23,15 @@ interface Props {
 }
 
 export function WilfredPanel({ estateDocId, stepId, province, documentType, completedSteps, floatingMode }: Props) {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`${SESSION_STORAGE_PREFIX}${estateDocId}`) ?? null;
+    } catch {
+      return null;
+    }
+  });
   const [isOpen, setIsOpen] = useState(false);
+  const sessionCreating = useRef(false);
 
   const createSession = trpc.wilfred.createSession.useMutation();
   const sendMessage = trpc.wilfred.sendMessage.useMutation();
@@ -34,17 +44,34 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
     { enabled: !!stepId },
   );
 
-  // Auto-create session on first open
+  // Create session on first open, with persistence
   useEffect(() => {
-    if (isOpen && !sessionId && !createSession.isPending) {
+    if (isOpen && !sessionId && !sessionCreating.current) {
+      sessionCreating.current = true;
       createSession.mutate(
         { estateDocId },
         {
-          onSuccess: (result) => setSessionId(result.sessionId),
+          onSuccess: (result) => {
+            setSessionId(result.sessionId);
+            try {
+              localStorage.setItem(`${SESSION_STORAGE_PREFIX}${estateDocId}`, result.sessionId);
+            } catch { /* ignore */ }
+            sessionCreating.current = false;
+          },
+          onError: () => {
+            sessionCreating.current = false;
+          },
         },
       );
     }
-  }, [isOpen, sessionId, estateDocId]);
+  }, [isOpen, sessionId, estateDocId, createSession]);
+
+  // Refetch history when step changes (context might change suggestions)
+  useEffect(() => {
+    if (sessionId && isOpen) {
+      refetchHistory();
+    }
+  }, [stepId, sessionId, isOpen, refetchHistory]);
 
   const handleSend = useCallback(
     (content: string) => {
@@ -75,12 +102,31 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
     timestamp: m.timestamp,
   }));
 
+  const panelContent = (
+    <>
+      <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
+      <WilfredInput
+        onSend={handleSend}
+        disabled={sendMessage.isPending || !sessionId}
+        suggestions={suggestionsResult?.suggestions}
+      />
+    </>
+  );
+
+  const headerContent = (
+    <div className="flex items-center gap-2">
+      <span className="text-lg">🎩</span>
+      <span className="text-sm font-medium text-[var(--ifw-primary-700)]">Wilfred</span>
+      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-600)]">
+        AI
+      </span>
+    </div>
+  );
+
   // Floating mode: always shows as floating button + popup panel
-  // Default mode: desktop sidebar + mobile bottom sheet
   if (floatingMode) {
     return (
       <>
-        {/* Floating button */}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -90,30 +136,17 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
           {isOpen ? '✕' : '🎩'}
         </button>
 
-        {/* Floating panel */}
         {isOpen && (
           <div className="fixed bottom-20 right-4 z-30 w-80 bg-white border border-[var(--ifw-border)] rounded-xl shadow-xl flex flex-col" style={{ maxHeight: '60vh' }}>
             <div className="px-4 py-3 border-b border-[var(--ifw-border)] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🎩</span>
-                <span className="text-sm font-medium text-[var(--ifw-primary-700)]">Wilfred</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-600)]">
-                  AI
-                </span>
-              </div>
+              {headerContent}
               {stepId && (
                 <span className="text-[10px] text-[var(--ifw-neutral-400)]">
                   {stepId.replace(/-/g, ' ')}
                 </span>
               )}
             </div>
-
-            <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
-            <WilfredInput
-              onSend={handleSend}
-              disabled={sendMessage.isPending || !sessionId}
-              suggestions={suggestionsResult?.suggestions}
-            />
+            {panelContent}
           </div>
         )}
       </>
@@ -126,19 +159,14 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
       {/* Desktop panel */}
       <aside className="w-80 border-l bg-[var(--ifw-neutral-50)] hidden xl:flex flex-col">
         <div className="px-4 py-3 border-b border-[var(--ifw-border)] flex items-center gap-2">
-          <span className="text-lg">🎩</span>
-          <span className="text-sm font-medium text-[var(--ifw-primary-700)]">Wilfred</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-600)]">
-            AI
-          </span>
+          {headerContent}
+          {stepId && (
+            <span className="text-[10px] text-[var(--ifw-neutral-400)] ml-auto">
+              {stepId.replace(/-/g, ' ')}
+            </span>
+          )}
         </div>
-
-        <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
-        <WilfredInput
-          onSend={handleSend}
-          disabled={sendMessage.isPending || !sessionId}
-          suggestions={suggestionsResult?.suggestions}
-        />
+        {panelContent}
       </aside>
 
       {/* Mobile toggle button */}
@@ -155,21 +183,12 @@ export function WilfredPanel({ estateDocId, stepId, province, documentType, comp
       {isOpen && (
         <div className="xl:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-[var(--ifw-border)] rounded-t-xl shadow-xl flex flex-col" style={{ maxHeight: '60vh' }}>
           <div className="px-4 py-3 border-b border-[var(--ifw-border)] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🎩</span>
-              <span className="text-sm font-medium text-[var(--ifw-primary-700)]">Wilfred</span>
-            </div>
+            {headerContent}
             <button type="button" onClick={() => setIsOpen(false)} className="text-xs text-[var(--ifw-text-muted)]">
               Close
             </button>
           </div>
-
-          <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
-          <WilfredInput
-            onSend={handleSend}
-            disabled={sendMessage.isPending || !sessionId}
-            suggestions={suggestionsResult?.suggestions}
-          />
+          {panelContent}
         </div>
       )}
     </>
