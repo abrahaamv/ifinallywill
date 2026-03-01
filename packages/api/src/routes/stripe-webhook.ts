@@ -78,6 +78,41 @@ export async function registerStripeWebhook(fastify: FastifyInstance, db: unknow
       }
     }
 
+    // Handle PaymentIntent succeeded events (from Stripe Elements inline payment)
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const orderId = paymentIntent.metadata?.orderId;
+      const paymentIntentId = paymentIntent.id;
+
+      if (!orderId) {
+        fastify.log.warn('payment_intent.succeeded without orderId in metadata');
+        return reply.status(200).send({ received: true });
+      }
+
+      try {
+        const drizzleDb = db as {
+          update: (table: typeof documentOrders) => {
+            set: (values: Record<string, unknown>) => {
+              where: (condition: unknown) => Promise<unknown>;
+            };
+          };
+        };
+        await drizzleDb
+          .update(documentOrders)
+          .set({
+            status: 'paid' as const,
+            paidAt: new Date(),
+            stripePaymentIntentId: paymentIntentId,
+          })
+          .where(eq(documentOrders.id, orderId));
+
+        fastify.log.info({ orderId, paymentIntentId }, 'Order marked as paid via PaymentIntent webhook');
+      } catch (err) {
+        fastify.log.error({ err, orderId }, 'Failed to update order status from PaymentIntent');
+        return reply.status(500).send({ error: 'Internal error' });
+      }
+    }
+
     return reply.status(200).send({ received: true });
   });
 

@@ -23,9 +23,7 @@ export function ProfileBanner({ ownerName, isCouple, coupleDocId, onSwitch }: Pr
         <div className="w-7 h-7 rounded-full bg-amber-800/20 flex items-center justify-center text-amber-900 text-xs font-bold">
           {ownerName.charAt(0).toUpperCase()}
         </div>
-        <span className="text-xs font-medium text-amber-900 hidden sm:inline">
-          {ownerName}
-        </span>
+        <span className="text-xs font-medium text-amber-900 hidden sm:inline">{ownerName}</span>
       </div>
     );
   }
@@ -40,9 +38,7 @@ export function ProfileBanner({ ownerName, isCouple, coupleDocId, onSwitch }: Pr
         <div className="w-6 h-6 rounded-full bg-amber-800/20 flex items-center justify-center text-amber-900 text-xs font-bold">
           {ownerName.charAt(0).toUpperCase()}
         </div>
-        <span className="text-xs font-medium text-amber-900">
-          {ownerName}&apos;s Will
-        </span>
+        <span className="text-xs font-medium text-amber-900">{ownerName}&apos;s Will</span>
         <svg
           width="12"
           height="12"
@@ -71,12 +67,8 @@ export function ProfileBanner({ ownerName, isCouple, coupleDocId, onSwitch }: Pr
                 {ownerName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div className="text-sm font-medium text-[var(--ifw-primary-700)]">
-                  {ownerName}
-                </div>
-                <div className="text-[10px] text-[var(--ifw-neutral-400)]">
-                  Primary Will
-                </div>
+                <div className="text-sm font-medium text-[var(--ifw-primary-700)]">{ownerName}</div>
+                <div className="text-[10px] text-[var(--ifw-neutral-400)]">Primary Will</div>
               </div>
             </div>
 
@@ -95,12 +87,8 @@ export function ProfileBanner({ ownerName, isCouple, coupleDocId, onSwitch }: Pr
                     P
                   </div>
                   <div>
-                    <div className="text-sm text-[var(--ifw-neutral-700)]">
-                      Partner&apos;s Will
-                    </div>
-                    <div className="text-[10px] text-[var(--ifw-neutral-400)]">
-                      Switch profile
-                    </div>
+                    <div className="text-sm text-[var(--ifw-neutral-700)]">Partner&apos;s Will</div>
+                    <div className="text-[10px] text-[var(--ifw-neutral-400)]">Switch profile</div>
                   </div>
                 </button>
               </>

@@ -2,7 +2,7 @@
  * Wilfred chat input — text field + send button
  */
 
-import { useState, useRef, type KeyboardEvent } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 
 interface Props {
   onSend: (message: string) => void;
@@ -68,7 +68,14 @@ export function WilfredInput({ onSend, disabled, suggestions }: Props) {
           className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white disabled:opacity-40"
           style={{ backgroundColor: 'var(--ifw-primary-700)' }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
           </svg>
         </button>

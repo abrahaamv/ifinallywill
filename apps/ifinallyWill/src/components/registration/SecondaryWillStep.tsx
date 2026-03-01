@@ -25,19 +25,11 @@ export function SecondaryWillStep({ data, onUpdate, onNext, onBack }: Props) {
     <div className="animate-slide-in-right">
       <SectionTitle>Are you an owner of an incorporated or limited company?</SectionTitle>
       <StepSubtitle>
-        A secondary Will for your business shares and investments can save your family
-        thousands in probate. Plus, it keeps your business private.
+        A secondary Will for your business shares and investments can save your family thousands in
+        probate. Plus, it keeps your business private.
       </StepSubtitle>
 
-      <div
-        style={{
-          maxWidth: '700px',
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '1.25rem',
-        }}
-      >
+      <div className="options-grid-2col">
         <OptionCard
           selected={data.wants_secondary_will === true}
           onClick={() => selectOption(true)}

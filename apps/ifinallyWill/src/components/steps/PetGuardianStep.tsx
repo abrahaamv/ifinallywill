@@ -2,11 +2,11 @@
  * Step 7: Pet Guardians
  */
 
-import { useState, useEffect } from 'react';
-import { StepLayout } from '../shared/StepLayout';
+import { useEffect, useState } from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import { trpc } from '../../utils/trpc';
 import type { StepProps } from '../../lib/types';
+import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 
 interface PetEntry {
   name: string;
@@ -17,7 +17,14 @@ interface PetEntry {
   backupKeyNameId?: string;
 }
 
-export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function PetGuardianStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.pets as PetEntry[] | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'pets' });
   const { data: people } = trpc.keyNames.list.useQuery();
@@ -68,11 +75,15 @@ export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirst
     >
       {/* Existing pets */}
       {pets.map((pet, i) => (
-        <div key={i} className="flex items-center justify-between border border-[var(--ifw-border)] rounded-lg px-4 py-3 mb-2">
+        <div
+          key={i}
+          className="flex items-center justify-between border border-[var(--ifw-border)] rounded-lg px-4 py-3 mb-2"
+        >
           <div>
             <div className="font-medium text-sm">{pet.name}</div>
             <div className="text-xs text-[var(--ifw-text-muted)]">
-              {pet.type}{pet.breed ? ` \u2022 ${pet.breed}` : ''}
+              {pet.type}
+              {pet.breed ? ` \u2022 ${pet.breed}` : ''}
             </div>
           </div>
           <button
@@ -91,7 +102,9 @@ export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirst
           <h3 className="font-medium text-sm">Add a Pet</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="pet-name" className="block text-xs font-medium mb-1">Pet Name *</label>
+              <label htmlFor="pet-name" className="block text-xs font-medium mb-1">
+                Pet Name *
+              </label>
               <input
                 id="pet-name"
                 value={draft.name ?? ''}
@@ -100,7 +113,9 @@ export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirst
               />
             </div>
             <div>
-              <label htmlFor="pet-type" className="block text-xs font-medium mb-1">Type *</label>
+              <label htmlFor="pet-type" className="block text-xs font-medium mb-1">
+                Type *
+              </label>
               <select
                 id="pet-type"
                 value={draft.type ?? ''}
@@ -119,7 +134,9 @@ export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirst
           </div>
 
           <div>
-            <label htmlFor="pet-guardian" className="block text-xs font-medium mb-1">Guardian *</label>
+            <label htmlFor="pet-guardian" className="block text-xs font-medium mb-1">
+              Guardian *
+            </label>
             <select
               id="pet-guardian"
               value={draft.guardianKeyNameId ?? ''}
@@ -128,7 +145,9 @@ export function PetGuardianStep({ estateDocId, willData, onNext, onPrev, isFirst
             >
               <option value="">Select a person...</option>
               {nonChildren.map((p) => (
-                <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                <option key={p.id} value={p.id}>
+                  {p.firstName} {p.lastName}
+                </option>
               ))}
             </select>
           </div>

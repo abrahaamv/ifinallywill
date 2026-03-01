@@ -4,27 +4,28 @@
  * Ported from v6 Register.jsx.
  */
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { WizardHelpContent } from '../../components/registration/WizardHelpContent';
 import { useRegistrationWizard } from '../../hooks/useRegistrationWizard';
 import { RegistrationLayout } from '../../layouts/RegistrationLayout';
-import { WizardHelpContent } from '../../components/registration/WizardHelpContent';
+import { useAuth } from '../../providers/AuthProvider';
 import '../../styles/register.css';
 
-// Step components
-import { WelcomeStep } from '../../components/registration/WelcomeStep';
+import { AccountStep } from '../../components/registration/AccountStep';
+import { CheckoutStep } from '../../components/registration/CheckoutStep';
 import { LocationStep } from '../../components/registration/LocationStep';
 import { NameStep } from '../../components/registration/NameStep';
-import { AccountStep } from '../../components/registration/AccountStep';
-import { SecondaryWillStep } from '../../components/registration/SecondaryWillStep';
 import { POAStep } from '../../components/registration/POAStep';
-import { PartnerStep } from '../../components/registration/PartnerStep';
-import { PartnerNameStep } from '../../components/registration/PartnerNameStep';
-import { PartnerLocationStep } from '../../components/registration/PartnerLocationStep';
-import { PlanningTogetherStep } from '../../components/registration/PlanningTogetherStep';
 import { PackageSelectionStep } from '../../components/registration/PackageSelectionStep';
-import { CheckoutStep } from '../../components/registration/CheckoutStep';
+import { PartnerLocationStep } from '../../components/registration/PartnerLocationStep';
+import { PartnerNameStep } from '../../components/registration/PartnerNameStep';
+import { PartnerStep } from '../../components/registration/PartnerStep';
+import { PlanningTogetherStep } from '../../components/registration/PlanningTogetherStep';
+import { SecondaryWillStep } from '../../components/registration/SecondaryWillStep';
+// Step components
+import { WelcomeStep } from '../../components/registration/WelcomeStep';
 
 // Map step IDs to components
 const STEP_COMPONENTS: Record<
@@ -53,8 +54,10 @@ const STEP_COMPONENTS: Record<
 export function RegisterPage() {
   const navigate = useNavigate();
   const wizard = useRegistrationWizard();
+  const { signIn } = useAuth();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const currentStepDef = wizard.steps[wizard.step];
   const StepComponent = currentStepDef ? STEP_COMPONENTS[currentStepDef.id] : null;
@@ -73,10 +76,7 @@ export function RegisterPage() {
     let nextIndex = wizard.step + 1;
 
     // Skip package selection if flagged
-    if (
-      wizard.data.skip_package_selection &&
-      wizard.steps[nextIndex]?.id === 'packageSelection'
-    ) {
+    if (wizard.data.skip_package_selection && wizard.steps[nextIndex]?.id === 'packageSelection') {
       const checkoutIdx = wizard.steps.findIndex((s) => s.id === 'checkout');
       if (checkoutIdx !== -1) nextIndex = checkoutIdx;
       wizard.updateData({ skip_package_selection: false });
@@ -101,23 +101,32 @@ export function RegisterPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     setLoading(true);
-    try {
-      // TODO: tRPC mutation for account creation
-      // const result = await trpc.auth.register.mutate({ ... });
-      wizard.clearWizard();
-      navigate('/app/will/personal');
-    } catch {
-      setLoading(false);
-    }
+    setError(null);
+
+    const fullName = [wizard.data.first_name, wizard.data.last_name].filter(Boolean).join(' ') || 'Demo User';
+
+    // Demo mode: create a local session and go straight to the dashboard
+    signIn({
+      id: `demo_${Date.now()}`,
+      email: wizard.data.email || 'demo@ifinalllywill.com',
+      name: fullName,
+      tenantId: 'demo',
+      role: 'member',
+    });
+
+    wizard.clearWizard();
+    navigate('/app/dashboard');
   };
 
   if (!currentStepDef || !StepComponent) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h2>Error: Step not found</h2>
-        <p>Step: {wizard.step}, Total: {wizard.steps.length}</p>
+        <p>
+          Step: {wizard.step}, Total: {wizard.steps.length}
+        </p>
         <button type="button" onClick={() => wizard.goToStep(0)}>
           Reset
         </button>
@@ -151,6 +160,13 @@ export function RegisterPage() {
             />
           </motion.div>
         </AnimatePresence>
+
+        {/* Registration error */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-[var(--ifw-error)] mt-4">
+            {error}
+          </div>
+        )}
 
         {/* Loading overlay */}
         {loading && (

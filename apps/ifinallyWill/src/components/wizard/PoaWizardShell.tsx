@@ -5,28 +5,29 @@
  * Mirrors WizardShell.tsx but uses poa-specific data & step config.
  */
 
-import { useMemo, useCallback } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { trpc } from '../../utils/trpc';
+import { useCallback, useMemo } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { getPoaSteps } from '../../config/poaWizardConfig';
-import { WizardProgress } from './WizardProgress';
-import { ProfileBanner } from './ProfileBanner';
+import { trpc } from '../../utils/trpc';
 import { WilfredPanel } from '../wilfred/WilfredPanel';
+import { ProfileBanner } from './ProfileBanner';
+import { WizardProgress } from './WizardProgress';
 
+import type { PoaData } from '../../lib/types';
+import { PoaActivationStep } from '../poa-steps/PoaActivationStep';
+import { PoaAgentSelectionStep } from '../poa-steps/PoaAgentSelectionStep';
+import { PoaBackupAgentsStep } from '../poa-steps/PoaBackupAgentsStep';
+import { PoaHealthDirectivesStep } from '../poa-steps/PoaHealthDirectivesStep';
+import { PoaJointAgentStep } from '../poa-steps/PoaJointAgentStep';
+import { PoaOrganDonationStep } from '../poa-steps/PoaOrganDonationStep';
 // POA step components
 import { PoaPersonalInfoStep } from '../poa-steps/PoaPersonalInfoStep';
-import { PoaAgentSelectionStep } from '../poa-steps/PoaAgentSelectionStep';
-import { PoaJointAgentStep } from '../poa-steps/PoaJointAgentStep';
-import { PoaBackupAgentsStep } from '../poa-steps/PoaBackupAgentsStep';
 import { PoaRestrictionsStep } from '../poa-steps/PoaRestrictionsStep';
-import { PoaActivationStep } from '../poa-steps/PoaActivationStep';
-import { PoaHealthDirectivesStep } from '../poa-steps/PoaHealthDirectivesStep';
-import { PoaOrganDonationStep } from '../poa-steps/PoaOrganDonationStep';
 import { PoaReviewStep } from '../poa-steps/PoaReviewStep';
 
 export interface PoaStepProps {
   estateDocId: string;
-  poaData: Record<string, unknown> | null;
+  poaData: PoaData | null;
   documentType: 'poa_property' | 'poa_health';
   onNext: () => void;
   onPrev: () => void;
@@ -53,13 +54,13 @@ export function PoaWizardShell() {
   // Fetch document metadata
   const { data: doc, isLoading: docLoading } = trpc.estateDocuments.get.useQuery(
     { id: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   // Fetch POA data
   const { data: poaDataResult, isLoading: poaLoading } = trpc.poaData.get.useQuery(
     { estateDocId: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   // Determine document type (poa_property or poa_health)
@@ -79,7 +80,7 @@ export function PoaWizardShell() {
     (id: string) => {
       navigate(`/app/poa/${docId}/${id}`, { replace: true });
     },
-    [navigate, docId],
+    [navigate, docId]
   );
 
   const nextStep = useCallback(() => {
@@ -101,8 +102,8 @@ export function PoaWizardShell() {
 
   // Completed steps from server
   const completedSteps = useMemo(() => {
-    const poa = poaDataResult as Record<string, unknown> | undefined;
-    return (poa?.completedSteps as string[] | null) ?? [];
+    const poa = poaDataResult as PoaData | undefined;
+    return poa?.completedSteps ?? [];
   }, [poaDataResult]);
 
   // Loading state
@@ -121,13 +122,13 @@ export function PoaWizardShell() {
     return <Navigate to="/app/dashboard" replace />;
   }
 
-  const coupleDocId = (doc as Record<string, unknown>).coupleDocId as string | null | undefined;
-  const personalInfo = (poaDataResult as Record<string, unknown> | undefined)?.personalInfo as { fullName?: string } | undefined;
+  const coupleDocId = (doc as { coupleDocId?: string | null }).coupleDocId ?? null;
+  const personalInfo = (poaDataResult as PoaData | undefined)?.personalInfo;
   const ownerName = personalInfo?.fullName ?? 'You';
 
   // Render current step
   const StepComponent = POA_STEP_COMPONENTS[currentStep?.id ?? ''];
-  const poaData = (poaDataResult as Record<string, unknown>) ?? null;
+  const poaData = (poaDataResult as PoaData | undefined) ?? null;
 
   return (
     <div className="flex min-h-[calc(100vh-80px)]">
@@ -223,7 +224,11 @@ export function PoaWizardShell() {
         ) : (
           <div className="p-8 text-center text-[var(--ifw-text-muted)]">
             Step not found.{' '}
-            <button type="button" onClick={() => goToStep('poa-personal-info')} className="underline">
+            <button
+              type="button"
+              onClick={() => goToStep('poa-personal-info')}
+              className="underline"
+            >
               Go to first step
             </button>
           </div>

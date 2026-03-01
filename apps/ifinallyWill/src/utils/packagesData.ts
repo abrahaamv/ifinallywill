@@ -49,21 +49,50 @@ export function getPackagesForUser(options: {
 }): PricingCardData[] {
   // Import default packages inline to avoid circular deps
   const packages = [
-    { id: 1, name: 'Basic Will Package', description: 'Essential Will', price: 89, features: ['Last Will and Testament', 'Legal compliance review', 'PDF download', 'Signing instructions'] },
-    { id: 2, name: 'Complete Estate Package', description: 'Complete Protection', price: 189, features: ['Last Will and Testament', 'Secondary Will', 'POA for Property', 'POA for Health', 'Save $47 vs individual'] },
-    { id: 3, name: 'Couples Package', description: 'Couples Protection', price: 299, features: ['Two Last Wills', 'Two Secondary Wills', 'All 4 POAs', 'Save $175 vs individual'] },
+    {
+      id: 1,
+      name: 'Basic Will Package',
+      description: 'Essential Will',
+      price: 89,
+      features: [
+        'Last Will and Testament',
+        'Legal compliance review',
+        'PDF download',
+        'Signing instructions',
+      ],
+    },
+    {
+      id: 2,
+      name: 'Complete Estate Package',
+      description: 'Complete Protection',
+      price: 189,
+      features: [
+        'Last Will and Testament',
+        'Secondary Will',
+        'POA for Property',
+        'POA for Health',
+        'Save $47 vs individual',
+      ],
+    },
+    {
+      id: 3,
+      name: 'Couples Package',
+      description: 'Couples Protection',
+      price: 299,
+      features: ['Two Last Wills', 'Two Secondary Wills', 'All 4 POAs', 'Save $175 vs individual'],
+    },
   ];
 
   let filtered = packages;
 
   // If user explicitly doesn't want a couples plan
   if (!options.hasPartner || options.wantsSpousalPackage === false) {
-    filtered = filtered.filter(p => !p.name.toLowerCase().includes('couples'));
+    filtered = filtered.filter((p) => !p.name.toLowerCase().includes('couples'));
   }
 
   // If user came from selecting "planning together", jump straight to couples
   if (options.wantsSpousalPackage === true) {
-    filtered = filtered.filter(p => p.name.toLowerCase().includes('couples'));
+    filtered = filtered.filter((p) => p.name.toLowerCase().includes('couples'));
   }
 
   return filtered.map(mapPackageToCardFormat);

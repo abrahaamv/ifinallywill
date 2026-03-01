@@ -4,12 +4,19 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonSelector } from '../shared/PersonSelector';
 import { trpc } from '../../utils/trpc';
+import { PersonSelector } from '../shared/PersonSelector';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaJointAgentStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaJointAgentStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const currentJoint = existingPoa?.jointAgent as string | null | undefined;
   const primaryAgent = existingPoa?.primaryAgent as string | undefined;
   const [jointAgentId, setJointAgentId] = useState(currentJoint ?? '');
@@ -17,17 +24,20 @@ export function PoaJointAgentStep({ estateDocId, poaData: existingPoa, onNext, o
   const updateSection = trpc.poaData.updateSection.useMutation();
 
   const handleNext = () => {
-    updateSection.mutate({
-      estateDocId,
-      section: 'agents',
-      data: {
-        primaryAgent: primaryAgent ?? '',
-        jointAgent: skipJoint ? null : (jointAgentId || null),
-        backupAgents: existingPoa?.backupAgents ?? [],
-        restrictions: existingPoa?.restrictions ?? null,
-        activationType: existingPoa?.activationType ?? 'immediate',
+    updateSection.mutate(
+      {
+        estateDocId,
+        section: 'agents',
+        data: {
+          primaryAgent: primaryAgent ?? '',
+          jointAgent: skipJoint ? null : jointAgentId || null,
+          backupAgents: existingPoa?.backupAgents ?? [],
+          restrictions: existingPoa?.restrictions ?? null,
+          activationType: existingPoa?.activationType ?? 'immediate',
+        },
       },
-    }, { onSuccess: () => onNext() });
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -42,15 +52,19 @@ export function PoaJointAgentStep({ estateDocId, poaData: existingPoa, onNext, o
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>Joint agents</strong> must act together on all decisions. This provides checks and balances
-          but can slow down decision-making. Most people skip this step unless they have specific reasons.
+          <strong>Joint agents</strong> must act together on all decisions. This provides checks and
+          balances but can slow down decision-making. Most people skip this step unless they have
+          specific reasons.
         </div>
 
         <label className="flex items-center gap-3 text-sm">
           <input
             type="checkbox"
             checked={skipJoint}
-            onChange={(e) => { setSkipJoint(e.target.checked); if (e.target.checked) setJointAgentId(''); }}
+            onChange={(e) => {
+              setSkipJoint(e.target.checked);
+              if (e.target.checked) setJointAgentId('');
+            }}
             className="h-4 w-4 rounded"
           />
           I do not want a joint agent (skip this step)

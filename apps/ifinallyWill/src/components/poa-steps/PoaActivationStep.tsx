@@ -4,22 +4,32 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaActivationStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaActivationStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const currentType = (existingPoa?.activationType as string | undefined) ?? '';
   const [activationType, setActivationType] = useState(currentType);
   const updateSection = trpc.poaData.updateSection.useMutation();
 
   const handleNext = () => {
     if (!activationType) return;
-    updateSection.mutate({
-      estateDocId,
-      section: 'activationType',
-      data: activationType,
-    }, { onSuccess: () => onNext() });
+    updateSection.mutate(
+      {
+        estateDocId,
+        section: 'activationType',
+        data: activationType,
+      },
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -35,9 +45,9 @@ export function PoaActivationStep({ estateDocId, poaData: existingPoa, onNext, o
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>This is an important choice.</strong> An "immediate" POA gives your agent authority right away,
-          even while you're still capable. An "incapacity" POA only activates when you become unable to make
-          decisions yourself — typically confirmed by a physician.
+          <strong>This is an important choice.</strong> An "immediate" POA gives your agent
+          authority right away, even while you're still capable. An "incapacity" POA only activates
+          when you become unable to make decisions yourself — typically confirmed by a physician.
         </div>
 
         <div className="space-y-3">

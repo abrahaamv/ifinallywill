@@ -15,11 +15,11 @@ export function PartnerDashboardPage() {
   const selectedPartner = partnerList?.find((p) => p.id === selectedPartnerId);
   const { data: earnings } = trpc.partners.getEarnings.useQuery(
     { partnerId: selectedPartnerId! },
-    { enabled: !!selectedPartnerId },
+    { enabled: !!selectedPartnerId }
   );
   const { data: codes } = trpc.partners.listCodes.useQuery(
     { partnerId: selectedPartnerId! },
-    { enabled: !!selectedPartnerId },
+    { enabled: !!selectedPartnerId }
   );
 
   if (isLoading) {
@@ -47,7 +47,9 @@ export function PartnerDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Partner cards */}
           <div className="lg:col-span-1 space-y-3">
-            <h2 className="font-semibold text-sm text-[var(--ifw-text-muted)] uppercase tracking-wide">Partners</h2>
+            <h2 className="font-semibold text-sm text-[var(--ifw-text-muted)] uppercase tracking-wide">
+              Partners
+            </h2>
             {partnerList.map((partner) => (
               <button
                 key={partner.id}
@@ -81,8 +83,8 @@ export function PartnerDashboardPage() {
                       partner.status === 'active'
                         ? 'bg-green-50 text-green-700'
                         : partner.status === 'pending'
-                        ? 'bg-yellow-50 text-yellow-700'
-                        : 'bg-red-50 text-red-700'
+                          ? 'bg-yellow-50 text-yellow-700'
+                          : 'bg-red-50 text-red-700'
                     }`}
                   >
                     {partner.status}
@@ -101,9 +103,15 @@ export function PartnerDashboardPage() {
               <div className="space-y-6">
                 {/* Stats cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard label="Total Earnings" value={`$${(earnings.totalEarnings / 100).toFixed(2)}`} />
+                  <StatCard
+                    label="Total Earnings"
+                    value={`$${(earnings.totalEarnings / 100).toFixed(2)}`}
+                  />
                   <StatCard label="Code Usages" value={String(earnings.totalCodeUsages)} />
-                  <StatCard label="Active Codes" value={`${earnings.activeCodes}/${earnings.totalCodes}`} />
+                  <StatCard
+                    label="Active Codes"
+                    value={`${earnings.activeCodes}/${earnings.totalCodes}`}
+                  />
                   <StatCard label="Docs Given" value={String(earnings.totalDocumentsGiven)} />
                 </div>
 
@@ -129,14 +137,17 @@ export function PartnerDashboardPage() {
                                 {code.isFree ? 'FREE' : `${code.discountPct}%`}
                               </td>
                               <td className="px-4 py-2">
-                                {code.currentUses}{code.maxUses ? `/${code.maxUses}` : ''}
+                                {code.currentUses}
+                                {code.maxUses ? `/${code.maxUses}` : ''}
                               </td>
                               <td className="px-4 py-2">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  code.isActive
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'bg-[var(--ifw-neutral-100)] text-[var(--ifw-text-muted)]'
-                                }`}>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded-full ${
+                                    code.isActive
+                                      ? 'bg-green-50 text-green-700'
+                                      : 'bg-[var(--ifw-neutral-100)] text-[var(--ifw-text-muted)]'
+                                  }`}
+                                >
                                   {code.isActive ? 'Active' : 'Inactive'}
                                 </span>
                               </td>
@@ -146,7 +157,9 @@ export function PartnerDashboardPage() {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--ifw-text-muted)]">No discount codes created yet.</p>
+                    <p className="text-sm text-[var(--ifw-text-muted)]">
+                      No discount codes created yet.
+                    </p>
                   )}
                 </div>
 

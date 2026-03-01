@@ -19,12 +19,7 @@ export type Province =
   | 'prince-edward-island'
   | 'saskatchewan';
 
-export type DocType =
-  | 'defaultWill'
-  | 'primaryWill'
-  | 'secondaryWill'
-  | 'poaProperty'
-  | 'poaHealth';
+export type DocType = 'defaultWill' | 'primaryWill' | 'secondaryWill' | 'poaProperty' | 'poaHealth';
 
 /** Map platform document types to template file names */
 const DOC_TYPE_MAP: Record<string, DocType> = {
@@ -62,9 +57,7 @@ const PROVINCE_MAP: Record<string, Province> = {
 };
 
 // Vite glob import — all template modules, lazy-loaded
-const templateModules = import.meta.glob<{ sections: TemplateSection[] }>(
-  './canada/**/*.ts',
-);
+const templateModules = import.meta.glob<{ sections: TemplateSection[] }>('./canada/**/*.ts');
 
 /**
  * Resolve a province string (flexible input) to a Province directory key.
@@ -80,7 +73,13 @@ export function resolveProvince(input: string): Province | null {
  */
 export function resolveDocType(input: string): DocType | null {
   // Check direct match first (e.g., 'defaultWill')
-  const valid: DocType[] = ['defaultWill', 'primaryWill', 'secondaryWill', 'poaProperty', 'poaHealth'];
+  const valid: DocType[] = [
+    'defaultWill',
+    'primaryWill',
+    'secondaryWill',
+    'poaProperty',
+    'poaHealth',
+  ];
   if (valid.includes(input as DocType)) return input as DocType;
   // Check mapped names (e.g., 'primary_will')
   return DOC_TYPE_MAP[input] ?? null;
@@ -94,7 +93,7 @@ export function resolveDocType(input: string): DocType | null {
  */
 export async function loadTemplate(
   provinceInput: string,
-  docTypeInput: string,
+  docTypeInput: string
 ): Promise<TemplateSection[] | null> {
   const province = resolveProvince(provinceInput);
   const docType = resolveDocType(docTypeInput);

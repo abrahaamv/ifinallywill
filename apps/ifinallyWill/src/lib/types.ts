@@ -5,24 +5,23 @@
  * Replaces `Record<string, unknown>` throughout the app.
  */
 
-import type { z } from 'zod';
 import type {
-  personalInfoSchema,
-  spouseInfoSchema,
-  executorsSchema,
-  residueSchema,
-  wipeoutSchema,
-  trustingSchema,
-  guardiansSchema,
-  petsSchema,
   additionalSchema,
-  finalDetailsSchema,
-  maritalStatusSchema,
-  poaAgentsSchema,
-  poaHealthDetailsSchema,
-  keyNameSchema,
   createAssetSchema,
+  executorsSchema,
+  finalDetailsSchema,
+  guardiansSchema,
+  keyNameSchema,
+  maritalStatusSchema,
+  personalInfoSchema,
+  petsSchema,
+  poaAgentsSchema,
+  residueSchema,
+  spouseInfoSchema,
+  trustingSchema,
+  wipeoutSchema,
 } from '@platform/api-contract/schemas';
+import type { z } from 'zod';
 
 // ---------------------------------------------------------------------------
 // Will Data — matches will_data JSONB columns from DB schema
@@ -65,7 +64,19 @@ export interface WillData {
 // ---------------------------------------------------------------------------
 
 export type PoaAgents = z.infer<typeof poaAgentsSchema>;
-export type PoaHealthDetails = z.infer<typeof poaHealthDetailsSchema>;
+/** Explicit POA health details — mirrors poaHealthDetailsSchema output */
+export interface PoaHealthDetails {
+  organDonation: boolean;
+  dnr: boolean;
+  statements?: {
+    terminalCondition?: string;
+    unconsciousCondition?: string;
+    mentalImpairment?: string;
+    violentBehavior?: string;
+    painManagement?: string;
+    otherDirectives?: string;
+  };
+}
 
 /** Full POA data shape — matches poa_data DB columns */
 export interface PoaData {
@@ -133,26 +144,20 @@ export interface EstateDocument {
 // ---------------------------------------------------------------------------
 
 /**
- * Legacy step props — willData as Record for backward compat with step components.
- * Prefer WillStepProps for new code.
+ * Step props for will wizard step components.
+ * willData accepts WillData or a generic Record for backward compat.
  */
 export interface StepProps {
   estateDocId: string;
-  willData: Record<string, unknown>;
+  willData: WillData | Record<string, unknown>;
   onNext: () => void;
   onPrev: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
 }
 
-export interface WillStepProps {
-  estateDocId: string;
-  willData: WillData;
-  onNext: () => void;
-  onPrev: () => void;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-}
+/** Alias — prefer StepProps directly */
+export type WillStepProps = StepProps;
 
 export interface PoaStepProps {
   estateDocId: string;

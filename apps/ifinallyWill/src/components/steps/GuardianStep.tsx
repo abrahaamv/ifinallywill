@@ -2,12 +2,12 @@
  * Step 6: Guardians — assign guardians for minor children
  */
 
-import { useState, useEffect } from 'react';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonSelector } from '../shared/PersonSelector';
+import { useEffect, useState } from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import { trpc } from '../../utils/trpc';
 import type { StepProps } from '../../lib/types';
+import { trpc } from '../../utils/trpc';
+import { PersonSelector } from '../shared/PersonSelector';
+import { StepLayout } from '../shared/StepLayout';
 
 interface GuardianEntry {
   keyNameId: string;
@@ -15,7 +15,14 @@ interface GuardianEntry {
   childKeyNameIds: string[];
 }
 
-export function GuardianStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function GuardianStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.guardians as GuardianEntry[] | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'guardians' });
   const { data: people } = trpc.keyNames.list.useQuery();
@@ -24,10 +31,10 @@ export function GuardianStep({ estateDocId, willData, onNext, onPrev, isFirstSte
   const childIds = children.map((c) => c.id);
 
   const [primaryId, setPrimaryId] = useState<string>(
-    existing?.find((g) => g.position === 'primary')?.keyNameId ?? '',
+    existing?.find((g) => g.position === 'primary')?.keyNameId ?? ''
   );
   const [alternateId, setAlternateId] = useState<string>(
-    existing?.find((g) => g.position === 'alternate')?.keyNameId ?? '',
+    existing?.find((g) => g.position === 'alternate')?.keyNameId ?? ''
   );
 
   useEffect(() => {
@@ -70,7 +77,15 @@ export function GuardianStep({ estateDocId, willData, onNext, onPrev, isFirstSte
             selectedIds={primaryId ? [primaryId] : []}
             onChange={(ids) => setPrimaryId(ids[0] ?? '')}
             excludeIds={alternateId ? [alternateId] : []}
-            filterRelationship={['spouse', 'sibling', 'parent', 'grandparent', 'pibling', 'friend', 'other']}
+            filterRelationship={[
+              'spouse',
+              'sibling',
+              'parent',
+              'grandparent',
+              'pibling',
+              'friend',
+              'other',
+            ]}
           />
         </div>
 
@@ -80,7 +95,15 @@ export function GuardianStep({ estateDocId, willData, onNext, onPrev, isFirstSte
             selectedIds={alternateId ? [alternateId] : []}
             onChange={(ids) => setAlternateId(ids[0] ?? '')}
             excludeIds={primaryId ? [primaryId] : []}
-            filterRelationship={['spouse', 'sibling', 'parent', 'grandparent', 'pibling', 'friend', 'other']}
+            filterRelationship={[
+              'spouse',
+              'sibling',
+              'parent',
+              'grandparent',
+              'pibling',
+              'friend',
+              'other',
+            ]}
           />
         </div>
       </div>

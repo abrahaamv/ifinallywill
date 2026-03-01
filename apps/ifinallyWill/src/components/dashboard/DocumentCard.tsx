@@ -28,7 +28,15 @@ function getDocRoute(id: string, documentType: string): string {
   return `/app/documents/${id}`;
 }
 
-export function DocumentCard({ id, documentType, status, completionPct, province, updatedAt, coupleDocId }: Props) {
+export function DocumentCard({
+  id,
+  documentType,
+  status,
+  completionPct,
+  province,
+  updatedAt,
+  coupleDocId,
+}: Props) {
   const docMeta = DOCUMENT_TYPES.find((d) => d.type === documentType);
   const statusMeta = STATUS_LABELS[status] ?? STATUS_LABELS.draft!;
 
@@ -65,7 +73,8 @@ export function DocumentCard({ id, documentType, status, completionPct, province
             className="h-full rounded-full transition-all"
             style={{
               width: `${completionPct}%`,
-              backgroundColor: completionPct === 100 ? 'var(--ifw-success)' : 'var(--ifw-primary-500)',
+              backgroundColor:
+                completionPct === 100 ? 'var(--ifw-success)' : 'var(--ifw-primary-500)',
             }}
           />
         </div>
@@ -76,9 +85,7 @@ export function DocumentCard({ id, documentType, status, completionPct, province
           Updated {new Date(updatedAt).toLocaleDateString()}
         </p>
         {coupleDocId && (
-          <span className="text-xs text-[var(--ifw-primary-700)] font-medium">
-            👥 Couple
-          </span>
+          <span className="text-xs text-[var(--ifw-primary-700)] font-medium">👥 Couple</span>
         )}
       </div>
     </a>

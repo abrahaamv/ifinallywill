@@ -1,13 +1,12 @@
 import type { TemplateSection } from '../../../lib/template-renderer';
 
-export const sections: TemplateSection[] =
-[
- {
- id: "secondaryWill-titleIntro",
- title: `<p style="text-align: center"><strong>SECONDARY LAST WILL AND TESTAMENT OF {{personal.fullName}}</strong></p>`,
- order: 1,
- fallback: "",
- content: `
+export const sections: TemplateSection[] = [
+  {
+    id: 'secondaryWill-titleIntro',
+    title: `<p style="text-align: center"><strong>SECONDARY LAST WILL AND TESTAMENT OF {{personal.fullName}}</strong></p>`,
+    order: 1,
+    fallback: '',
+    content: `
  <p><br /><br />
  I, {{personal.fullName}}, presently of {{personal.city}}
  {{#if personal.province}}, {{personal.province}}{{/if}}, declare that this is my Secondary Last Will and Testament
@@ -22,48 +21,48 @@ export const sections: TemplateSection[] =
  than my Private Assets is intended to revoke the other; they are to operate concurrently.
  <br /><br />
  </p>`,
- keywords: ["personal.fullName", "personal.city", "personal.province"],
- children: []
- },
- {
- id: "secondaryWill-priorWillsCodicils",
- title: `<p><strong><u>Prior Wills and Codicils</u></strong></p>`,
- order: 2,
- fallback: "",
- content: `<ol>
+    keywords: ['personal.fullName', 'personal.city', 'personal.province'],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-priorWillsCodicils',
+    title: `<p><strong><u>Prior Wills and Codicils</u></strong></p>`,
+    order: 2,
+    fallback: '',
+    content: `<ol>
  <li>I revoke all prior Wills and Codicils.</li>
 </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "secondaryWill-executor",
- title: `<p style="text-align: center"><strong>II. EXECUTOR</strong></p>`,
- order: 3,
- fallback: "",
- content: "",
- keywords: [],
- children: [
- {
- id: "secondaryWill-executorDefinition",
- title: `<p><strong><u>Definition</u></strong></p>`,
- order: 1,
- fallback: "",
- content: `<ol>
+    keywords: [],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-executor',
+    title: `<p style="text-align: center"><strong>II. EXECUTOR</strong></p>`,
+    order: 3,
+    fallback: '',
+    content: '',
+    keywords: [],
+    children: [
+      {
+        id: 'secondaryWill-executorDefinition',
+        title: `<p><strong><u>Definition</u></strong></p>`,
+        order: 1,
+        fallback: '',
+        content: `<ol>
  <li>The expression "my Executor" used throughout this Will includes either the singular or plural number,
  wherever the fact or context so requires. The term "executor" in this Will is synonymous with and includes
  the terms "personal representative" and "executrix".
  </li>
  </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "secondaryWill-executorAppointment",
- title: `<p><strong><u>Appointment</u></strong></p>`,
- order: 2,
- fallback: "",
- content: `<ol>
+        keywords: [],
+        children: [],
+      },
+      {
+        id: 'secondaryWill-executorAppointment',
+        title: `<p><strong><u>Appointment</u></strong></p>`,
+        order: 2,
+        fallback: '',
+        content: `<ol>
  {{#if executors.length}}
  {{#groupByPriority executors}}
  {{#eachGroup}}
@@ -98,15 +97,15 @@ export const sections: TemplateSection[] =
  {{/if}}
  <li>No bond or other security of any kind will be required of any Executor appointed in this my Will.</li>
  </ol>`,
- keywords: ["executors", "relatives", "kids", "spouseInfo"],
- children: []
- },
- {
- id: "secondaryWill-executorPowers",
- title: `<p><strong><u>Powers of my Executor</u></strong></p>`,
- order: 3,
- fallback: "",
- content: `<ol>
+        keywords: ['executors', 'relatives', 'kids', 'spouseInfo'],
+        children: [],
+      },
+      {
+        id: 'secondaryWill-executorPowers',
+        title: `<p><strong><u>Powers of my Executor</u></strong></p>`,
+        order: 3,
+        fallback: '',
+        content: `<ol>
  <li>I give and appoint to my Executor the following duties and powers with respect to my estate:</li>
  <ul>
  <li>
@@ -178,17 +177,17 @@ export const sections: TemplateSection[] =
  as often as required, and without application to or approval by any court.
  </li>
  </ol>`,
- keywords: ["trusting", "minTrustingAge"],
- children: []
- }
- ]
- },
- {
- id: "secondaryWill-dispositionOfEstate",
- title: `<p style="text-align: center"><strong>III. DISPOSITION OF PRIVATE ASSETS</strong></p>`,
- order: 4,
- fallback: "",
- content: `{{#if bequests}}
+        keywords: ['trusting', 'minTrustingAge'],
+        children: [],
+      },
+    ],
+  },
+  {
+    id: 'secondaryWill-dispositionOfEstate',
+    title: `<p style="text-align: center"><strong>III. DISPOSITION OF PRIVATE ASSETS</strong></p>`,
+    order: 4,
+    fallback: '',
+    content: `{{#if bequests}}
  {{#if_gt bequests.length 0}}
     <p><strong><u>Specific Bequest</u></strong></p>
  <ol>
@@ -216,15 +215,15 @@ export const sections: TemplateSection[] =
   <li>All property given under this Will is subject to any encumbrances or liens attached to the property.</li>
   <li>I wish for the residue of my corporate assets to be distributed accordingly.</li>
 </ol>`,
- keywords: ["bequests", "relatives", "kids", "spouseInfo"],
- children: []
- },
- {
- id: "secondaryWill-respRdsp",
- title: `<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>`,
- order: 5,
- fallback: "",
- content: `<ol>
+    keywords: ['bequests', 'relatives', 'kids', 'spouseInfo'],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-respRdsp',
+    title: `<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>`,
+    order: 5,
+    fallback: '',
+    content: `<ol>
  <li>If at the time of my death I hold any interest in or am entitled to any interest in a Registered Education Savings Plan ("RESP") or a Registered Disability Savings Plan ("RDSP"), I direct my Executor(s) to deal with such plans in the following manner:</li>
  <ul>
  <li>Any RESP of which I am the subscriber shall be transferred to my spouse, if living, and if not living, then to my children equally. If no spouse or children survive me, then I direct my Executor(s) to collapse such plans and add the proceeds to my estate residue;</li>
@@ -232,15 +231,15 @@ export const sections: TemplateSection[] =
  <li>My Executor(s) shall have the authority to make any elections, designations, or other decisions necessary to implement these directions, including any elections under the Income Tax Act.</li>
  </ul>
 </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "secondaryWill-testamentaryTrusts",
- title: `<p style="text-align: center"><strong>V. TESTAMENTARY TRUSTS</strong></p>`,
- order: 6,
- fallback: "",
- content: `<p><strong><u>Testamentary Trust for Young Beneficiaries</u></strong></p>
+    keywords: [],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-testamentaryTrusts',
+    title: `<p style="text-align: center"><strong>V. TESTAMENTARY TRUSTS</strong></p>`,
+    order: 6,
+    fallback: '',
+    content: `<p><strong><u>Testamentary Trust for Young Beneficiaries</u></strong></p>
 <ol>
  {{#if trusting}}
  {{#if trusting.0.age}}
@@ -394,15 +393,15 @@ export const sections: TemplateSection[] =
  <li>If any trust condition is held invalid, it will not affect other provisions that can be given effect without the
  invalid provision.</li>
 </ol>`,
- keywords: ["trusting", "minTrustingAge", "maxTrustingAge"],
- children: []
- },
- {
- id: "secondaryWill-digitalAssets",
- title: `<p style="text-align: center"><strong>VI. DIGITAL ASSETS</strong></p>`,
- order: 7,
- fallback: "",
- content: `<ol>
+    keywords: ['trusting', 'minTrustingAge', 'maxTrustingAge'],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-digitalAssets',
+    title: `<p style="text-align: center"><strong>VI. DIGITAL ASSETS</strong></p>`,
+    order: 7,
+    fallback: '',
+    content: `<ol>
  <li>My Executor(s) may access, handle, distribute, and dispose of my digital assets, and may obtain, access, modify,
  delete, and control my passwords and other electronic credentials associated with my digital devices and digital
  assets.</li>
@@ -418,15 +417,15 @@ export const sections: TemplateSection[] =
  financial accounts, banking accounts, domain registrations, DNS service accounts, web hosting accounts, tax
  items, regardless of the ownership of any physical device upon which the digital item is stored.</li>
 </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "secondaryWill-generalProvisions",
- title: `<p style="text-align: center"><strong>VII. GENERAL PROVISIONS</strong></p>`,
- order: 8,
- fallback: "",
- content: `<p><strong><u>Family Law Act</u></strong></p>
+    keywords: [],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-generalProvisions',
+    title: `<p style="text-align: center"><strong>VII. GENERAL PROVISIONS</strong></p>`,
+    order: 8,
+    fallback: '',
+    content: `<p><strong><u>Family Law Act</u></strong></p>
 <ol>
  <li>I declare that all property acquired by a person as a result of my death together with any property into which
  such property can be traced, and all income from such property or any property into which such property can be
@@ -467,15 +466,15 @@ export const sections: TemplateSection[] =
  <li>If any provisions of this Will are deemed unenforceable, the remaining provisions will remain in full force and
  effect.</li>
 </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "secondaryWill-signatureExecution",
- title: `<p>&nbsp;</p><p style="text-align: center"><em>The remainder of this page has intentionally been left blank.</em></p>`,
- order: 9,
- fallback: "",
- content: `<p>IN WITNESS WHEREOF, I have signed my name on this the _________ day of ______________________, 20______,
+    keywords: [],
+    children: [],
+  },
+  {
+    id: 'secondaryWill-signatureExecution',
+    title: `<p>&nbsp;</p><p style="text-align: center"><em>The remainder of this page has intentionally been left blank.</em></p>`,
+    order: 9,
+    fallback: '',
+    content: `<p>IN WITNESS WHEREOF, I have signed my name on this the _________ day of ______________________, 20______,
  at {{personal.city}}, {{personal.province}} declaring and publishing this instrument as my Last Will, in the presence of the undersigned
  witnesses, who witnessed and subscribed this Last Will at my request, and in my presence
 <br /><br /><br /> _____________________________<br /> {{personal.fullName}} (Testator) Signature<br /> <br /><br /> SIGNED
@@ -489,8 +488,7 @@ Witness #2 ____________________________________<br /><br /> Address:<br />______
 Toronto, ON<br /> ifinallywill.com<br /> info@ifinallywill.com<br />
 <br /><br /><br /><br />
 </p>`,
- keywords: ["personal.fullName", "personal.city", "personal.province"],
- children: []
- }
-]
-;
+    keywords: ['personal.fullName', 'personal.city', 'personal.province'],
+    children: [],
+  },
+];

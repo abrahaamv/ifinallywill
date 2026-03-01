@@ -20,7 +20,7 @@ export const DOCUMENT_TYPES = [
   {
     type: 'poa_property' as const,
     name: 'Power of Attorney for Property',
-    description: 'Choose someone to manage your finances if you can\'t',
+    description: "Choose someone to manage your finances if you can't",
     price: 49,
     icon: '🏦',
   },

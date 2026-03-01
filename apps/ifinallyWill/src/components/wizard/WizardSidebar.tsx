@@ -5,13 +5,13 @@
  * Supports both PersonalShell (category-aware) and legacy WizardShell usage.
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   CATEGORIES,
-  getStepsByCategory,
-  type WizardContext,
-  type WizardCategory,
   type StepConfig,
+  type WizardCategory,
+  type WizardContext,
+  getStepsByCategory,
 } from '../../lib/wizard';
 
 interface Props {
@@ -62,10 +62,7 @@ function CategorySidebar({
   onStepClick,
   onCategoryClick,
 }: Props) {
-  const grouped = useMemo(
-    () => getStepsByCategory(wizardContext),
-    [wizardContext],
-  );
+  const grouped = useMemo(() => getStepsByCategory(wizardContext), [wizardContext]);
 
   const completedSet = useMemo(() => new Set(completedSteps), [completedSteps]);
 
@@ -193,12 +190,7 @@ function CategorySidebar({
 // Legacy flat sidebar (backward compatibility with WizardShell)
 // ---------------------------------------------------------------------------
 
-function LegacySidebar({
-  steps,
-  currentStepId,
-  completedSteps,
-  onStepClick,
-}: LegacyProps) {
+function LegacySidebar({ steps, currentStepId, completedSteps, onStepClick }: LegacyProps) {
   const grouped = CATEGORIES.map((cat) => ({
     ...cat,
     steps: steps.filter((s) => s.category === cat.key),

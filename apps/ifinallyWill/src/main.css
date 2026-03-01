@@ -8,6 +8,11 @@
 /* Import shared design tokens from packages/ui */
 @import "@platform/ui/styles/tokens";
 
+/* Import app-specific design tokens and animations */
+@import "./styles/tokens.css";
+@import "./styles/theme.css";
+@import "./styles/animations.css";
+
 /* Dark mode variant using class-based dark mode */
 @custom-variant dark (&:is(.dark *));
 
@@ -15,11 +20,11 @@
 
 :root {
   /* Landing page branding (navy/gold — keep as-is from v6) */
-  --ifw-navy: oklch(0.30 0.18 265);
-  --ifw-navy-light: oklch(0.40 0.15 265);
-  --ifw-navy-dark: oklch(0.20 0.15 265);
+  --ifw-navy: oklch(0.3 0.18 265);
+  --ifw-navy-light: oklch(0.4 0.15 265);
+  --ifw-navy-dark: oklch(0.2 0.15 265);
   --ifw-gold: oklch(0.84 0.19 90);
-  --ifw-gold-light: oklch(0.90 0.14 90);
+  --ifw-gold-light: oklch(0.9 0.14 90);
 
   /* Internal app — light theme (default) */
   --ifw-bg-dark: oklch(0.95 0 98);
@@ -51,11 +56,11 @@
   --ifw-neutral-100: oklch(0.96 0 0);
   --ifw-neutral-200: oklch(0.92 0 0);
   --ifw-neutral-300: oklch(0.87 0 0);
-  --ifw-neutral-400: oklch(0.70 0 0);
+  --ifw-neutral-400: oklch(0.7 0 0);
   --ifw-neutral-500: oklch(0.55 0 0);
-  --ifw-neutral-600: oklch(0.40 0 0);
-  --ifw-neutral-700: oklch(0.30 0 0);
-  --ifw-neutral-800: oklch(0.20 0 0);
+  --ifw-neutral-600: oklch(0.4 0 0);
+  --ifw-neutral-700: oklch(0.3 0 0);
+  --ifw-neutral-800: oklch(0.2 0 0);
   --ifw-neutral-900: oklch(0.13 0 0);
 
   /* Shadows */
@@ -92,7 +97,7 @@
   --ifw-neutral-50: oklch(0.13 0 0);
   --ifw-neutral-100: oklch(0.18 0 0);
   --ifw-neutral-200: oklch(0.22 0 0);
-  --ifw-neutral-300: oklch(0.30 0 0);
+  --ifw-neutral-300: oklch(0.3 0 0);
   --ifw-neutral-700: oklch(0.87 0 0);
   --ifw-neutral-800: oklch(0.92 0 0);
   --ifw-neutral-900: oklch(0.96 0 0);

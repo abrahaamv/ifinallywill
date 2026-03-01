@@ -6,25 +6,22 @@
  *   - category key: Category detail view with sidebar + step content
  *
  * Replaces WizardShell as the main will document view.
- * Includes couples workflow via useProfileSwitching.
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { usePersonalData } from '../../hooks/usePersonalData';
-import { useStepNavigation } from '../../hooks/useStepNavigation';
 import { useSidebarState } from '../../hooks/useSidebarState';
-import { useProfileSwitching } from '../../hooks/useProfileSwitching';
-import { getStepCategory, CATEGORIES } from '../../lib/wizard';
+import { useStepNavigation } from '../../hooks/useStepNavigation';
+import { CATEGORIES, getStepCategory } from '../../lib/wizard';
 import type { WizardCategory } from '../../lib/wizard';
-import { DashboardView } from './DashboardView';
-import { CategoryDetailView } from './CategoryDetailView';
-import { WizardSidebar } from './WizardSidebar';
-import { ProfileBanner } from './ProfileBanner';
-import { WilfredPanel } from '../wilfred/WilfredPanel';
 import { CelebrationModal } from '../modals/CelebrationModal';
 import { LeaveConfirmModal } from '../modals/LeaveConfirmModal';
-import { PersonConfirmationModal } from '../modals/PersonConfirmationModal';
+import { WilfredPanel } from '../wilfred/WilfredPanel';
+import { CategoryDetailView } from './CategoryDetailView';
+import { DashboardView } from './DashboardView';
+import { ProfileBanner } from './ProfileBanner';
+import { WizardSidebar } from './WizardSidebar';
 
 type ViewMode = 'dashboard' | WizardCategory;
 
@@ -42,19 +39,9 @@ export function PersonalShell() {
   // Modal state
   const [celebrationCategory, setCelebrationCategory] = useState<WizardCategory | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [showSharedStepConfirm, setShowSharedStepConfirm] = useState(false);
-  const [pendingSharedStepId, setPendingSharedStepId] = useState<string | null>(null);
 
   // Sidebar state
   const sidebar = useSidebarState();
-
-  // Profile switching for couples
-  const profile = useProfileSwitching({
-    currentDocId: docId ?? '',
-    ownerName: data.ownerName,
-    coupleDocId: data.doc?.coupleDocId,
-    coupleName: (data.doc as Record<string, unknown>)?.coupleName as string | undefined,
-  });
 
   // Derive view from URL stepId
   useEffect(() => {
@@ -74,23 +61,9 @@ export function PersonalShell() {
   // Navigate to a step
   const navigateToStep = useCallback(
     (id: string) => {
-      // Check if entering a shared step in couples mode
-      if (profile.isMultiProfile && profile.isCurrentStepShared(id)) {
-        setPendingSharedStepId(id);
-        setShowSharedStepConfirm(true);
-        return;
-      }
       navigate(`/app/documents/${docId}/${id}`, { replace: true });
     },
-    [navigate, docId, profile],
-  );
-
-  // Direct navigate (skip shared check — used after confirmation)
-  const directNavigateToStep = useCallback(
-    (id: string) => {
-      navigate(`/app/documents/${docId}/${id}`, { replace: true });
-    },
-    [navigate, docId],
+    [navigate, docId]
   );
 
   // Return to dashboard
@@ -127,7 +100,7 @@ export function PersonalShell() {
         navigateToStep(firstStep.id);
       }
     },
-    [nav, navigateToStep],
+    [nav, navigateToStep]
   );
 
   // Handle step click from sidebar
@@ -135,7 +108,7 @@ export function PersonalShell() {
     (id: string) => {
       navigateToStep(id);
     },
-    [navigateToStep],
+    [navigateToStep]
   );
 
   // Handle sidebar category click — enter that category
@@ -143,15 +116,8 @@ export function PersonalShell() {
     (category: WizardCategory) => {
       handleCategoryClick(category);
     },
-    [handleCategoryClick],
+    [handleCategoryClick]
   );
-
-  // Handle profile switch
-  const handleProfileSwitch = useCallback(() => {
-    if (data.doc?.coupleDocId) {
-      navigate(`/app/documents/${data.doc.coupleDocId}`);
-    }
-  }, [navigate, data.doc?.coupleDocId]);
 
   // Loading state
   if (data.isLoading) {
@@ -170,9 +136,7 @@ export function PersonalShell() {
   }
 
   const categoryLabel =
-    currentView !== 'dashboard'
-      ? CATEGORIES.find((c) => c.key === currentView)?.label ?? ''
-      : '';
+    currentView !== 'dashboard' ? (CATEGORIES.find((c) => c.key === currentView)?.label ?? '') : '';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -188,27 +152,33 @@ export function PersonalShell() {
               onClick={handleDashboardClick}
               className="text-sm font-medium text-amber-900 hover:text-amber-800 flex items-center gap-1"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               Dashboard
             </button>
           )}
           <span className="text-sm font-medium text-amber-900">
-            {(profile.activeProfile?.name ?? data.ownerName)}&apos;s Estate Plan
+            {data.ownerName}&apos;s Estate Plan
           </span>
-          {profile.isMultiProfile && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-800/10 text-amber-900">
-              Couples
-            </span>
-          )}
         </div>
 
         <ProfileBanner
-          ownerName={profile.activeProfile?.name ?? data.ownerName}
-          isCouple={profile.isMultiProfile}
+          ownerName={data.ownerName}
+          isCouple={data.isCouple}
           coupleDocId={data.doc.coupleDocId}
-          onSwitch={handleProfileSwitch}
+          onSwitch={() =>
+            data.doc?.coupleDocId && navigate(`/app/documents/${data.doc.coupleDocId}`)
+          }
         />
       </div>
 
@@ -267,7 +237,7 @@ export function PersonalShell() {
         {currentView === 'dashboard' ? (
           <main className="flex-1 p-6 overflow-y-auto">
             <DashboardView
-              ownerName={profile.activeProfile?.name ?? data.ownerName}
+              ownerName={data.ownerName}
               categoryCompletions={data.categoryCompletions}
               overallProgress={data.overallProgress}
               recommendedStep={nav.getRecommendedStep()}
@@ -321,21 +291,6 @@ export function PersonalShell() {
           returnToDashboard();
         }}
         onCancel={() => setShowLeaveConfirm(false)}
-      />
-
-      {/* Shared step confirmation for couples */}
-      <PersonConfirmationModal
-        open={showSharedStepConfirm}
-        ownerName={profile.activeProfile?.name ?? data.ownerName}
-        stepLabel={pendingSharedStepId?.replace(/-/g, ' ') ?? 'Shared Step'}
-        isSharedStep={pendingSharedStepId ? profile.isCurrentStepShared(pendingSharedStepId) : false}
-        onConfirm={() => {
-          setShowSharedStepConfirm(false);
-          if (pendingSharedStepId) {
-            directNavigateToStep(pendingSharedStepId);
-            setPendingSharedStepId(null);
-          }
-        }}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-# AI Assistant Platform - Unified Development Environment
+# IFinallyWill - Development Environment
 # All services in one compose file
 #
 # Usage:
@@ -6,7 +6,7 @@
 #   docker compose --profile tools up -d    # Include pgAdmin
 #   docker compose --profile all up -d      # Start everything
 
-name: platform
+name: ifinallywill
 
 services:
   # ============================================================
@@ -15,33 +15,33 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: platform-postgres
+    container_name: ifinallywill-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-platform}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-platform_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-platform}
+      POSTGRES_USER: ${POSTGRES_USER:-ifinallywill}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ifinallywill_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ifinallywill}
     ports:
-      - '${POSTGRES_PORT:-5432}:5432'
+      - '${POSTGRES_PORT:-5434}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-platform}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-ifinallywill}']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      platform-network:
-        ipv4_address: 172.30.0.10
+      ifinallywill-network:
+        ipv4_address: 172.28.0.10
 
   redis:
     image: redis:7.4.2-alpine
-    container_name: platform-redis
+    container_name: ifinallywill-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-platform_redis_password}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-ifinallywill_redis_password}
     ports:
-      - '${REDIS_PORT:-6379}:6379'
+      - '${REDIS_PORT:-6381}:6379'
     volumes:
       - redis_data:/data
     healthcheck:
@@ -50,8 +50,8 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      platform-network:
-        ipv4_address: 172.30.0.11
+      ifinallywill-network:
+        ipv4_address: 172.28.0.11
 
   # ============================================================
   # Voice AI Services (VK-Agent + Janus) — DEACTIVATED
@@ -60,7 +60,7 @@ services:
   #
   # janus:
   #   image: canyan/janus-gateway:latest
-  #   container_name: platform-janus
+  #   container_name: ifinallywill-janus
   #   restart: unless-stopped
   #   volumes:
   #     - ./janus-configs/janus.jcfg:/usr/local/etc/janus/janus.jcfg:ro
@@ -77,20 +77,20 @@ services:
   #     retries: 5
   #     start_period: 10s
   #   networks:
-  #     platform-network:
-  #       ipv4_address: 172.30.0.20
+  #     ifinallywill-network:
+  #       ipv4_address: 172.28.0.20
   #
   # vk-agent:
   #   build:
   #     context: ../../services/vk-agent
   #     dockerfile: Dockerfile
-  #   container_name: platform-vk-agent
+  #   container_name: ifinallywill-vk-agent
   #   restart: unless-stopped
   #   env_file:
   #     - ../../services/vk-agent/.env
   #   environment:
-  #     - VK_AGENT_JANUS_WS_URL=ws://platform-janus:8188
-  #     - VK_AGENT_RTP_HOST=172.30.0.21
+  #     - VK_AGENT_JANUS_WS_URL=ws://ifinallywill-janus:8188
+  #     - VK_AGENT_RTP_HOST=172.28.0.21
   #     - VK_AGENT_RTP_PORT=5004
   #   ports:
   #     - "5004:5004/udp"  # RTP audio
@@ -104,8 +104,8 @@ services:
   #     janus:
   #       condition: service_healthy
   #   networks:
-  #     platform-network:
-  #       ipv4_address: 172.30.0.21
+  #     ifinallywill-network:
+  #       ipv4_address: 172.28.0.21
 
   # ============================================================
   # Development Tools (optional)
@@ -113,10 +113,10 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: platform-pgadmin
+    container_name: ifinallywill-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@platform.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ifinallywill.local}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -130,20 +130,20 @@ services:
       - tools
       - all
     networks:
-      - platform-network
+      - ifinallywill-network
 
 volumes:
   postgres_data:
-    name: platform-postgres-data
+    name: ifinallywill-postgres-data
   redis_data:
-    name: platform-redis-data
+    name: ifinallywill-redis-data
   pgadmin_data:
-    name: platform-pgadmin-data
+    name: ifinallywill-pgadmin-data
 
 networks:
-  platform-network:
-    name: platform-network
+  ifinallywill-network:
+    name: ifinallywill-network
     driver: bridge
     ipam:
       config:
-        - subnet: 172.30.0.0/16
+        - subnet: 172.28.0.0/24

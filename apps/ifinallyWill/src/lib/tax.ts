@@ -184,7 +184,7 @@ export function getTaxRateForProvince(province: string): TaxRateInfo {
   if (!province) return DEFAULT_TAX_RATE;
   if (CANADIAN_TAX_RATES[province]) return CANADIAN_TAX_RATES[province];
   const key = Object.keys(CANADIAN_TAX_RATES).find(
-    (k) => k.toLowerCase() === province.toLowerCase(),
+    (k) => k.toLowerCase() === province.toLowerCase()
   );
   return (key ? CANADIAN_TAX_RATES[key] : undefined) ?? DEFAULT_TAX_RATE;
 }
@@ -222,7 +222,7 @@ export function calculateTotal(basePrice: number, province = 'Ontario'): number 
 }
 
 export function getTaxBreakdown(basePrice: number, province = 'Ontario'): TaxBreakdown {
-  const price = parseFloat(String(basePrice)) || 0;
+  const price = Number.parseFloat(String(basePrice)) || 0;
   const info = getTaxRateForProvince(province);
 
   const gstAmount = round2(price * info.gst);
@@ -256,7 +256,5 @@ export function getTaxBreakdown(basePrice: number, province = 'Ontario'): TaxBre
 export const SECONDARY_WILL_PROVINCES = ['Ontario', 'British Columbia'] as const;
 
 export function supportsSecondaryWill(province: string): boolean {
-  return SECONDARY_WILL_PROVINCES.some(
-    (p) => p.toLowerCase() === province.toLowerCase(),
-  );
+  return SECONDARY_WILL_PROVINCES.some((p) => p.toLowerCase() === province.toLowerCase());
 }

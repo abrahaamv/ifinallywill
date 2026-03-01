@@ -21,7 +21,11 @@ export function AdminDashboardPage() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Documents" value={String(totalDocs)} sub={`${completedDocs} completed`} />
+        <StatCard
+          label="Total Documents"
+          value={String(totalDocs)}
+          sub={`${completedDocs} completed`}
+        />
         <StatCard label="Total Orders" value={String(totalOrders)} sub={`${paidOrders} paid`} />
         <StatCard label="Revenue" value={`$${(totalRevenue / 100).toFixed(2)}`} sub="All time" />
         <StatCard label="Partners" value={String(partners?.length ?? 0)} sub="Active affiliates" />
@@ -30,17 +34,28 @@ export function AdminDashboardPage() {
       {/* Quick links */}
       <h2 className="font-semibold mb-3">Quick Actions</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <a href="/app/admin/users" className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors">
+        <a
+          href="/app/admin/users"
+          className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors"
+        >
           <div className="text-lg mb-1">👥</div>
           <div className="font-medium text-sm">Manage Users</div>
           <div className="text-xs text-[var(--ifw-text-muted)]">View and manage user accounts</div>
         </a>
-        <a href="/app/admin/templates" className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors">
+        <a
+          href="/app/admin/templates"
+          className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors"
+        >
           <div className="text-lg mb-1">📝</div>
           <div className="font-medium text-sm">Manage Templates</div>
-          <div className="text-xs text-[var(--ifw-text-muted)]">Edit and version document templates</div>
+          <div className="text-xs text-[var(--ifw-text-muted)]">
+            Edit and version document templates
+          </div>
         </a>
-        <a href="/app/admin/payments" className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors">
+        <a
+          href="/app/admin/payments"
+          className="border rounded-lg p-4 hover:border-[var(--ifw-primary-500)] transition-colors"
+        >
           <div className="text-lg mb-1">💳</div>
           <div className="font-medium text-sm">View Payments</div>
           <div className="text-xs text-[var(--ifw-text-muted)]">Orders, revenue, and refunds</div>

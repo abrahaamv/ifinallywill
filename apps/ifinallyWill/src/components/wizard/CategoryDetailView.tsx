@@ -6,27 +6,27 @@
  */
 
 import { Suspense } from 'react';
-import type { WizardCategory, StepConfig } from '../../lib/wizard';
 import type { WillData } from '../../lib/types';
 import type { StepProps } from '../../lib/types';
+import type { StepConfig, WizardCategory } from '../../lib/wizard';
 
-// Step components — same map as WizardShell
-import { PersonalInfoStep } from '../steps/PersonalInfoStep';
-import { FamilyStatusStep } from '../steps/FamilyStatusStep';
-import { SpouseInfoStep } from '../steps/SpouseInfoStep';
-import { ChildrenStep } from '../steps/ChildrenStep';
-import { KeyPeopleStep } from '../steps/KeyPeopleStep';
-import { GuardianStep } from '../steps/GuardianStep';
-import { PetGuardianStep } from '../steps/PetGuardianStep';
+import { AdditionalStep } from '../steps/AdditionalStep';
 import { AssetsStep } from '../steps/AssetsStep';
 import { BequestsStep } from '../steps/BequestsStep';
-import { ResidueStep } from '../steps/ResidueStep';
-import { InheritanceStep } from '../steps/InheritanceStep';
+import { ChildrenStep } from '../steps/ChildrenStep';
 import { ExecutorsStep } from '../steps/ExecutorsStep';
-import { WipeoutStep } from '../steps/WipeoutStep';
-import { AdditionalStep } from '../steps/AdditionalStep';
+import { FamilyStatusStep } from '../steps/FamilyStatusStep';
 import { FinalDetailsStep } from '../steps/FinalDetailsStep';
+import { GuardianStep } from '../steps/GuardianStep';
+import { InheritanceStep } from '../steps/InheritanceStep';
+import { KeyPeopleStep } from '../steps/KeyPeopleStep';
+// Step components — same map as WizardShell
+import { PersonalInfoStep } from '../steps/PersonalInfoStep';
+import { PetGuardianStep } from '../steps/PetGuardianStep';
+import { ResidueStep } from '../steps/ResidueStep';
 import { ReviewStep } from '../steps/ReviewStep';
+import { SpouseInfoStep } from '../steps/SpouseInfoStep';
+import { WipeoutStep } from '../steps/WipeoutStep';
 
 const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   'personal-info': PersonalInfoStep,
@@ -87,15 +87,22 @@ export function CategoryDetailView(props: Props) {
           onClick={onDashboard}
           className="text-sm text-[var(--ifw-neutral-500)] hover:text-[var(--ifw-primary-700)] flex items-center gap-1"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
           Dashboard
         </button>
         <span className="text-[var(--ifw-neutral-300)]">/</span>
-        <span className="text-sm font-medium text-[var(--ifw-neutral-900)]">
-          {categoryLabel}
-        </span>
+        <span className="text-sm font-medium text-[var(--ifw-neutral-900)]">{categoryLabel}</span>
         <span className="ml-auto text-xs text-[var(--ifw-neutral-400)]">
           Step {currentIndex + 1} of {totalSteps}
         </span>
@@ -114,7 +121,7 @@ export function CategoryDetailView(props: Props) {
             <div className="max-w-3xl">
               <StepComponent
                 estateDocId={estateDocId}
-                willData={willData as Record<string, unknown>}
+                willData={willData}
                 onNext={onNext}
                 onPrev={onPrev}
                 isFirstStep={isFirstStep}

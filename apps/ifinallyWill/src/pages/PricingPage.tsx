@@ -2,7 +2,7 @@
  * Pricing page — document prices, bundle offer, comparison
  */
 
-import { DOCUMENT_TYPES, BUNDLE_PRICE, BUNDLE_SAVINGS } from '../config/documents';
+import { BUNDLE_PRICE, BUNDLE_SAVINGS, DOCUMENT_TYPES } from '../config/documents';
 
 export function PricingPage() {
   const totalIndividual = DOCUMENT_TYPES.reduce((s, d) => s + d.price, 0);
@@ -20,12 +20,18 @@ export function PricingPage() {
         {/* Individual documents */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {DOCUMENT_TYPES.map((doc) => (
-            <div key={doc.type} className="border border-[var(--ifw-border)] rounded-xl p-6 text-center">
+            <div
+              key={doc.type}
+              className="border border-[var(--ifw-border)] rounded-xl p-6 text-center"
+            >
               <span className="text-4xl">{doc.icon}</span>
               <h3 className="font-semibold mt-4">{doc.name}</h3>
               <p className="text-3xl font-bold mt-3">${doc.price}</p>
               <p className="text-xs text-[var(--ifw-text-muted)] mt-2">{doc.description}</p>
-              <a href="/register" className="mt-4 block text-sm font-medium py-2 rounded-lg border border-[var(--ifw-primary-500)] text-[var(--ifw-primary-700)] hover:bg-[var(--ifw-primary-50)]">
+              <a
+                href="/register"
+                className="mt-4 block text-sm font-medium py-2 rounded-lg border border-[var(--ifw-primary-500)] text-[var(--ifw-primary-700)] hover:bg-[var(--ifw-primary-50)]"
+              >
                 Get Started
               </a>
             </div>
@@ -43,12 +49,18 @@ export function PricingPage() {
           </p>
           <div className="mt-4">
             <span className="text-4xl font-bold">${BUNDLE_PRICE}</span>
-            <span className="text-lg text-[var(--ifw-text-muted)] line-through ml-3">${totalIndividual}</span>
+            <span className="text-lg text-[var(--ifw-text-muted)] line-through ml-3">
+              ${totalIndividual}
+            </span>
           </div>
           <p className="text-sm text-[var(--ifw-success)] font-medium mt-1">
             Save ${BUNDLE_SAVINGS}
           </p>
-          <a href="/register" className="mt-6 inline-block px-8 py-3 text-sm font-medium text-white rounded-lg" style={{ backgroundColor: 'var(--ifw-primary-700)' }}>
+          <a
+            href="/register"
+            className="mt-6 inline-block px-8 py-3 text-sm font-medium text-white rounded-lg"
+            style={{ backgroundColor: 'var(--ifw-primary-700)' }}
+          >
             Get the Bundle
           </a>
         </div>
@@ -61,7 +73,9 @@ export function PricingPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Feature</th>
-                  <th className="text-center py-3 px-4 text-[var(--ifw-primary-700)]">IFinallyWill</th>
+                  <th className="text-center py-3 px-4 text-[var(--ifw-primary-700)]">
+                    IFinallyWill
+                  </th>
                   <th className="text-center py-3 px-4 text-[var(--ifw-text-muted)]">Lawyer</th>
                   <th className="text-center py-3 px-4 text-[var(--ifw-text-muted)]">DIY Kit</th>
                 </tr>
@@ -71,8 +85,12 @@ export function PricingPage() {
                   <tr key={row.feature} className="border-b">
                     <td className="py-3 px-4">{row.feature}</td>
                     <td className="py-3 px-4 text-center">{row.ifw}</td>
-                    <td className="py-3 px-4 text-center text-[var(--ifw-text-muted)]">{row.lawyer}</td>
-                    <td className="py-3 px-4 text-center text-[var(--ifw-text-muted)]">{row.diy}</td>
+                    <td className="py-3 px-4 text-center text-[var(--ifw-text-muted)]">
+                      {row.lawyer}
+                    </td>
+                    <td className="py-3 px-4 text-center text-[var(--ifw-text-muted)]">
+                      {row.diy}
+                    </td>
                   </tr>
                 ))}
               </tbody>

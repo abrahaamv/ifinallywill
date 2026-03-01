@@ -108,46 +108,6 @@ function mapPoaTemplateData(
   };
 }
 
-/**
- * Wrap HTML content in a full document with print-ready styling
- */
-function wrapHtmlForPdf(htmlContent: string, title: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${title}</title>
-  <style>
-    @page { size: letter; margin: 1in; }
-    body {
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 12pt;
-      line-height: 1.6;
-      color: #000;
-      max-width: 6.5in;
-      margin: 0 auto;
-      padding: 0;
-    }
-    h1 { font-size: 16pt; text-align: center; margin-bottom: 24pt; text-transform: uppercase; }
-    h2 { font-size: 14pt; margin-top: 18pt; margin-bottom: 12pt; }
-    h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 8pt; }
-    p { margin-bottom: 8pt; text-align: justify; }
-    ol, ul { margin-bottom: 8pt; padding-left: 24pt; }
-    li { margin-bottom: 4pt; }
-    .signature-line {
-      border-bottom: 1px solid #000;
-      width: 250px;
-      display: inline-block;
-      margin-top: 36pt;
-    }
-    .signature-block { margin-top: 48pt; }
-    .witness-block { margin-top: 36pt; }
-  </style>
-</head>
-<body>${htmlContent}</body>
-</html>`;
-}
-
 export const documentGenerationRouter = router({
   /** Generate a document for a specific order item */
   generate: protectedMutation
@@ -256,62 +216,6 @@ export const documentGenerationRouter = router({
         .where(eq(documentOrders.id, input.orderId));
 
       return generated;
-    }),
-
-  /** Generate a PDF from a generated document's HTML content */
-  generatePdf: protectedMutation
-    .input(z.object({ generatedDocId: z.string().uuid() }))
-    .mutation(async ({ input, ctx }) => {
-      // Get the generated document
-      const genDoc = await ctx.db.query.generatedDocuments.findFirst({
-        where: eq(generatedDocuments.id, input.generatedDocId),
-      });
-
-      if (!genDoc) throw new Error('Generated document not found');
-
-      // Verify ownership via order
-      const order = await ctx.db.query.documentOrders.findFirst({
-        where: and(
-          eq(documentOrders.id, genDoc.orderId),
-          eq(documentOrders.tenantId, ctx.tenantId),
-        ),
-      });
-
-      if (!order) throw new Error('Access denied');
-
-      const htmlContent = (genDoc as Record<string, unknown>).htmlContent as string;
-      if (!htmlContent) throw new Error('No HTML content available');
-
-      // Generate PDF using Puppeteer
-      try {
-        const puppeteer = await import('puppeteer');
-        const browser = await puppeteer.default.launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
-
-        const page = await browser.newPage();
-
-        const fullHtml = wrapHtmlForPdf(htmlContent, 'Estate Document');
-        await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-
-        const pdfBuffer = await page.pdf({
-          format: 'letter',
-          margin: { top: '1in', bottom: '1in', left: '1in', right: '1in' },
-          printBackground: true,
-        });
-
-        await browser.close();
-
-        // Convert to base64 for transport
-        const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-
-        return { pdfBase64 };
-      } catch (err) {
-        // If Puppeteer is not available, return the HTML for client-side printing
-        const fullHtml = wrapHtmlForPdf(htmlContent, 'Estate Document');
-        return { htmlFallback: fullHtml };
-      }
     }),
 
   /** List generated documents for the current user */

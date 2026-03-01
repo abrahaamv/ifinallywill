@@ -6,10 +6,15 @@
  */
 
 import { useMemo } from 'react';
-import { trpc } from '../utils/trpc';
-import { buildWizardContext, getStepsByCategory, calculateProgress, isCategoryComplete } from '../lib/wizard';
 import type { WillData } from '../lib/types';
+import {
+  buildWizardContext,
+  calculateProgress,
+  getStepsByCategory,
+  isCategoryComplete,
+} from '../lib/wizard';
 import type { WizardCategory, WizardContext } from '../lib/wizard';
+import { trpc } from '../utils/trpc';
 
 export interface CategoryCompletion {
   category: WizardCategory;
@@ -31,7 +36,12 @@ export interface PersonalData {
     coupleDocId?: string | null;
   } | null;
   willData: WillData;
-  keyPeople: Array<{ id: string; fullName: string; relationship: string; dateOfBirth?: string | null }>;
+  keyPeople: Array<{
+    id: string;
+    fullName: string;
+    relationship: string;
+    dateOfBirth?: string | null;
+  }>;
   assets: Array<{ id: string; name: string; category: string }>;
   wizardContext: WizardContext;
   completedSteps: Set<string>;
@@ -46,12 +56,12 @@ export interface PersonalData {
 export function usePersonalData(docId: string | undefined): PersonalData {
   const { data: doc, isLoading: docLoading } = trpc.estateDocuments.get.useQuery(
     { id: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   const { data: willDataResult, isLoading: willLoading } = trpc.willData.get.useQuery(
     { estateDocId: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   const { data: keyPeople } = trpc.keyNames.list.useQuery();
@@ -61,26 +71,20 @@ export function usePersonalData(docId: string | undefined): PersonalData {
 
   const wizardContext = useMemo(() => {
     const children = (keyPeople ?? []).filter(
-      (p: { relationship: string }) => p.relationship === 'child',
+      (p: { relationship: string }) => p.relationship === 'child'
     );
     return buildWizardContext({
       willData: willData ?? null,
       children,
       assetCount: (assets ?? []).length,
       isSecondaryWill: doc?.documentType === 'secondary_will',
-      isCouples: !!(doc as Record<string, unknown> | undefined)?.coupleDocId,
+      isCouples: !!(doc as { coupleDocId?: string | null } | undefined)?.coupleDocId,
     });
   }, [willData, keyPeople, assets, doc]);
 
-  const completedStepsArray = useMemo(
-    () => willData?.completedSteps ?? [],
-    [willData],
-  );
+  const completedStepsArray = useMemo(() => willData?.completedSteps ?? [], [willData]);
 
-  const completedSteps = useMemo(
-    () => new Set(completedStepsArray),
-    [completedStepsArray],
-  );
+  const completedSteps = useMemo(() => new Set(completedStepsArray), [completedStepsArray]);
 
   const categoryCompletions = useMemo((): CategoryCompletion[] => {
     const grouped = getStepsByCategory(wizardContext);
@@ -100,12 +104,12 @@ export function usePersonalData(docId: string | undefined): PersonalData {
 
   const overallProgress = useMemo(
     () => calculateProgress(wizardContext, completedSteps),
-    [wizardContext, completedSteps],
+    [wizardContext, completedSteps]
   );
 
   const personalInfo = willData?.personalInfo as { fullName?: string } | undefined;
   const ownerName = personalInfo?.fullName ?? 'You';
-  const isCouple = !!(doc as Record<string, unknown> | undefined)?.coupleDocId;
+  const isCouple = !!(doc as { coupleDocId?: string | null } | undefined)?.coupleDocId;
 
   return {
     doc: doc
@@ -116,7 +120,7 @@ export function usePersonalData(docId: string | undefined): PersonalData {
           country: doc.country,
           status: doc.status,
           completionPct: doc.completionPct,
-          coupleDocId: (doc as Record<string, unknown>).coupleDocId as string | null | undefined,
+          coupleDocId: (doc as { coupleDocId?: string | null }).coupleDocId ?? null,
         }
       : null,
     willData,

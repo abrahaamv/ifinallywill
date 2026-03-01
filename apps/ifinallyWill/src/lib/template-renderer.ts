@@ -160,7 +160,7 @@ export function findPersonInfo(
   name: string,
   relatives: PersonInfo[],
   kids: PersonInfo[],
-  spouseInfo: PersonInfo,
+  spouseInfo: PersonInfo
 ): PersonInfo & { relation: string; telephone: string } {
   const empty = {
     fullName: name || '',
@@ -251,7 +251,7 @@ export function renderBequests(
   bequests: TemplateData['bequests'],
   relatives: PersonInfo[],
   kids: PersonInfo[],
-  spouseInfo: PersonInfo,
+  spouseInfo: PersonInfo
 ): string {
   if (!bequests?.length) return '';
 
@@ -261,8 +261,7 @@ export function renderBequests(
   // Group by shared_uuid
   const groups = new Map<string, typeof nonCustom>();
   for (const item of nonCustom) {
-    const key =
-      item.shared_uuid ?? `single_${item.id ?? Math.random().toString(36).slice(2, 9)}`;
+    const key = item.shared_uuid ?? `single_${item.id ?? Math.random().toString(36).slice(2, 9)}`;
     const arr = groups.get(key) ?? [];
     arr.push(item);
     groups.set(key, arr);
@@ -319,24 +318,22 @@ function registerHandlebarsHelpers(): void {
 
   // --- String helpers ---
 
-  Handlebars.registerHelper('formatLocation', function (city, province, country) {
+  Handlebars.registerHelper('formatLocation', (city, province, country) => {
     const parts = [city, province, country].filter((p: unknown) => p);
     return new Handlebars.SafeString(parts.length > 0 ? ` of ${parts.join(', ')}` : '');
   });
 
-  Handlebars.registerHelper('capitalLetters', function (text) {
+  Handlebars.registerHelper('capitalLetters', (text) => {
     if (text == null) return '';
     return String(text).toUpperCase();
   });
 
-  Handlebars.registerHelper('concat', function (...args: unknown[]) {
+  Handlebars.registerHelper('concat', (...args: unknown[]) => {
     // Last argument is the Handlebars options object
     return args.slice(0, -1).join('');
   });
 
-  Handlebars.registerHelper('subtract', function (a: number, b: number) {
-    return a - b;
-  });
+  Handlebars.registerHelper('subtract', (a: number, b: number) => a - b);
 
   // --- Logic helpers ---
 
@@ -344,9 +341,7 @@ function registerHandlebarsHelpers(): void {
     return a === b ? options.fn(this) : options.inverse(this);
   });
 
-  Handlebars.registerHelper('eq', function (a, b) {
-    return a === b;
-  });
+  Handlebars.registerHelper('eq', (a, b) => a === b);
 
   Handlebars.registerHelper('if_neq', function (this: unknown, a, b, options) {
     return a !== b ? options.fn(this) : options.inverse(this);
@@ -384,10 +379,10 @@ function registerHandlebarsHelpers(): void {
     function (this: unknown, name, relatives, kids, spouseInfo, options) {
       const personInfo = findPersonInfo(name, relatives || [], kids || [], spouseInfo || {});
       return options.fn(personInfo);
-    },
+    }
   );
 
-  Handlebars.registerHelper('isSpecificRelation', function (relation) {
+  Handlebars.registerHelper('isSpecificRelation', (relation) => {
     const specificRelations = [
       'spouse',
       'brother',
@@ -401,7 +396,7 @@ function registerHandlebarsHelpers(): void {
     return specificRelations.includes(relation?.toLowerCase());
   });
 
-  Handlebars.registerHelper('get', function (obj, prop) {
+  Handlebars.registerHelper('get', (obj, prop) => {
     if (!obj) return '';
     const properties = String(prop).split('.');
     let value: unknown = obj;
@@ -412,22 +407,21 @@ function registerHandlebarsHelpers(): void {
     return value === undefined ? '' : value;
   });
 
-  Handlebars.registerHelper('debug', function (value) {
-    console.log('Template Debug:', value);
+  Handlebars.registerHelper('debug', (value) => {
+    if (import.meta.env.DEV) {
+      console.log('Template Debug:', value);
+    }
     return JSON.stringify(value, null, 2);
   });
 
   // --- Complex helpers ---
 
-  Handlebars.registerHelper(
-    'renderBequests',
-    function (bequests, relatives, kids, spouseInfo) {
-      if (!bequests) return '';
-      return new Handlebars.SafeString(
-        renderBequests(bequests, relatives || [], kids || [], spouseInfo || {}),
-      );
-    },
-  );
+  Handlebars.registerHelper('renderBequests', (bequests, relatives, kids, spouseInfo) => {
+    if (!bequests) return '';
+    return new Handlebars.SafeString(
+      renderBequests(bequests, relatives || [], kids || [], spouseInfo || {})
+    );
+  });
 
   Handlebars.registerHelper('groupByPriority', function (this: unknown, executors, options) {
     if (!executors || !Array.isArray(executors) || executors.length === 0) {
@@ -437,13 +431,13 @@ function registerHandlebarsHelpers(): void {
     const grouped: Record<number, unknown[]> = {};
     for (const executor of executors) {
       if (!executor) continue;
-      const priority = (executor as Record<string, unknown>).priority as number || 0;
+      const priority = ((executor as Record<string, unknown>).priority as number) || 0;
       if (!grouped[priority]) grouped[priority] = [];
       grouped[priority].push(executor);
     }
 
     const sortedGroups = Object.entries(grouped)
-      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+      .sort(([a], [b]) => Number.parseInt(a) - Number.parseInt(b))
       .map(([, group]) => group);
 
     return options.fn({ groups: sortedGroups });
@@ -487,13 +481,13 @@ function registerHandlebarsHelpers(): void {
     const grouped: Record<number, unknown[]> = {};
     for (const guardian of guardians) {
       if (!guardian) continue;
-      const position = (guardian as Record<string, unknown>).position as number || 0;
+      const position = ((guardian as Record<string, unknown>).position as number) || 0;
       if (!grouped[position]) grouped[position] = [];
       grouped[position].push(guardian);
     }
 
     const sortedGroups = Object.entries(grouped)
-      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+      .sort(([a], [b]) => Number.parseInt(a) - Number.parseInt(b))
       .map(([, group]) => group);
 
     return options.fn({ groups: sortedGroups });
@@ -527,10 +521,7 @@ function compileSections(sections: TemplateSection[]): string {
  * Render a document from template sections and data.
  * Uses real Handlebars with all 21 v6 helpers registered.
  */
-export function renderDocument(
-  sections: TemplateSection[],
-  data: Partial<TemplateData>,
-): string {
+export function renderDocument(sections: TemplateSection[], data: Partial<TemplateData>): string {
   const safeData: TemplateData = {
     personal: { fullName: '', city: '', province: '' },
     isMarried: false,
@@ -562,7 +553,9 @@ export function renderDocument(
     const compiled = Handlebars.compile(templateString);
     return compiled(safeData);
   } catch (error) {
-    console.error('Error rendering template:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error rendering template:', error);
+    }
     return `<p>Error rendering template: ${error instanceof Error ? error.message : String(error)}</p>`;
   }
 }

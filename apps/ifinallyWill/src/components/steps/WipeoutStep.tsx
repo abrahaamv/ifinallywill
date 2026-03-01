@@ -10,18 +10,25 @@
  * - Organization vs person mode toggle
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { wipeoutSchema } from '@platform/api-contract/schemas';
+import type { wipeoutSchema } from '@platform/api-contract/schemas';
+import { useEffect, useMemo, useState } from 'react';
 import type { z } from 'zod';
-import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 
 type WipeoutData = z.infer<typeof wipeoutSchema>;
 type BeneficiaryRow = NonNullable<WipeoutData['table_dataBequest']>[number];
 
-export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function WipeoutStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.wipeout as WipeoutData | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'wipeout' });
   const { data: keyPeople } = trpc.keyNames.list.useQuery();
@@ -32,18 +39,42 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
   const familyOptions = useMemo(() => {
     if (isMarried) {
       return [
-        { icon: '👨‍👩‍👧‍👦', title: '50% Parents & Siblings', subtitle: "50% to spouse's family", value: '50% to parents and siblings and 50% to parents and siblings of spouse' },
-        { icon: '👥', title: '50% Siblings Each', subtitle: 'Split between families', value: '50% to siblings and 50% to siblings of spouse' },
+        {
+          icon: '👨‍👩‍👧‍👦',
+          title: '50% Parents & Siblings',
+          subtitle: "50% to spouse's family",
+          value: '50% to parents and siblings and 50% to parents and siblings of spouse',
+        },
+        {
+          icon: '👥',
+          title: '50% Siblings Each',
+          subtitle: 'Split between families',
+          value: '50% to siblings and 50% to siblings of spouse',
+        },
       ];
     }
     return [
-      { icon: '👨‍👩‍👧‍👦', title: '100% Parents & Siblings', subtitle: 'Per stirpes distribution', value: '100% to parents and siblings' },
-      { icon: '👥', title: '100% Siblings', subtitle: 'Per stirpes distribution', value: '100% to siblings' },
+      {
+        icon: '👨‍👩‍👧‍👦',
+        title: '100% Parents & Siblings',
+        subtitle: 'Per stirpes distribution',
+        value: '100% to parents and siblings',
+      },
+      {
+        icon: '👥',
+        title: '100% Siblings',
+        subtitle: 'Per stirpes distribution',
+        value: '100% to siblings',
+      },
     ];
   }, [isMarried]);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(existing?.selectedCategory ?? '');
-  const [beneficiaries, setBeneficiaries] = useState<BeneficiaryRow[]>(existing?.table_dataBequest ?? []);
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    existing?.selectedCategory ?? ''
+  );
+  const [beneficiaries, setBeneficiaries] = useState<BeneficiaryRow[]>(
+    existing?.table_dataBequest ?? []
+  );
   const [availableShares, setAvailableShares] = useState<number>(existing?.availableShares ?? 100);
 
   // Specific beneficiary sub-form state
@@ -67,24 +98,40 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
 
   const addBeneficiary = () => {
     setFormError('');
-    if (!beneficiary.trim()) { setFormError('Beneficiary is required'); return; }
-    if (!isOrg && beneficiary === backup) { setFormError("Beneficiary and backup can't be the same"); return; }
-    const sharesNum = parseInt(shares, 10);
+    if (!beneficiary.trim()) {
+      setFormError('Beneficiary is required');
+      return;
+    }
+    if (!isOrg && beneficiary === backup) {
+      setFormError("Beneficiary and backup can't be the same");
+      return;
+    }
+    const sharesNum = Number.parseInt(shares, 10);
     if (isNaN(sharesNum) || sharesNum <= 0 || sharesNum > availableShares) {
       setFormError(`Please enter a valid number between 1 and ${availableShares}`);
       return;
     }
-    if (!isOrg && !shareType) { setFormError('Please select a distribution type'); return; }
+    if (!isOrg && !shareType) {
+      setFormError('Please select a distribution type');
+      return;
+    }
 
-    setBeneficiaries((prev) => [...prev, {
-      beneficiary: beneficiary.trim(),
-      backup: isOrg ? undefined : backup || undefined,
-      type: isOrg ? undefined : (shareType as 'per_stirpes' | 'per_capita'),
-      shares: sharesNum,
-      isOrganization: isOrg || undefined,
-    }]);
+    setBeneficiaries((prev) => [
+      ...prev,
+      {
+        beneficiary: beneficiary.trim(),
+        backup: isOrg ? undefined : backup || undefined,
+        type: isOrg ? undefined : (shareType as 'per_stirpes' | 'per_capita'),
+        shares: sharesNum,
+        isOrganization: isOrg || undefined,
+      },
+    ]);
     setAvailableShares((prev) => prev - sharesNum);
-    setBeneficiary(''); setBackup(''); setShareType(''); setShares(''); setIsOrg(false);
+    setBeneficiary('');
+    setBackup('');
+    setShareType('');
+    setShares('');
+    setIsOrg(false);
   };
 
   const removeBeneficiary = (index: number) => {
@@ -113,9 +160,9 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
       <div className="space-y-6">
         {/* Info box */}
         <div className="ifw-info-box">
-          <strong>What is a wipeout clause?</strong> A wipeout clause ensures your estate goes to someone
-          you choose, even if all your named beneficiaries are unable to inherit. Without it, provincial
-          intestacy laws would decide.
+          <strong>What is a wipeout clause?</strong> A wipeout clause ensures your estate goes to
+          someone you choose, even if all your named beneficiaries are unable to inherit. Without
+          it, provincial intestacy laws would decide.
         </div>
 
         {/* Family distribution cards */}
@@ -153,7 +200,9 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
               <span className="text-xl flex-shrink-0">📋</span>
               <div>
                 <div className="font-medium text-sm">Specific Wipeout Beneficiary</div>
-                <div className="text-xs text-[var(--ifw-text-muted)]">Choose specific people or organizations</div>
+                <div className="text-xs text-[var(--ifw-text-muted)]">
+                  Choose specific people or organizations
+                </div>
               </div>
             </button>
             <button
@@ -183,7 +232,16 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
 
             {/* Organization toggle */}
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isOrg} onChange={(e) => { setIsOrg(e.target.checked); setBackup(''); setShareType(''); }} className="h-4 w-4 rounded" />
+              <input
+                type="checkbox"
+                checked={isOrg}
+                onChange={(e) => {
+                  setIsOrg(e.target.checked);
+                  setBackup('');
+                  setShareType('');
+                }}
+                className="h-4 w-4 rounded"
+              />
               This is an organization (not a person)
             </label>
 
@@ -193,9 +251,19 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   {isOrg ? 'Organization Name *' : 'Beneficiary *'}
                 </label>
                 {isOrg ? (
-                  <input type="text" value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} className="ifw-input" placeholder="Enter organization name" />
+                  <input
+                    type="text"
+                    value={beneficiary}
+                    onChange={(e) => setBeneficiary(e.target.value)}
+                    className="ifw-input"
+                    placeholder="Enter organization name"
+                  />
                 ) : (
-                  <select value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} className="ifw-input">
+                  <select
+                    value={beneficiary}
+                    onChange={(e) => setBeneficiary(e.target.value)}
+                    className="ifw-input"
+                  >
                     <option value="">Select person...</option>
                     {(keyPeople ?? []).map((p) => (
                       <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
@@ -209,20 +277,34 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
               {!isOrg && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Backup</label>
-                  <select value={backup} onChange={(e) => setBackup(e.target.value)} className="ifw-input">
+                  <select
+                    value={backup}
+                    onChange={(e) => setBackup(e.target.value)}
+                    className="ifw-input"
+                  >
                     <option value="">None</option>
-                    {(keyPeople ?? []).filter((p) => `${p.firstName} ${p.lastName}` !== beneficiary).map((p) => (
-                      <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
-                        {p.firstName} {p.lastName}
-                      </option>
-                    ))}
+                    {(keyPeople ?? [])
+                      .filter((p) => `${p.firstName} ${p.lastName}` !== beneficiary)
+                      .map((p) => (
+                        <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
+                          {p.firstName} {p.lastName}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium mb-1">Shares *</label>
-                <input type="number" value={shares} onChange={(e) => setShares(e.target.value)} className="ifw-input" min={1} max={availableShares} placeholder={`1-${availableShares}`} />
+                <input
+                  type="number"
+                  value={shares}
+                  onChange={(e) => setShares(e.target.value)}
+                  className="ifw-input"
+                  min={1}
+                  max={availableShares}
+                  placeholder={`1-${availableShares}`}
+                />
               </div>
 
               {!isOrg && (
@@ -230,11 +312,23 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   <label className="block text-sm font-medium mb-1">Distribution Type *</label>
                   <div className="flex gap-4 mt-2">
                     <label className="flex items-center gap-1.5 text-sm">
-                      <input type="radio" name="wipeout-type" value="per_stirpes" checked={shareType === 'per_stirpes'} onChange={() => setShareType('per_stirpes')} />
+                      <input
+                        type="radio"
+                        name="wipeout-type"
+                        value="per_stirpes"
+                        checked={shareType === 'per_stirpes'}
+                        onChange={() => setShareType('per_stirpes')}
+                      />
                       Per Stirpes
                     </label>
                     <label className="flex items-center gap-1.5 text-sm">
-                      <input type="radio" name="wipeout-type" value="per_capita" checked={shareType === 'per_capita'} onChange={() => setShareType('per_capita')} />
+                      <input
+                        type="radio"
+                        name="wipeout-type"
+                        value="per_capita"
+                        checked={shareType === 'per_capita'}
+                        onChange={() => setShareType('per_capita')}
+                      />
                       Per Capita
                     </label>
                   </div>
@@ -244,8 +338,12 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
 
             {formError && <p className="text-xs text-[var(--ifw-error)]">{formError}</p>}
 
-            <button type="button" onClick={addBeneficiary} disabled={availableShares <= 0}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--ifw-primary-500)] text-[var(--ifw-primary-text)] hover:bg-[var(--ifw-primary-hover)] disabled:opacity-40 transition-colors">
+            <button
+              type="button"
+              onClick={addBeneficiary}
+              disabled={availableShares <= 0}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--ifw-primary-500)] text-[var(--ifw-primary-text)] hover:bg-[var(--ifw-primary-hover)] disabled:opacity-40 transition-colors"
+            >
               Add Beneficiary
             </button>
 
@@ -265,13 +363,35 @@ export function WipeoutStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   <tbody>
                     {beneficiaries.map((row, i) => (
                       <tr key={i} className="border-t border-[var(--ifw-border)]">
-                        <td className="px-3 py-2">{row.beneficiary}{row.isOrganization ? ' (Org)' : ''}</td>
-                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">{row.backup ?? '—'}</td>
-                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">{row.type === 'per_stirpes' ? 'Per Stirpes' : row.type === 'per_capita' ? 'Per Capita' : '—'}</td>
+                        <td className="px-3 py-2">
+                          {row.beneficiary}
+                          {row.isOrganization ? ' (Org)' : ''}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">
+                          {row.backup ?? '—'}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">
+                          {row.type === 'per_stirpes'
+                            ? 'Per Stirpes'
+                            : row.type === 'per_capita'
+                              ? 'Per Capita'
+                              : '—'}
+                        </td>
                         <td className="px-3 py-2 text-right">{row.shares}</td>
-                        <td className="px-3 py-2 text-right">{totalShares > 0 ? ((row.shares ?? 0) / totalShares * 100).toFixed(1) : 0}%</td>
                         <td className="px-3 py-2 text-right">
-                          <button type="button" onClick={() => removeBeneficiary(i)} className="text-xs text-[var(--ifw-error)] hover:underline">Remove</button>
+                          {totalShares > 0
+                            ? (((row.shares ?? 0) / totalShares) * 100).toFixed(1)
+                            : 0}
+                          %
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => removeBeneficiary(i)}
+                            className="text-xs text-[var(--ifw-error)] hover:underline"
+                          >
+                            Remove
+                          </button>
                         </td>
                       </tr>
                     ))}

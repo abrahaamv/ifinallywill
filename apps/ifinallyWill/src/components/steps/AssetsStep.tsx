@@ -3,11 +3,17 @@
  */
 
 import { useState } from 'react';
+import type { StepProps } from '../../lib/types';
 import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
-import type { StepProps } from '../../lib/types';
 
-export function AssetsStep({ estateDocId: _estateDocId, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function AssetsStep({
+  estateDocId: _estateDocId,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const [showForm, setShowForm] = useState(false);
   const [description, setDescription] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);

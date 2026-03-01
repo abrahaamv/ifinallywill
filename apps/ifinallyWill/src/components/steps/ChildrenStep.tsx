@@ -3,12 +3,18 @@
  */
 
 import { useState } from 'react';
-import { trpc } from '../../utils/trpc';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonForm } from '../shared/PersonForm';
 import type { StepProps } from '../../lib/types';
+import { trpc } from '../../utils/trpc';
+import { PersonForm } from '../shared/PersonForm';
+import { StepLayout } from '../shared/StepLayout';
 
-export function ChildrenStep({ estateDocId: _estateDocId, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function ChildrenStep({
+  estateDocId: _estateDocId,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const [showForm, setShowForm] = useState(false);
   const utils = trpc.useUtils();
   const { data: people } = trpc.keyNames.list.useQuery();

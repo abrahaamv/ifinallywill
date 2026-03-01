@@ -235,57 +235,6 @@ export async function seed() {
 
     // ==================== IFinallyWill Seed Data ====================
 
-    // Seed estate documents for admin user (Ontario, all 4 doc types)
-    const province = 'ON';
-    const docTypes = ['primary_will', 'poa_property', 'poa_health'] as const;
-
-    // Disable RLS on willsystem tables
-    await db.execute(sql`ALTER TABLE estate_documents DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE will_data DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE poa_data DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE key_names DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE estate_assets DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE bequests DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_types DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE asset_classes DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_orders DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_order_items DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE generated_documents DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE partners DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE discount_codes DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE code_usages DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE template_versions DISABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE api_tenants DISABLE ROW LEVEL SECURITY`);
-
-    for (const docType of docTypes) {
-      const [estateDoc] = await db
-        .insert(schema.estateDocuments)
-        .values({
-          userId: admin.id,
-          tenantId: tenant.id,
-          documentType: docType,
-          province,
-          country: 'Canada',
-          status: 'draft',
-          completionPct: 0,
-        })
-        .returning();
-
-      if (docType === 'primary_will') {
-        await db.insert(schema.willData).values({
-          estateDocId: estateDoc.id,
-          tenantId: tenant.id,
-        });
-        logger.info('✅ Created primary will + willData', { estateDocId: estateDoc.id });
-      } else {
-        await db.insert(schema.poaData).values({
-          estateDocId: estateDoc.id,
-          tenantId: tenant.id,
-        });
-        logger.info(`✅ Created ${docType} + poaData`, { estateDocId: estateDoc.id });
-      }
-    }
-
     // Seed asset classes (reference data — 20 types)
     const assetClassValues = [
       { classNumber: 1, name: 'Real Estate - Primary Residence', fieldSchema: [{ name: 'address', label: 'Address', type: 'text' as const, required: true }, { name: 'estimatedValue', label: 'Estimated Value', type: 'currency' as const }] },
@@ -331,22 +280,6 @@ export async function seed() {
     await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
     await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE estate_documents ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE will_data ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE poa_data ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE key_names ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE estate_assets ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE bequests ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_types ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE asset_classes ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_orders ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE document_order_items ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE generated_documents ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE partners ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE discount_codes ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE code_usages ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE template_versions ENABLE ROW LEVEL SECURITY`);
-    await db.execute(sql`ALTER TABLE api_tenants ENABLE ROW LEVEL SECURITY`);
     logger.info('✅ Re-enabled RLS after seeding');
 
     logger.info('🎉 Seeding complete!');
@@ -361,22 +294,6 @@ export async function seed() {
       await db.execute(sql`ALTER TABLE widgets ENABLE ROW LEVEL SECURITY`);
       await db.execute(sql`ALTER TABLE knowledge_documents ENABLE ROW LEVEL SECURITY`);
       await db.execute(sql`ALTER TABLE ai_personalities ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE estate_documents ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE will_data ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE poa_data ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE key_names ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE estate_assets ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE bequests ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE document_types ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE asset_classes ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE document_orders ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE document_order_items ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE generated_documents ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE partners ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE discount_codes ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE code_usages ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE template_versions ENABLE ROW LEVEL SECURITY`);
-      await db.execute(sql`ALTER TABLE api_tenants ENABLE ROW LEVEL SECURITY`);
       logger.info('✅ Re-enabled RLS in error handler');
     } catch (rlsError) {
       logger.error('❌ Failed to re-enable RLS', { error: rlsError });

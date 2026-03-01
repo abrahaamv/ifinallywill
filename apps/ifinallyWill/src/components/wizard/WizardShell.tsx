@@ -5,33 +5,33 @@
  */
 
 import { useMemo } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { trpc } from '../../utils/trpc';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useWizardNavigation } from '../../hooks/useWizardNavigation';
+import type { StepProps, WillData } from '../../lib/types';
 import { buildWizardContext } from '../../lib/wizard';
-import type { WillData, StepProps } from '../../lib/types';
-import { WizardSidebar } from './WizardSidebar';
-import { WizardProgress } from './WizardProgress';
-import { ProfileBanner } from './ProfileBanner';
+import { trpc } from '../../utils/trpc';
 import { WilfredPanel } from '../wilfred/WilfredPanel';
+import { ProfileBanner } from './ProfileBanner';
+import { WizardProgress } from './WizardProgress';
+import { WizardSidebar } from './WizardSidebar';
 
-// Step components
-import { PersonalInfoStep } from '../steps/PersonalInfoStep';
-import { FamilyStatusStep } from '../steps/FamilyStatusStep';
-import { SpouseInfoStep } from '../steps/SpouseInfoStep';
-import { ChildrenStep } from '../steps/ChildrenStep';
-import { KeyPeopleStep } from '../steps/KeyPeopleStep';
-import { GuardianStep } from '../steps/GuardianStep';
-import { PetGuardianStep } from '../steps/PetGuardianStep';
+import { AdditionalStep } from '../steps/AdditionalStep';
 import { AssetsStep } from '../steps/AssetsStep';
 import { BequestsStep } from '../steps/BequestsStep';
-import { ResidueStep } from '../steps/ResidueStep';
-import { InheritanceStep } from '../steps/InheritanceStep';
+import { ChildrenStep } from '../steps/ChildrenStep';
 import { ExecutorsStep } from '../steps/ExecutorsStep';
-import { WipeoutStep } from '../steps/WipeoutStep';
-import { AdditionalStep } from '../steps/AdditionalStep';
+import { FamilyStatusStep } from '../steps/FamilyStatusStep';
 import { FinalDetailsStep } from '../steps/FinalDetailsStep';
+import { GuardianStep } from '../steps/GuardianStep';
+import { InheritanceStep } from '../steps/InheritanceStep';
+import { KeyPeopleStep } from '../steps/KeyPeopleStep';
+// Step components
+import { PersonalInfoStep } from '../steps/PersonalInfoStep';
+import { PetGuardianStep } from '../steps/PetGuardianStep';
+import { ResidueStep } from '../steps/ResidueStep';
 import { ReviewStep } from '../steps/ReviewStep';
+import { SpouseInfoStep } from '../steps/SpouseInfoStep';
+import { WipeoutStep } from '../steps/WipeoutStep';
 
 /** Re-export for backward compat */
 export type { StepProps } from '../../lib/types';
@@ -62,12 +62,12 @@ export function WizardShell() {
   // Fetch document + will data
   const { data: doc, isLoading: docLoading } = trpc.estateDocuments.get.useQuery(
     { id: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   const { data: willDataResult, isLoading: willLoading } = trpc.willData.get.useQuery(
     { estateDocId: docId! },
-    { enabled: !!docId },
+    { enabled: !!docId }
   );
 
   const { data: keyPeople } = trpc.keyNames.list.useQuery();
@@ -81,7 +81,7 @@ export function WizardShell() {
       children,
       assetCount: (assets ?? []).length,
       isSecondaryWill: doc?.documentType === 'secondary_will',
-      isCouples: !!(doc as Record<string, unknown> | undefined)?.coupleDocId,
+      isCouples: !!(doc as { coupleDocId?: string | null })?.coupleDocId,
     });
   }, [willDataResult, keyPeople, assets, doc]);
 
@@ -111,8 +111,8 @@ export function WizardShell() {
     return <Navigate to="/app/dashboard" replace />;
   }
 
-  const coupleDocId = (doc as Record<string, unknown>).coupleDocId as string | null | undefined;
-  const willData = (willDataResult as Record<string, unknown>) ?? {};
+  const coupleDocId = (doc as { coupleDocId?: string | null }).coupleDocId ?? null;
+  const willData = (willDataResult as WillData) ?? {};
   const personalInfo = willData.personalInfo as { fullName?: string } | undefined;
   const ownerName = personalInfo?.fullName ?? 'You';
 
@@ -182,7 +182,14 @@ export function WizardShell() {
           />
         ) : (
           <div className="p-8 text-center text-[var(--ifw-neutral-500)]">
-            Step not found. <button type="button" onClick={() => nav.goToStep('personal-info')} className="underline">Go to first step</button>
+            Step not found.{' '}
+            <button
+              type="button"
+              onClick={() => nav.goToStep('personal-info')}
+              className="underline"
+            >
+              Go to first step
+            </button>
           </div>
         )}
       </main>

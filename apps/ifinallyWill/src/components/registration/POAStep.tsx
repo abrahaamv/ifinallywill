@@ -27,20 +27,11 @@ export function POAStep({ data, onUpdate, onNext, onBack }: Props) {
     <div className="animate-slide-in-right">
       <SectionTitle>What if you are incapacitated?</SectionTitle>
       <StepSubtitle>
-        If you&apos;re incapacitated and unable to make decisions, who will manage your
-        finances and medical care? A Power of Attorney lets your chosen person make
-        decisions for you.
+        If you&apos;re incapacitated and unable to make decisions, who will manage your finances and
+        medical care? A Power of Attorney lets your chosen person make decisions for you.
       </StepSubtitle>
 
-      <div
-        style={{
-          maxWidth: '700px',
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '1.25rem',
-        }}
-      >
+      <div className="options-grid-2col">
         <OptionCard
           selected={data.poa_type === 'property'}
           onClick={() => selectOption('property')}

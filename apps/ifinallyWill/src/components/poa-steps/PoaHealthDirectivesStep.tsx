@@ -4,8 +4,8 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
 interface Statements {
@@ -15,10 +15,15 @@ interface Statements {
   otherDirectives?: string;
 }
 
-export function PoaHealthDirectivesStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
-  const healthDetails = (existingPoa as Record<string, unknown>)?.healthDetails as {
-    organDonation?: boolean; dnr?: boolean; statements?: Statements;
-  } | undefined;
+export function PoaHealthDirectivesStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
+  const healthDetails = existingPoa?.healthDetails;
 
   const [statements, setStatements] = useState<Statements>(healthDetails?.statements ?? {});
   const updateHealth = trpc.poaData.updateHealthDetails.useMutation();
@@ -28,14 +33,17 @@ export function PoaHealthDirectivesStep({ estateDocId, poaData: existingPoa, onN
   };
 
   const handleNext = () => {
-    updateHealth.mutate({
-      estateDocId,
-      data: {
-        organDonation: healthDetails?.organDonation ?? false,
-        dnr: healthDetails?.dnr ?? false,
-        statements,
+    updateHealth.mutate(
+      {
+        estateDocId,
+        data: {
+          organDonation: healthDetails?.organDonation ?? false,
+          dnr: healthDetails?.dnr ?? false,
+          statements,
+        },
       },
-    }, { onSuccess: () => onNext() });
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -50,9 +58,9 @@ export function PoaHealthDirectivesStep({ estateDocId, poaData: existingPoa, onN
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>These are your wishes.</strong> While not all provinces treat these as legally binding,
-          they provide critical guidance to your health care agent and medical professionals about your
-          preferences in difficult medical situations.
+          <strong>These are your wishes.</strong> While not all provinces treat these as legally
+          binding, they provide critical guidance to your health care agent and medical
+          professionals about your preferences in difficult medical situations.
         </div>
 
         <div>

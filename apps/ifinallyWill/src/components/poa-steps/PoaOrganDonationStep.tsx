@@ -4,28 +4,36 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaOrganDonationStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
-  const healthDetails = (existingPoa as Record<string, unknown>)?.healthDetails as {
-    organDonation?: boolean; dnr?: boolean; statements?: Record<string, string>;
-  } | undefined;
+export function PoaOrganDonationStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
+  const healthDetails = existingPoa?.healthDetails;
 
   const [organDonation, setOrganDonation] = useState(healthDetails?.organDonation ?? false);
   const [dnr, setDnr] = useState(healthDetails?.dnr ?? false);
   const updateHealth = trpc.poaData.updateHealthDetails.useMutation();
 
   const handleNext = () => {
-    updateHealth.mutate({
-      estateDocId,
-      data: {
-        organDonation,
-        dnr,
-        statements: healthDetails?.statements,
+    updateHealth.mutate(
+      {
+        estateDocId,
+        data: {
+          organDonation,
+          dnr,
+          statements: healthDetails?.statements,
+        },
       },
-    }, { onSuccess: () => onNext() });
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -53,7 +61,8 @@ export function PoaOrganDonationStep({ estateDocId, poaData: existingPoa, onNext
               <div>
                 <div className="font-medium text-sm">Yes, I wish to donate</div>
                 <div className="text-xs text-[var(--ifw-text-muted)]">
-                  I consent to donating my organs and tissues for transplantation or medical research
+                  I consent to donating my organs and tissues for transplantation or medical
+                  research
                 </div>
               </div>
             </button>
@@ -112,9 +121,10 @@ export function PoaOrganDonationStep({ estateDocId, poaData: existingPoa, onNext
         </div>
 
         <div className="ifw-info-box">
-          <strong>Important:</strong> These wishes guide your health care agent and medical team. In some
-          provinces, a signed DNR may need to be in a specific format provided by the provincial health authority
-          to be legally enforceable. Consult your physician for province-specific requirements.
+          <strong>Important:</strong> These wishes guide your health care agent and medical team. In
+          some provinces, a signed DNR may need to be in a specific format provided by the
+          provincial health authority to be legally enforceable. Consult your physician for
+          province-specific requirements.
         </div>
       </div>
     </StepLayout>

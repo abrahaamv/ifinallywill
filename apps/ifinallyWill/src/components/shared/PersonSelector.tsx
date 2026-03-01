@@ -82,9 +82,7 @@ export function PersonSelector({
                       : 'border-[var(--ifw-neutral-300)]'
                   }`}
                 >
-                  {isSelected && (
-                    <span className="text-white text-xs">✓</span>
-                  )}
+                  {isSelected && <span className="text-white text-xs">✓</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">

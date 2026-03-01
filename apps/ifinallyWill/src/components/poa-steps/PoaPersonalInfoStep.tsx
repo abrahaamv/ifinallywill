@@ -4,15 +4,14 @@
  * Data saved via poaData.updateSection('personalInfo', ...)
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { personalInfoSchema } from '@platform/api-contract/schemas';
+import { useCallback, useEffect, useState } from 'react';
 import type { z } from 'zod';
+import { PROVINCES } from '../../config/provinces';
+import { useAssistantForm } from '../../hooks/useAssistantForm';
+import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
-import { PROVINCES } from '../../config/provinces';
-import { trpc } from '../../utils/trpc';
 
 type FormData = z.infer<typeof personalInfoSchema>;
 
@@ -21,21 +20,41 @@ function formatPhone(value: string): string {
 }
 
 const COMMON_CITIES: Array<{ city: string; province: string }> = [
-  { city: 'Toronto', province: 'ON' }, { city: 'Montreal', province: 'QC' },
-  { city: 'Vancouver', province: 'BC' }, { city: 'Calgary', province: 'AB' },
-  { city: 'Edmonton', province: 'AB' }, { city: 'Ottawa', province: 'ON' },
-  { city: 'Winnipeg', province: 'MB' }, { city: 'Halifax', province: 'NS' },
-  { city: 'Saskatoon', province: 'SK' }, { city: 'Regina', province: 'SK' },
-  { city: 'Victoria', province: 'BC' }, { city: 'Hamilton', province: 'ON' },
-  { city: 'London', province: 'ON' }, { city: 'Kitchener', province: 'ON' },
+  { city: 'Toronto', province: 'ON' },
+  { city: 'Montreal', province: 'QC' },
+  { city: 'Vancouver', province: 'BC' },
+  { city: 'Calgary', province: 'AB' },
+  { city: 'Edmonton', province: 'AB' },
+  { city: 'Ottawa', province: 'ON' },
+  { city: 'Winnipeg', province: 'MB' },
+  { city: 'Halifax', province: 'NS' },
+  { city: 'Saskatoon', province: 'SK' },
+  { city: 'Regina', province: 'SK' },
+  { city: 'Victoria', province: 'BC' },
+  { city: 'Hamilton', province: 'ON' },
+  { city: 'London', province: 'ON' },
+  { city: 'Kitchener', province: 'ON' },
 ];
 
-export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaPersonalInfoStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const existing = existingPoa?.personalInfo as FormData | undefined;
   const updateSection = trpc.poaData.updateSection.useMutation();
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(personalInfoSchema),
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useAssistantForm<FormData>({
+    schema: personalInfoSchema,
     defaultValues: {
       fullName: existing?.fullName ?? '',
       email: existing?.email ?? '',
@@ -49,22 +68,27 @@ export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext,
   });
 
   const values = watch();
-  const [citySuggestions, setCitySuggestions] = useState<Array<{ city: string; province: string }>>([]);
+  const [citySuggestions, setCitySuggestions] = useState<Array<{ city: string; province: string }>>(
+    []
+  );
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleCityInput = useCallback((inputValue: string) => {
-    setValue('city', inputValue);
-    if (inputValue.length >= 2) {
-      const matches = COMMON_CITIES.filter((c) =>
-        c.city.toLowerCase().startsWith(inputValue.toLowerCase())
-      ).slice(0, 5);
-      setCitySuggestions(matches);
-      setShowSuggestions(matches.length > 0);
-    } else {
-      setCitySuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [setValue]);
+  const handleCityInput = useCallback(
+    (inputValue: string) => {
+      setValue('city', inputValue);
+      if (inputValue.length >= 2) {
+        const matches = COMMON_CITIES.filter((c) =>
+          c.city.toLowerCase().startsWith(inputValue.toLowerCase())
+        ).slice(0, 5);
+        setCitySuggestions(matches);
+        setShowSuggestions(matches.length > 0);
+      } else {
+        setCitySuggestions([]);
+        setShowSuggestions(false);
+      }
+    },
+    [setValue]
+  );
 
   const selectCity = (city: string, province: string) => {
     setValue('city', city);
@@ -83,9 +107,12 @@ export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext,
   }, [values.fullName, values.email, values.city, values.province]);
 
   const onSubmit = (data: FormData) => {
-    updateSection.mutate({ estateDocId, section: 'personalInfo', data }, {
-      onSuccess: () => onNext(),
-    });
+    updateSection.mutate(
+      { estateDocId, section: 'personalInfo', data },
+      {
+        onSuccess: () => onNext(),
+      }
+    );
   };
 
   return (
@@ -100,26 +127,50 @@ export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext,
     >
       <div className="space-y-5">
         <div>
-          <label htmlFor="poa-pi-name" className="block text-sm font-medium mb-1">Full Legal Name *</label>
-          <input id="poa-pi-name" {...register('fullName')} className="ifw-input" placeholder="e.g. John David Smith" />
-          {errors.fullName && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.fullName.message}</p>}
+          <label htmlFor="poa-pi-name" className="block text-sm font-medium mb-1">
+            Full Legal Name *
+          </label>
+          <input
+            id="poa-pi-name"
+            {...register('fullName')}
+            className="ifw-input"
+            placeholder="e.g. John David Smith"
+          />
+          {errors.fullName && (
+            <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.fullName.message}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label htmlFor="poa-pi-email" className="block text-sm font-medium mb-1">Email *</label>
+            <label htmlFor="poa-pi-email" className="block text-sm font-medium mb-1">
+              Email *
+            </label>
             <input id="poa-pi-email" type="email" {...register('email')} className="ifw-input" />
-            {errors.email && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.email.message}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="poa-pi-phone" className="block text-sm font-medium mb-1">Phone</label>
-            <input id="poa-pi-phone" type="tel" value={values.phone ?? ''} onChange={handlePhoneChange} className="ifw-input" maxLength={11} />
+            <label htmlFor="poa-pi-phone" className="block text-sm font-medium mb-1">
+              Phone
+            </label>
+            <input
+              id="poa-pi-phone"
+              type="tel"
+              value={values.phone ?? ''}
+              onChange={handlePhoneChange}
+              className="ifw-input"
+              maxLength={11}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="relative">
-            <label htmlFor="poa-pi-city" className="block text-sm font-medium mb-1">City *</label>
+            <label htmlFor="poa-pi-city" className="block text-sm font-medium mb-1">
+              City *
+            </label>
             <input
               id="poa-pi-city"
               type="text"
@@ -130,12 +181,18 @@ export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext,
               placeholder="Start typing..."
               autoComplete="off"
             />
-            {errors.city && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.city.message}</p>}
+            {errors.city && (
+              <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.city.message}</p>
+            )}
             {showSuggestions && citySuggestions.length > 0 && (
               <ul className="absolute z-10 top-full left-0 right-0 mt-1 border border-[var(--ifw-border)] rounded-lg bg-[var(--ifw-bg-light)] shadow-md max-h-48 overflow-y-auto">
                 {citySuggestions.map((s) => (
                   <li key={`${s.city}-${s.province}`}>
-                    <button type="button" className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--ifw-surface-hover)]" onMouseDown={() => selectCity(s.city, s.province)}>
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--ifw-surface-hover)]"
+                      onMouseDown={() => selectCity(s.city, s.province)}
+                    >
                       {s.city}, {PROVINCES.find((p) => p.code === s.province)?.name ?? s.province}
                     </button>
                   </li>
@@ -144,20 +201,26 @@ export function PoaPersonalInfoStep({ estateDocId, poaData: existingPoa, onNext,
             )}
           </div>
           <div>
-            <label htmlFor="poa-pi-province" className="block text-sm font-medium mb-1">Province *</label>
+            <label htmlFor="poa-pi-province" className="block text-sm font-medium mb-1">
+              Province *
+            </label>
             <select id="poa-pi-province" {...register('province')} className="ifw-input">
               <option value="">Select province...</option>
               {PROVINCES.map((p) => (
-                <option key={p.code} value={p.code}>{p.name}</option>
+                <option key={p.code} value={p.code}>
+                  {p.name}
+                </option>
               ))}
             </select>
-            {errors.province && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.province.message}</p>}
+            {errors.province && (
+              <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.province.message}</p>
+            )}
           </div>
         </div>
 
         <div className="ifw-info-box">
-          <strong>Power of Attorney</strong> allows someone you trust to make financial or property decisions
-          on your behalf. This document must comply with the laws of your province.
+          <strong>Power of Attorney</strong> allows someone you trust to make financial or property
+          decisions on your behalf. This document must comply with the laws of your province.
         </div>
       </div>
     </StepLayout>

@@ -3,7 +3,7 @@
  * Ported from v6 PartnerNameStep.jsx
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { RegistrationData } from '../../hooks/useRegistrationWizard';
 import { FloatingInput } from './primitives/FloatingInput';
 import { NavButtons } from './primitives/NavButtons';
@@ -99,20 +99,35 @@ export function PartnerNameStep({ data, onUpdate, onNext, onBack }: Props) {
             border: '1px solid var(--color-border, #E5E7EB)',
           }}
         >
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+          <label
+            style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}
+          >
             <input
               type="checkbox"
               checked={sameAddress}
               onChange={handleSameAddressChange}
-              style={{ marginTop: '0.25rem', width: '1.125rem', height: '1.125rem', accentColor: '#0A1E86' }}
+              style={{
+                marginTop: '0.25rem',
+                width: '1.125rem',
+                height: '1.125rem',
+                accentColor: '#0A1E86',
+              }}
             />
             <span style={{ fontSize: '1rem', fontWeight: 500 }}>
               Same city, province and country as you
             </span>
           </label>
           {!sameAddress && (
-            <p style={{ marginTop: '0.75rem', marginLeft: '2rem', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-              You&apos;ll be asked for your spouse&apos;s city, province and country in the next step
+            <p
+              style={{
+                marginTop: '0.75rem',
+                marginLeft: '2rem',
+                color: 'var(--color-text-muted)',
+                fontSize: '0.875rem',
+              }}
+            >
+              You&apos;ll be asked for your spouse&apos;s city, province and country in the next
+              step
             </p>
           )}
         </div>

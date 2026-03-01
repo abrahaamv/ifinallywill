@@ -64,19 +64,11 @@ export function PartnerStep({ data, onUpdate, onNext, onBack }: Props) {
     }
   };
 
-  const gridStyle: React.CSSProperties = {
-    maxWidth: '700px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '1.25rem',
-  };
-
   if (showRelationshipType) {
     return (
       <div className="animate-slide-in-right">
         <SectionTitle>What is your relationship status?</SectionTitle>
-        <div style={gridStyle}>
+        <div className="options-grid-2col">
           <OptionCard
             selected={data.marital_status === 'married'}
             onClick={() => selectRelationshipType('married')}
@@ -104,7 +96,7 @@ export function PartnerStep({ data, onUpdate, onNext, onBack }: Props) {
   return (
     <div className="animate-slide-in-right">
       <SectionTitle>Do you have a spouse or common law partner?</SectionTitle>
-      <div style={gridStyle}>
+      <div className="options-grid-2col">
         <OptionCard
           selected={data.has_partner === 'yes'}
           onClick={() => selectHasPartner('yes')}

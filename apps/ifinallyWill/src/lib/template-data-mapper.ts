@@ -6,9 +6,9 @@
  * This bridges our clean relational model with the legacy template system.
  */
 
-import type { WillData, PoaData, KeyName, BequestShare } from './types';
-import type { TemplateData, PersonInfo } from './template-renderer';
+import type { PersonInfo, TemplateData } from './template-renderer';
 import { calculateTrustingAges } from './template-renderer';
+import type { BequestShare, KeyName, PoaData, WillData } from './types';
 
 // ---------------------------------------------------------------------------
 // Person conversion
@@ -46,7 +46,7 @@ function lookupPerson(id: string | null | undefined, people: KeyName[]): PersonI
 export function mapWillToTemplateData(
   willData: WillData,
   people: KeyName[],
-  documentType: string,
+  documentType: string
 ): Partial<TemplateData> {
   const pi = willData.personalInfo;
   const spouse = willData.spouseInfo;
@@ -114,8 +114,8 @@ export function mapWillToTemplateData(
   };
 
   // Derive relative label for spouse
-  const spouseRelative = spouse?.relative
-    ?? (isCommon ? 'Common-law Partner' : isMarried ? 'Spouse' : '');
+  const spouseRelative =
+    spouse?.relative ?? (isCommon ? 'Common-law Partner' : isMarried ? 'Spouse' : '');
 
   return {
     personal: {
@@ -134,7 +134,9 @@ export function mapWillToTemplateData(
     isCommonRelationship: isCommon,
     spouseInfo: spouse
       ? {
-          fullName: `${spouse.firstName ?? ''} ${spouse.middleName ?? ''} ${spouse.lastName ?? ''}`.replace(/\s+/g, ' ').trim(),
+          fullName: `${spouse.firstName ?? ''} ${spouse.middleName ?? ''} ${spouse.lastName ?? ''}`
+            .replace(/\s+/g, ' ')
+            .trim(),
           firstName: spouse.firstName,
           middleName: spouse.middleName ?? undefined,
           lastName: spouse.lastName,
@@ -210,27 +212,22 @@ export interface DbBequest {
 
 export function mapBequestsToTemplateFormat(
   dbBequests: DbBequest[],
-  people: KeyName[],
+  people: KeyName[]
 ): TemplateData['bequests'] {
   const result: TemplateData['bequests'] = [];
 
   for (const bequest of dbBequests) {
     const assetName = String(
-      bequest.asset?.details?.description ?? bequest.asset?.details?.name ?? 'asset',
+      bequest.asset?.details?.description ?? bequest.asset?.details?.name ?? 'asset'
     );
     const isCustom = bequest.asset?.details?.isCustom === true;
     const sharedUuid = bequest.shares.length > 1 ? bequest.id : undefined;
 
     for (const share of bequest.shares) {
       const person = people.find((p) => p.id === share.keyNameId);
-      const names = person
-        ? [person.firstName, person.lastName].filter(Boolean).join(' ')
-        : '';
-      const backupId =
-        (bequest.asset?.details?.backupKeyNameId as string) ?? undefined;
-      const backupPerson = backupId
-        ? people.find((p) => p.id === backupId)
-        : undefined;
+      const names = person ? [person.firstName, person.lastName].filter(Boolean).join(' ') : '';
+      const backupId = (bequest.asset?.details?.backupKeyNameId as string) ?? undefined;
+      const backupPerson = backupId ? people.find((p) => p.id === backupId) : undefined;
       const backup = backupPerson
         ? [backupPerson.firstName, backupPerson.lastName].filter(Boolean).join(' ')
         : undefined;
@@ -257,7 +254,7 @@ export function mapBequestsToTemplateFormat(
 export function mapPoaToTemplateData(
   poaData: PoaData,
   people: KeyName[],
-  documentType: string,
+  documentType: string
 ): Partial<TemplateData> {
   const pi = poaData.personalInfo;
 
@@ -284,9 +281,10 @@ export function mapPoaToTemplateData(
     attorneyJoint: jointAgent.fullName
       ? { ...jointAgent, relation: jointAgent.relation ?? '' }
       : undefined,
-    attorneyTwo: backupAgents.length > 0
-      ? backupAgents.map((a) => ({ ...a, relation: a.relation ?? '' }))
-      : undefined,
+    attorneyTwo:
+      backupAgents.length > 0
+        ? backupAgents.map((a) => ({ ...a, relation: a.relation ?? '' }))
+        : undefined,
     restrictions: poaData.restrictions ?? undefined,
     activationType: poaData.activationType ?? 'immediate',
     documentType,

@@ -30,13 +30,7 @@ const DOC_TYPE_LABELS: Record<DocumentType, string> = {
   poa_health: 'POA for Health',
 };
 
-export function DocumentSelectorModal({
-  open,
-  documents,
-  currentDocId,
-  onSelect,
-  onClose,
-}: Props) {
+export function DocumentSelectorModal({ open, documents, currentDocId, onSelect, onClose }: Props) {
   if (!open) return null;
 
   return (
@@ -75,9 +69,7 @@ export function DocumentSelectorModal({
                     <div className="text-sm font-medium text-[var(--ifw-neutral-900)]">
                       {DOC_TYPE_LABELS[doc.documentType]}
                     </div>
-                    <div className="text-xs text-[var(--ifw-neutral-500)]">
-                      {doc.ownerName}
-                    </div>
+                    <div className="text-xs text-[var(--ifw-neutral-500)]">{doc.ownerName}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[var(--ifw-neutral-400)]">

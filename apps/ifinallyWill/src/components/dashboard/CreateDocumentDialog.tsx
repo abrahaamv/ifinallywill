@@ -28,7 +28,11 @@ export function CreateDocumentDialog({ isOpen, onClose, onCreated }: Props) {
     setError(null);
     try {
       await createMutation.mutateAsync({
-        documentType: selectedType as 'primary_will' | 'secondary_will' | 'poa_property' | 'poa_health',
+        documentType: selectedType as
+          | 'primary_will'
+          | 'secondary_will'
+          | 'poa_property'
+          | 'poa_health',
         province,
       });
       setSelectedType('');

@@ -11,7 +11,8 @@ import { createModuleLogger } from '../utils/logger';
 import { trpc } from '../utils/trpc';
 
 const logger = createModuleLogger('TRPCProvider');
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL =
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '/api');
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const csrfTokenRef = useRef<string | null>(null);
@@ -32,14 +33,17 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
     fetchCsrfToken();
 
-    const interval = setInterval(async () => {
-      try {
-        const { token } = await CSRFService.getToken();
-        csrfTokenRef.current = token;
-      } catch (error) {
-        logger.error('Failed to refresh CSRF token', { error });
-      }
-    }, 30 * 60 * 1000);
+    const interval = setInterval(
+      async () => {
+        try {
+          const { token } = await CSRFService.getToken();
+          csrfTokenRef.current = token;
+        } catch (error) {
+          logger.error('Failed to refresh CSRF token', { error });
+        }
+      },
+      30 * 60 * 1000
+    );
 
     return () => clearInterval(interval);
   }, []);
@@ -62,7 +66,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             retry: false,
           },
         },
-      }),
+      })
   );
 
   const [trpcClient] = useState(() =>
@@ -86,13 +90,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             if (response.status === 401) {
               logger.warn('401 Unauthorized - Session expired');
               if (!window.location.pathname.startsWith('/login')) {
-                const shouldRedirect = confirm(
-                  'Your session has expired. Please log in again to continue.',
-                );
-                if (shouldRedirect) {
-                  sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
-                  window.location.href = '/login';
-                }
+                sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+                window.location.href = '/login?expired=true';
               }
             }
 
@@ -100,7 +99,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           },
         }),
       ],
-    }),
+    })
   );
 
   if (!isReady) {

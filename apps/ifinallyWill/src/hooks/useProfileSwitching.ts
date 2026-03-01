@@ -5,7 +5,7 @@
  * and localStorage persistence for the selected profile.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { isSharedStep } from '../lib/wizard';
 
 const STORAGE_KEY = 'ifw-current-profile';
@@ -64,27 +64,21 @@ export function useProfileSwitching({
     return profiles;
   }, [currentDocId, ownerName, ownerEmail, coupleDocId, coupleName, coupleEmail]);
 
-  const switchProfile = useCallback(
-    (email: string) => {
-      setCurrentProfile(email);
-      try {
-        localStorage.setItem(STORAGE_KEY, email);
-      } catch {
-        // ignore
-      }
-    },
-    [],
-  );
+  const switchProfile = useCallback((email: string) => {
+    setCurrentProfile(email);
+    try {
+      localStorage.setItem(STORAGE_KEY, email);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const activeProfile = useMemo(
     () => availableProfiles.find((p) => p.email === currentProfile) ?? availableProfiles[0],
-    [availableProfiles, currentProfile],
+    [availableProfiles, currentProfile]
   );
 
-  const isCurrentStepShared = useCallback(
-    (stepId: string): boolean => isSharedStep(stepId),
-    [],
-  );
+  const isCurrentStepShared = useCallback((stepId: string): boolean => isSharedStep(stepId), []);
 
   return {
     currentProfile,

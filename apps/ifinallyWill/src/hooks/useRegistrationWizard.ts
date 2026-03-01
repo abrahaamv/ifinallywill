@@ -188,7 +188,7 @@ export function useRegistrationWizard() {
   const updateData: UpdateDataFn = useCallback(
     (
       partialOrKey: Partial<RegistrationData> | keyof RegistrationData,
-      value?: RegistrationData[keyof RegistrationData],
+      value?: RegistrationData[keyof RegistrationData]
     ) => {
       setData((prev) => {
         const partial: Partial<RegistrationData> =
@@ -200,7 +200,7 @@ export function useRegistrationWizard() {
         return next;
       });
     },
-    [step],
+    [step]
   );
 
   const nextStep = useCallback(() => {
@@ -225,7 +225,7 @@ export function useRegistrationWizard() {
       setStep(clamped);
       saveState(clamped, data);
     },
-    [data, steps.length],
+    [data, steps.length]
   );
 
   const clearWizard = useCallback(() => {

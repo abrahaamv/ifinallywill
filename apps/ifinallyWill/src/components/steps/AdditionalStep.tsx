@@ -9,14 +9,13 @@
  * - Organ donation checkbox
  */
 
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { additionalSchema } from '@platform/api-contract/schemas';
+import { useEffect, useState } from 'react';
 import type { z } from 'zod';
-import { StepLayout } from '../shared/StepLayout';
+import { useAssistantForm } from '../../hooks/useAssistantForm';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
+import { StepLayout } from '../shared/StepLayout';
 
 type FormData = z.infer<typeof additionalSchema>;
 
@@ -24,17 +23,34 @@ const RESTING_PLACE_OPTIONS = [
   { key: 'cremation', icon: '🔥', label: 'Cremation', description: 'Have my remains cremated' },
   { key: 'burial', icon: '🌸', label: 'Burial', description: 'Traditional burial' },
   { key: 'mausoleum', icon: '🏛️', label: 'Mausoleum', description: 'Entombment in a mausoleum' },
-  { key: 'donate', icon: '❤️', label: 'Donate Body to Science', description: 'Donate for medical research' },
+  {
+    key: 'donate',
+    icon: '❤️',
+    label: 'Donate Body to Science',
+    description: 'Donate for medical research',
+  },
   { key: 'green', icon: '🌳', label: 'Green Burial', description: 'Eco-friendly natural burial' },
-  { key: 'family', icon: '👨‍👩‍👧‍👦', label: 'Let My Family Decide', description: 'Leave the decision to my loved ones' },
+  {
+    key: 'family',
+    icon: '👨‍👩‍👧‍👦',
+    label: 'Let My Family Decide',
+    description: 'Leave the decision to my loved ones',
+  },
 ] as const;
 
-export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function AdditionalStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.additional as FormData | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'additional' });
 
-  const { register, handleSubmit, watch, setValue } = useForm<FormData>({
-    resolver: zodResolver(additionalSchema),
+  const { register, handleSubmit, watch, setValue } = useAssistantForm<FormData>({
+    schema: additionalSchema,
     defaultValues: {
       finalRestingPlace: existing?.finalRestingPlace,
       customClauseText: existing?.customClauseText ?? '',
@@ -48,7 +64,12 @@ export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstS
 
   useEffect(() => {
     autoSave.save(values);
-  }, [values.finalRestingPlace, values.customClauseText, values.organDonation, JSON.stringify(values.otherWishes)]);
+  }, [
+    values.finalRestingPlace,
+    values.customClauseText,
+    values.organDonation,
+    JSON.stringify(values.otherWishes),
+  ]);
 
   const addWish = () => {
     const trimmed = newWish.trim();
@@ -60,7 +81,10 @@ export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstS
 
   const removeWish = (index: number) => {
     const current = values.otherWishes ?? [];
-    setValue('otherWishes', current.filter((_, i) => i !== index));
+    setValue(
+      'otherWishes',
+      current.filter((_: string, i: number) => i !== index)
+    );
   };
 
   const onSubmit = (data: FormData) => {
@@ -92,7 +116,9 @@ export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstS
                 type="button"
                 className="ifw-option-card text-left"
                 data-selected={values.finalRestingPlace === opt.key}
-                onClick={() => setValue('finalRestingPlace', opt.key as FormData['finalRestingPlace'])}
+                onClick={() =>
+                  setValue('finalRestingPlace', opt.key as FormData['finalRestingPlace'])
+                }
               >
                 <span className="ifw-option-icon text-xl flex-shrink-0">{opt.icon}</span>
                 <div className="min-w-0">
@@ -163,7 +189,7 @@ export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstS
 
           {(values.otherWishes ?? []).length > 0 && (
             <ul className="space-y-1.5">
-              {(values.otherWishes ?? []).map((wish, i) => (
+              {(values.otherWishes ?? []).map((wish: string, i: number) => (
                 <li
                   key={i}
                   className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[var(--ifw-neutral-100)] text-sm"
@@ -184,9 +210,9 @@ export function AdditionalStep({ estateDocId, willData, onNext, onPrev, isFirstS
 
         {/* Info box */}
         <div className="ifw-info-box">
-          <strong>Why do we ask?</strong> While these wishes are not legally enforceable, they provide
-          valuable guidance to your family and executor about your personal preferences during a
-          difficult time. You can always update these later.
+          <strong>Why do we ask?</strong> While these wishes are not legally enforceable, they
+          provide valuable guidance to your family and executor about your personal preferences
+          during a difficult time. You can always update these later.
         </div>
       </div>
     </StepLayout>

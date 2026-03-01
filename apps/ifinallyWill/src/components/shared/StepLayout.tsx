@@ -2,8 +2,8 @@
  * Standard step layout — title, description, content, navigation buttons
  */
 
-import { SaveIndicator } from '../wizard/SaveIndicator';
 import type { SaveStatus } from '../../hooks/useAutoSave';
+import { SaveIndicator } from '../wizard/SaveIndicator';
 
 interface Props {
   title: string;
@@ -36,9 +36,7 @@ export function StepLayout({
           <h2 className="text-xl font-bold">{title}</h2>
           {saveStatus && <SaveIndicator status={saveStatus} />}
         </div>
-        {description && (
-          <p className="text-sm text-[var(--ifw-neutral-500)] mt-1">{description}</p>
-        )}
+        {description && <p className="text-sm text-[var(--ifw-neutral-500)] mt-1">{description}</p>}
       </div>
 
       {/* Content */}

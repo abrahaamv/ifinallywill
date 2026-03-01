@@ -3,7 +3,7 @@
  * Renders HTML in a scrollable A4-styled container with print support.
  */
 
-import { useRef, useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface Props {
   html: string;
@@ -65,7 +65,16 @@ export function DocumentPreview({ html, title, onClose }: Props) {
             onClick={handlePrint}
             className="px-3 py-1.5 text-xs font-medium border rounded-lg hover:bg-[var(--ifw-neutral-100)] flex items-center gap-1.5"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="6 9 6 2 18 2 18 9" />
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
@@ -94,10 +103,7 @@ export function DocumentPreview({ html, title, onClose }: Props) {
           lineHeight: '1.6',
         }}
       >
-        <div
-          dangerouslySetInnerHTML={{ __html: html }}
-          className="document-preview-content"
-        />
+        <div dangerouslySetInnerHTML={{ __html: html }} className="document-preview-content" />
       </div>
 
       <p className="text-[10px] text-[var(--ifw-text-muted)] text-center">

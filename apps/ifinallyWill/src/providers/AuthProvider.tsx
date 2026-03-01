@@ -6,8 +6,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { trpc } from '../utils/trpc';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
 interface User {
   id: string;
   email: string;
@@ -20,6 +18,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  signIn: (user: User) => void;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }
@@ -40,14 +39,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (session?.user) {
       setUser(session.user as User);
     } else {
-      setUser(null);
+      // Restore demo user from localStorage if no backend session
+      const stored = localStorage.getItem('ifw_demo_user');
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored) as User);
+        } catch {
+          localStorage.removeItem('ifw_demo_user');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
     }
     setIsLoading(false);
   }, [session]);
 
+  const signIn = (demoUser: User) => {
+    setUser(demoUser);
+    localStorage.setItem('ifw_demo_user', JSON.stringify(demoUser));
+  };
+
   const signOut = async () => {
     try {
-      const csrfResponse = await fetch(`${API_URL}/api/auth/csrf`, {
+      const csrfResponse = await fetch('/api/auth/csrf', {
         credentials: 'include',
       });
 
@@ -57,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { csrfToken } = await csrfResponse.json();
 
-      await fetch(`${API_URL}/api/auth/signout`, {
+      await fetch('/api/auth/signout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ csrfToken }),
@@ -65,9 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       setUser(null);
+      localStorage.removeItem('ifw_demo_user');
       window.location.href = '/login';
     } catch {
       setUser(null);
+      localStorage.removeItem('ifw_demo_user');
       window.location.href = '/login';
     }
   };
@@ -76,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    signIn,
     signOut,
     refreshSession: async () => {
       await refreshSession();

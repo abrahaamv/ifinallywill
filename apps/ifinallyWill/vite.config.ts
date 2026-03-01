@@ -30,9 +30,7 @@ export default defineConfig(({ mode }) => {
               const setCookie = proxyRes.headers['set-cookie'];
               if (setCookie) {
                 proxyRes.headers['set-cookie'] = setCookie.map((cookie: string) => {
-                  return cookie
-                    .replace(/; Secure/gi, '')
-                    .replace(/; Domain=localhost/gi, '');
+                  return cookie.replace(/; Secure/gi, '').replace(/; Domain=localhost/gi, '');
                 });
               }
             });
@@ -50,8 +48,8 @@ export default defineConfig(({ mode }) => {
     define: {
       global: 'globalThis',
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      '__VITE_APP_URL__': JSON.stringify(urls.app),
-      '__VITE_API_URL__': JSON.stringify(urls.api),
+      __VITE_APP_URL__: JSON.stringify(urls.app),
+      __VITE_API_URL__: JSON.stringify(urls.api),
     },
     optimizeDeps: {
       include: ['buffer'],

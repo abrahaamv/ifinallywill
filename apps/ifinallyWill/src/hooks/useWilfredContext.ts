@@ -30,6 +30,6 @@ export function useWilfredContext(options: WilfredContextOptions) {
       options.documentType,
       JSON.stringify(options.completedSteps),
       JSON.stringify(options.formValues),
-    ],
+    ]
   );
 }

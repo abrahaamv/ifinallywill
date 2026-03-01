@@ -50,7 +50,7 @@ export function useAutoSave({ estateDocId, section, debounceMs = 1500 }: UseAuto
         });
       }, debounceMs);
     },
-    [estateDocId, section, debounceMs, mutation],
+    [estateDocId, section, debounceMs, mutation]
   );
 
   /** Save immediately without debounce */
@@ -66,7 +66,7 @@ export function useAutoSave({ estateDocId, section, debounceMs = 1500 }: UseAuto
         data,
       });
     },
-    [estateDocId, section, mutation],
+    [estateDocId, section, mutation]
   );
 
   // Cleanup timer on unmount

@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getVisibleSteps, type WizardContext, type StepConfig } from '../lib/wizard';
+import { type StepConfig, type WizardContext, getVisibleSteps } from '../lib/wizard';
 
 interface UseWizardNavigationOptions {
   docId: string;
@@ -31,7 +31,7 @@ export function useWizardNavigation({ docId, context }: UseWizardNavigationOptio
     (id: string) => {
       navigate(`/app/documents/${docId}/${id}`, { replace: true });
     },
-    [navigate, docId],
+    [navigate, docId]
   );
 
   const nextStep = useCallback(() => {

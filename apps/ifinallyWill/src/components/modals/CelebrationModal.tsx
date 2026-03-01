@@ -17,19 +17,21 @@ interface Props {
 const CATEGORY_MESSAGES: Record<WizardCategory, { title: string; message: string }> = {
   aboutYou: {
     title: 'About You Complete!',
-    message: "Great job! You've finished telling us about yourself. Your personal details are saved.",
+    message:
+      "Great job! You've finished telling us about yourself. Your personal details are saved.",
   },
   yourFamily: {
     title: 'Family Section Complete!',
-    message: "Wonderful! Your family information is all set. Your loved ones are accounted for.",
+    message: 'Wonderful! Your family information is all set. Your loved ones are accounted for.',
   },
   yourEstate: {
     title: 'Estate Section Complete!',
-    message: "Excellent! Your estate details are recorded. Your assets and wishes are documented.",
+    message: 'Excellent! Your estate details are recorded. Your assets and wishes are documented.',
   },
   yourArrangements: {
     title: 'All Arrangements Done!',
-    message: "Congratulations! You've completed all your arrangements. Your will is ready for review!",
+    message:
+      "Congratulations! You've completed all your arrangements. Your will is ready for review!",
   },
 };
 
@@ -124,12 +126,8 @@ export function CelebrationModal({ open, category, onClose }: Props) {
       {/* Card */}
       <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-sm mx-4 text-center z-10">
         <div className="text-5xl mb-4">🎉</div>
-        <h2 className="text-xl font-bold text-[var(--ifw-neutral-900)] mb-2">
-          {msg.title}
-        </h2>
-        <p className="text-sm text-[var(--ifw-neutral-500)] mb-6">
-          {msg.message}
-        </p>
+        <h2 className="text-xl font-bold text-[var(--ifw-neutral-900)] mb-2">{msg.title}</h2>
+        <p className="text-sm text-[var(--ifw-neutral-500)] mb-6">{msg.message}</p>
         <button
           type="button"
           onClick={onClose}

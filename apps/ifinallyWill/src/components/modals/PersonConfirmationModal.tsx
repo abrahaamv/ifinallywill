@@ -30,7 +30,16 @@ export function PersonConfirmationModal({
       {/* Card */}
       <div className="relative bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4 z-10">
         <div className="w-12 h-12 rounded-full bg-[var(--ifw-primary-50)] flex items-center justify-center mx-auto mb-4">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ifw-primary-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--ifw-primary-700)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
@@ -41,7 +50,8 @@ export function PersonConfirmationModal({
         </h3>
 
         <p className="text-sm text-[var(--ifw-neutral-500)] text-center mb-2">
-          You are currently editing <strong className="text-[var(--ifw-primary-700)]">{ownerName}&apos;s</strong> documents.
+          You are currently editing{' '}
+          <strong className="text-[var(--ifw-primary-700)]">{ownerName}&apos;s</strong> documents.
         </p>
 
         {isSharedStep && (

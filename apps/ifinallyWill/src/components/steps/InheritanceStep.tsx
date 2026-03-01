@@ -2,11 +2,11 @@
  * Step 11: Inheritance / Trusting — set ages for minor children's inheritance
  */
 
-import { useState, useEffect } from 'react';
-import { StepLayout } from '../shared/StepLayout';
+import { useEffect, useState } from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
-import { trpc } from '../../utils/trpc';
 import type { StepProps } from '../../lib/types';
+import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 
 interface TrustEntry {
   childKeyNameId: string;
@@ -14,7 +14,14 @@ interface TrustEntry {
   trustees: string[];
 }
 
-export function InheritanceStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function InheritanceStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.trusting as TrustEntry[] | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'trusting' });
   const { data: people } = trpc.keyNames.list.useQuery();
@@ -61,7 +68,10 @@ export function InheritanceStep({ estateDocId, willData, onNext, onPrev, isFirst
           if (!child) return null;
 
           return (
-            <div key={entry.childKeyNameId} className="border border-[var(--ifw-border)] rounded-xl p-4">
+            <div
+              key={entry.childKeyNameId}
+              className="border border-[var(--ifw-border)] rounded-xl p-4"
+            >
               <div className="font-medium text-sm mb-3">
                 {child.firstName} {child.lastName}
               </div>

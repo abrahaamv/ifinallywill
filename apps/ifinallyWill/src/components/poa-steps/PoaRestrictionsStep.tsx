@@ -4,22 +4,32 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaRestrictionsStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaRestrictionsStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const currentRestrictions = (existingPoa?.restrictions as string | null) ?? '';
   const [restrictions, setRestrictions] = useState(currentRestrictions);
   const [hasRestrictions, setHasRestrictions] = useState(!!currentRestrictions);
   const updateSection = trpc.poaData.updateSection.useMutation();
 
   const handleNext = () => {
-    updateSection.mutate({
-      estateDocId,
-      section: 'restrictions',
-      data: hasRestrictions ? restrictions : null,
-    }, { onSuccess: () => onNext() });
+    updateSection.mutate(
+      {
+        estateDocId,
+        section: 'restrictions',
+        data: hasRestrictions ? restrictions : null,
+      },
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -34,9 +44,9 @@ export function PoaRestrictionsStep({ estateDocId, poaData: existingPoa, onNext,
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>Restrictions are optional.</strong> Without restrictions, your agent has broad authority to manage
-          your property and finances. You can add conditions like "cannot sell the family home" or
-          "maximum $50,000 per transaction."
+          <strong>Restrictions are optional.</strong> Without restrictions, your agent has broad
+          authority to manage your property and finances. You can add conditions like "cannot sell
+          the family home" or "maximum $50,000 per transaction."
         </div>
 
         <div className="space-y-3">
@@ -44,12 +54,17 @@ export function PoaRestrictionsStep({ estateDocId, poaData: existingPoa, onNext,
             type="button"
             className="ifw-option-card w-full text-left"
             data-selected={!hasRestrictions}
-            onClick={() => { setHasRestrictions(false); setRestrictions(''); }}
+            onClick={() => {
+              setHasRestrictions(false);
+              setRestrictions('');
+            }}
           >
             <span className="text-xl flex-shrink-0">🔓</span>
             <div>
               <div className="font-medium text-sm">No Restrictions</div>
-              <div className="text-xs text-[var(--ifw-text-muted)]">My agent has full authority over my property and finances</div>
+              <div className="text-xs text-[var(--ifw-text-muted)]">
+                My agent has full authority over my property and finances
+              </div>
             </div>
           </button>
 
@@ -62,7 +77,9 @@ export function PoaRestrictionsStep({ estateDocId, poaData: existingPoa, onNext,
             <span className="text-xl flex-shrink-0">🔒</span>
             <div>
               <div className="font-medium text-sm">Add Restrictions</div>
-              <div className="text-xs text-[var(--ifw-text-muted)]">I want to limit my agent's authority</div>
+              <div className="text-xs text-[var(--ifw-text-muted)]">
+                I want to limit my agent's authority
+              </div>
             </div>
           </button>
         </div>

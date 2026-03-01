@@ -1,92 +1,57 @@
 /**
  * Document portfolio dashboard
- * Shows all estate documents with progress, status, and create action.
- * Groups documents by owner for couples packages.
+ * Shows all estate documents with progress, status, and create action
  */
 
-import { useState, useMemo } from 'react';
-import { DocumentCard } from '../../components/dashboard/DocumentCard';
+import { useState } from 'react';
 import { CreateDocumentDialog } from '../../components/dashboard/CreateDocumentDialog';
+import { DocumentCard } from '../../components/dashboard/DocumentCard';
 import { useAuth } from '../../providers/AuthProvider';
 import { trpc } from '../../utils/trpc';
 
 export function DashboardPage() {
   const { user } = useAuth();
   const [showCreate, setShowCreate] = useState(false);
-  const [activeTab, setActiveTab] = useState<'mine' | 'partner'>('mine');
 
-  const {
-    data: documents,
-    isLoading,
-    refetch,
-  } = trpc.estateDocuments.list.useQuery();
+  const { data: documents, isLoading, refetch } = trpc.estateDocuments.list.useQuery();
 
-  // Split documents into owner's and partner's (linked via coupleDocId)
-  const { myDocs, partnerDocs, hasPartner } = useMemo(() => {
-    if (!documents) return { myDocs: [], partnerDocs: [], hasPartner: false };
-
-    const hasCoupled = documents.some(
-      (d) => (d as Record<string, unknown>).coupleDocId != null,
-    );
-
-    // The API returns only the current user's documents.
-    // Partner's documents show up in their own query.
-    return {
-      myDocs: documents,
-      partnerDocs: [],
-      hasPartner: hasCoupled,
-    };
-  }, [documents]);
-
-  const activeDocs = activeTab === 'mine' ? myDocs : partnerDocs;
+  const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">My Documents</h1>
-          <p className="text-sm text-[var(--ifw-neutral-500)] mt-1">
-            Welcome back{user?.name ? `, ${user.name}` : ''}
-          </p>
+      {/* Gold gradient hero section */}
+      <div
+        className="py-6 sm:py-10 px-4 -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 mb-6 sm:mb-8"
+        style={{ background: 'linear-gradient(135deg, #FFBF00 0%, #FFD54F 100%)' }}
+      >
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p
+              className="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 sm:mb-2"
+              style={{ color: '#0A1E86', opacity: 0.7 }}
+            >
+              My Dashboard
+            </p>
+            <h1
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3"
+              style={{ color: '#0A1E86' }}
+            >
+              Welcome back, {firstName}
+            </h1>
+            <p className="text-base sm:text-lg" style={{ color: '#061254' }}>
+              Manage your estate planning documents from here.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 self-start sm:self-center"
+            style={{ backgroundColor: '#0A1E86' }}
+          >
+            + New Document
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 text-sm font-medium text-white rounded-lg"
-          style={{ backgroundColor: 'var(--ifw-primary-700)' }}
-        >
-          + New Document
-        </button>
       </div>
-
-      {/* Couples tab switcher */}
-      {hasPartner && (
-        <div className="flex gap-1 mb-6 bg-[var(--ifw-neutral-100)] rounded-lg p-1 w-fit">
-          <button
-            type="button"
-            onClick={() => setActiveTab('mine')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'mine'
-                ? 'bg-white shadow-sm font-medium'
-                : 'text-[var(--ifw-neutral-500)] hover:text-[var(--ifw-neutral-700)]'
-            }`}
-          >
-            My Documents
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('partner')}
-            className={`px-4 py-1.5 text-sm rounded-md transition-colors ${
-              activeTab === 'partner'
-                ? 'bg-white shadow-sm font-medium'
-                : 'text-[var(--ifw-neutral-500)] hover:text-[var(--ifw-neutral-700)]'
-            }`}
-          >
-            Partner&apos;s Documents
-          </button>
-        </div>
-      )}
 
       {/* Documents grid */}
       {isLoading ? (
@@ -100,9 +65,9 @@ export function DashboardPage() {
             </div>
           ))}
         </div>
-      ) : activeDocs.length > 0 ? (
+      ) : documents && documents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {activeDocs.map((doc) => (
+          {documents.map((doc) => (
             <DocumentCard
               key={doc.id}
               id={doc.id}
@@ -111,7 +76,7 @@ export function DashboardPage() {
               completionPct={doc.completionPct}
               province={doc.province}
               updatedAt={doc.updatedAt.toString()}
-              coupleDocId={(doc as Record<string, unknown>).coupleDocId as string | null | undefined}
+              coupleDocId={(doc as { coupleDocId?: string | null }).coupleDocId ?? null}
             />
           ))}
         </div>

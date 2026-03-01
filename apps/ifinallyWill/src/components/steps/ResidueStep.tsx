@@ -10,18 +10,25 @@
  * - Card-based selection UI (v6 ResidueOptionCard)
  */
 
-import { useEffect, useState, useMemo } from 'react';
-import { residueSchema } from '@platform/api-contract/schemas';
+import type { residueSchema } from '@platform/api-contract/schemas';
+import { useEffect, useMemo, useState } from 'react';
 import type { z } from 'zod';
-import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
 import { trpc } from '../../utils/trpc';
+import { StepLayout } from '../shared/StepLayout';
 
 type ResidueData = z.infer<typeof residueSchema>;
 type BeneficiaryRow = NonNullable<ResidueData['beneficiary']>[number];
 
-export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function ResidueStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.residue as ResidueData | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'residue' });
   const { data: keyPeople } = trpc.keyNames.list.useQuery();
@@ -34,19 +41,51 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
     const opts: Array<{ icon: string; title: string; subtitle: string; value: string }> = [];
     if (isMarried) {
       opts.push(
-        { icon: '💑', title: 'Spouse first, then children', subtitle: 'Per stirpes', value: 'Have the residue of my estate to go to my spouse first, then my children equally per stirpes' },
-        { icon: '👨‍👩‍👧', title: 'Spouse first, then children', subtitle: 'Per capita', value: 'Have the residue of my estate to go to my spouse first, then my children equally per capita' },
+        {
+          icon: '💑',
+          title: 'Spouse first, then children',
+          subtitle: 'Per stirpes',
+          value:
+            'Have the residue of my estate to go to my spouse first, then my children equally per stirpes',
+        },
+        {
+          icon: '👨‍👩‍👧',
+          title: 'Spouse first, then children',
+          subtitle: 'Per capita',
+          value:
+            'Have the residue of my estate to go to my spouse first, then my children equally per capita',
+        }
       );
     }
     if (hasKids) {
       opts.push(
-        { icon: '👶', title: 'Children per stirpes', subtitle: 'Share passes to their descendants', value: 'Have the residue go to children per stirpes' },
-        { icon: '👧', title: 'Children per capita', subtitle: 'Equal share among survivors only', value: 'Have the residue go to children per capita' },
+        {
+          icon: '👶',
+          title: 'Children per stirpes',
+          subtitle: 'Share passes to their descendants',
+          value: 'Have the residue go to children per stirpes',
+        },
+        {
+          icon: '👧',
+          title: 'Children per capita',
+          subtitle: 'Equal share among survivors only',
+          value: 'Have the residue go to children per capita',
+        }
       );
     }
     opts.push(
-      { icon: '👨‍👩‍👧‍👦', title: 'Parents then siblings', subtitle: 'Per stirpes distribution', value: 'Have the residue go to parents then siblings per stirpes' },
-      { icon: '👥', title: 'Siblings', subtitle: 'Per stirpes distribution', value: 'Have the residue go to siblings per stirpes' },
+      {
+        icon: '👨‍👩‍👧‍👦',
+        title: 'Parents then siblings',
+        subtitle: 'Per stirpes distribution',
+        value: 'Have the residue go to parents then siblings per stirpes',
+      },
+      {
+        icon: '👥',
+        title: 'Siblings',
+        subtitle: 'Per stirpes distribution',
+        value: 'Have the residue go to siblings per stirpes',
+      }
     );
     return opts;
   }, [isMarried, hasKids]);
@@ -79,20 +118,39 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
 
   const addBeneficiary = () => {
     setFormError('');
-    if (!beneficiary.trim()) { setFormError(isOrg ? 'Organization name is required' : 'Beneficiary is required'); return; }
-    if (!isOrg && beneficiary === backup) { setFormError("Beneficiary and backup can't be the same person"); return; }
-    const sharesNum = parseInt(shares, 10);
-    if (isNaN(sharesNum) || sharesNum <= 0) { setFormError('Shares must be a valid number greater than 0'); return; }
-    if (!isOrg && !shareType) { setFormError('Backup type is required'); return; }
+    if (!beneficiary.trim()) {
+      setFormError(isOrg ? 'Organization name is required' : 'Beneficiary is required');
+      return;
+    }
+    if (!isOrg && beneficiary === backup) {
+      setFormError("Beneficiary and backup can't be the same person");
+      return;
+    }
+    const sharesNum = Number.parseInt(shares, 10);
+    if (isNaN(sharesNum) || sharesNum <= 0) {
+      setFormError('Shares must be a valid number greater than 0');
+      return;
+    }
+    if (!isOrg && !shareType) {
+      setFormError('Backup type is required');
+      return;
+    }
 
-    setBeneficiaries((prev) => [...prev, {
-      beneficiary: beneficiary.trim(),
-      backup: isOrg ? undefined : backup || undefined,
-      type: isOrg ? undefined : (shareType as 'per_stirpes' | 'per_capita'),
-      shares: sharesNum,
-      isOrganization: isOrg || undefined,
-    }]);
-    setBeneficiary(''); setBackup(''); setShareType(''); setShares(''); setIsOrg(false);
+    setBeneficiaries((prev) => [
+      ...prev,
+      {
+        beneficiary: beneficiary.trim(),
+        backup: isOrg ? undefined : backup || undefined,
+        type: isOrg ? undefined : (shareType as 'per_stirpes' | 'per_capita'),
+        shares: sharesNum,
+        isOrganization: isOrg || undefined,
+      },
+    ]);
+    setBeneficiary('');
+    setBackup('');
+    setShareType('');
+    setShares('');
+    setIsOrg(false);
   };
 
   const removeBeneficiary = (index: number) => {
@@ -120,8 +178,9 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
       <div className="space-y-6">
         {/* Info box */}
         <div className="ifw-info-box">
-          <strong>What is residue?</strong> The residue of your estate is everything that remains after specific
-          gifts (bequests) have been distributed. This is typically the largest portion of your estate.
+          <strong>What is residue?</strong> The residue of your estate is everything that remains
+          after specific gifts (bequests) have been distributed. This is typically the largest
+          portion of your estate.
         </div>
 
         {/* Section 1: Bloodline options (dynamic based on marital/kid status) */}
@@ -159,7 +218,9 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
               <span className="text-xl flex-shrink-0">📝</span>
               <div>
                 <div className="font-medium text-sm">Custom Clause</div>
-                <div className="text-xs text-[var(--ifw-text-muted)]">Write your own residue instructions</div>
+                <div className="text-xs text-[var(--ifw-text-muted)]">
+                  Write your own residue instructions
+                </div>
               </div>
             </button>
             <button
@@ -171,7 +232,9 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
               <span className="text-xl flex-shrink-0">👤</span>
               <div>
                 <div className="font-medium text-sm">Specific Beneficiaries</div>
-                <div className="text-xs text-[var(--ifw-text-muted)]">Name specific people or organizations with shares</div>
+                <div className="text-xs text-[var(--ifw-text-muted)]">
+                  Name specific people or organizations with shares
+                </div>
               </div>
             </button>
           </div>
@@ -198,7 +261,16 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
             <h3 className="ifw-section-title">Add Residue Beneficiary</h3>
 
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isOrg} onChange={(e) => { setIsOrg(e.target.checked); setBackup(''); setShareType(''); }} className="h-4 w-4 rounded" />
+              <input
+                type="checkbox"
+                checked={isOrg}
+                onChange={(e) => {
+                  setIsOrg(e.target.checked);
+                  setBackup('');
+                  setShareType('');
+                }}
+                className="h-4 w-4 rounded"
+              />
               This is an organization (not a person)
             </label>
 
@@ -208,9 +280,19 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   {isOrg ? 'Organization Name *' : 'Beneficiary *'}
                 </label>
                 {isOrg ? (
-                  <input type="text" value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} className="ifw-input" placeholder="Enter organization name" />
+                  <input
+                    type="text"
+                    value={beneficiary}
+                    onChange={(e) => setBeneficiary(e.target.value)}
+                    className="ifw-input"
+                    placeholder="Enter organization name"
+                  />
                 ) : (
-                  <select value={beneficiary} onChange={(e) => setBeneficiary(e.target.value)} className="ifw-input">
+                  <select
+                    value={beneficiary}
+                    onChange={(e) => setBeneficiary(e.target.value)}
+                    className="ifw-input"
+                  >
                     <option value="">Select person...</option>
                     {(keyPeople ?? []).map((p) => (
                       <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
@@ -224,20 +306,33 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
               {!isOrg && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Backup</label>
-                  <select value={backup} onChange={(e) => setBackup(e.target.value)} className="ifw-input">
+                  <select
+                    value={backup}
+                    onChange={(e) => setBackup(e.target.value)}
+                    className="ifw-input"
+                  >
                     <option value="">None</option>
-                    {(keyPeople ?? []).filter((p) => `${p.firstName} ${p.lastName}` !== beneficiary).map((p) => (
-                      <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
-                        {p.firstName} {p.lastName}
-                      </option>
-                    ))}
+                    {(keyPeople ?? [])
+                      .filter((p) => `${p.firstName} ${p.lastName}` !== beneficiary)
+                      .map((p) => (
+                        <option key={p.id} value={`${p.firstName} ${p.lastName}`}>
+                          {p.firstName} {p.lastName}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium mb-1">Shares *</label>
-                <input type="number" value={shares} onChange={(e) => setShares(e.target.value)} className="ifw-input" min={1} placeholder="e.g. 50" />
+                <input
+                  type="number"
+                  value={shares}
+                  onChange={(e) => setShares(e.target.value)}
+                  className="ifw-input"
+                  min={1}
+                  placeholder="e.g. 50"
+                />
               </div>
 
               {!isOrg && (
@@ -245,11 +340,23 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   <label className="block text-sm font-medium mb-1">Distribution Type *</label>
                   <div className="flex gap-4 mt-2">
                     <label className="flex items-center gap-1.5 text-sm">
-                      <input type="radio" name="residue-type" value="per_stirpes" checked={shareType === 'per_stirpes'} onChange={() => setShareType('per_stirpes')} />
+                      <input
+                        type="radio"
+                        name="residue-type"
+                        value="per_stirpes"
+                        checked={shareType === 'per_stirpes'}
+                        onChange={() => setShareType('per_stirpes')}
+                      />
                       Per Stirpes
                     </label>
                     <label className="flex items-center gap-1.5 text-sm">
-                      <input type="radio" name="residue-type" value="per_capita" checked={shareType === 'per_capita'} onChange={() => setShareType('per_capita')} />
+                      <input
+                        type="radio"
+                        name="residue-type"
+                        value="per_capita"
+                        checked={shareType === 'per_capita'}
+                        onChange={() => setShareType('per_capita')}
+                      />
                       Per Capita
                     </label>
                   </div>
@@ -259,8 +366,11 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
 
             {formError && <p className="text-xs text-[var(--ifw-error)]">{formError}</p>}
 
-            <button type="button" onClick={addBeneficiary}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--ifw-primary-500)] text-[var(--ifw-primary-text)] hover:bg-[var(--ifw-primary-hover)] disabled:opacity-40 transition-colors">
+            <button
+              type="button"
+              onClick={addBeneficiary}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--ifw-primary-500)] text-[var(--ifw-primary-text)] hover:bg-[var(--ifw-primary-hover)] disabled:opacity-40 transition-colors"
+            >
               Add Beneficiary
             </button>
 
@@ -280,13 +390,35 @@ export function ResidueStep({ estateDocId, willData, onNext, onPrev, isFirstStep
                   <tbody>
                     {beneficiaries.map((row, i) => (
                       <tr key={i} className="border-t border-[var(--ifw-border)]">
-                        <td className="px-3 py-2">{row.beneficiary}{row.isOrganization ? ' (Org)' : ''}</td>
-                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">{row.backup ?? '—'}</td>
-                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">{row.type === 'per_stirpes' ? 'Per Stirpes' : row.type === 'per_capita' ? 'Per Capita' : '—'}</td>
+                        <td className="px-3 py-2">
+                          {row.beneficiary}
+                          {row.isOrganization ? ' (Org)' : ''}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">
+                          {row.backup ?? '—'}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--ifw-text-muted)]">
+                          {row.type === 'per_stirpes'
+                            ? 'Per Stirpes'
+                            : row.type === 'per_capita'
+                              ? 'Per Capita'
+                              : '—'}
+                        </td>
                         <td className="px-3 py-2 text-right">{row.shares}</td>
-                        <td className="px-3 py-2 text-right">{totalShares > 0 ? ((row.shares ?? 0) / totalShares * 100).toFixed(1) : 0}%</td>
                         <td className="px-3 py-2 text-right">
-                          <button type="button" onClick={() => removeBeneficiary(i)} className="text-xs text-[var(--ifw-error)] hover:underline">Remove</button>
+                          {totalShares > 0
+                            ? (((row.shares ?? 0) / totalShares) * 100).toFixed(1)
+                            : 0}
+                          %
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => removeBeneficiary(i)}
+                            className="text-xs text-[var(--ifw-error)] hover:underline"
+                          >
+                            Remove
+                          </button>
                         </td>
                       </tr>
                     ))}

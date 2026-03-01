@@ -2,7 +2,7 @@
  * Sidebar state hook — collapsed toggle with localStorage persistence
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'ifw-sidebar-collapsed';
 
@@ -55,7 +55,7 @@ export function useSidebarState() {
         collapse();
       }
     },
-    [collapse],
+    [collapse]
   );
 
   return { collapsed, toggle, expand, collapse, autoCollapse };

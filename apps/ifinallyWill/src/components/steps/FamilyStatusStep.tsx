@@ -3,17 +3,34 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
+import { StepLayout } from '../shared/StepLayout';
 
 const STATUSES = [
-  { value: 'single', label: 'Single', icon: '👤', description: 'Not married or in a common-law relationship' },
+  {
+    value: 'single',
+    label: 'Single',
+    icon: '👤',
+    description: 'Not married or in a common-law relationship',
+  },
   { value: 'married', label: 'Married', icon: '💍', description: 'Legally married' },
-  { value: 'common_law', label: 'Common Law', icon: '💑', description: 'Living together in a conjugal relationship' },
+  {
+    value: 'common_law',
+    label: 'Common Law',
+    icon: '💑',
+    description: 'Living together in a conjugal relationship',
+  },
 ] as const;
 
-export function FamilyStatusStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function FamilyStatusStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.maritalStatus as string | undefined;
   const [selected, setSelected] = useState(existing ?? '');
   const autoSave = useAutoSave({ estateDocId, section: 'maritalStatus' });

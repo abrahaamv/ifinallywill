@@ -2,26 +2,33 @@
  * Step 12: Executors — choose who will manage your estate
  */
 
-import { useState, useEffect } from 'react';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonSelector } from '../shared/PersonSelector';
+import { useEffect, useState } from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
+import { PersonSelector } from '../shared/PersonSelector';
+import { StepLayout } from '../shared/StepLayout';
 
 interface ExecutorEntry {
   keyNameId: string;
   position: 'primary' | 'alternate' | 'backup';
 }
 
-export function ExecutorsStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function ExecutorsStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.executors as ExecutorEntry[] | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'executors' });
 
   const [primaryId, setPrimaryId] = useState(
-    existing?.find((e) => e.position === 'primary')?.keyNameId ?? '',
+    existing?.find((e) => e.position === 'primary')?.keyNameId ?? ''
   );
   const [alternateId, setAlternateId] = useState(
-    existing?.find((e) => e.position === 'alternate')?.keyNameId ?? '',
+    existing?.find((e) => e.position === 'alternate')?.keyNameId ?? ''
   );
 
   useEffect(() => {

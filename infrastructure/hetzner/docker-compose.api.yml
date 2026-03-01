@@ -1,18 +1,18 @@
-# Platform API Server - Hetzner Deployment
+# IFinallyWill API Server - Hetzner Deployment
 # Deploy alongside Janus Gateway and VK-Agent
 #
 # Usage:
-#   scp -r infrastructure/hetzner root@178.156.151.139:/opt/platform-api/
-#   ssh root@178.156.151.139 "cd /opt/platform-api && docker compose -f docker-compose.api.yml up -d"
+#   scp -r infrastructure/hetzner root@178.156.151.139:/opt/ifinallywill-api/
+#   ssh root@178.156.151.139 "cd /opt/ifinallywill-api && docker compose -f docker-compose.api.yml up -d"
 
-name: platform-api
+name: ifinallywill-api
 
 services:
   api:
     build:
       context: ../..
       dockerfile: packages/api/Dockerfile
-    container_name: platform-api
+    container_name: ifinallywill-api
     restart: unless-stopped
     ports:
       - "3001:3001"  # HTTP API (tRPC)
@@ -51,18 +51,18 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - platform-network
+      - ifinallywill-network
     depends_on:
       - vk-agent
 
   # Reference existing services (already running)
   vk-agent:
-    image: platform-vk-agent:latest
+    image: ifinallywill-vk-agent:latest
     container_name: vk-agent
     # This service is already running - just reference for networking
     external: true
 
 networks:
-  platform-network:
+  ifinallywill-network:
     external: true
-    name: platform-network
+    name: ifinallywill-network

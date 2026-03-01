@@ -25,7 +25,10 @@ const BULLETS = [
 
 export function WelcomeStep({ onNext }: Props) {
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '700px', margin: '0 auto' }}>
+    <div
+      className="animate-fade-in"
+      style={{ padding: '2rem 1rem', maxWidth: '700px', margin: '0 auto' }}
+    >
       <SectionTitle>Let&apos;s Get Started</SectionTitle>
       <StepSubtitle>{INTRO}</StepSubtitle>
 
@@ -41,7 +44,8 @@ export function WelcomeStep({ onNext }: Props) {
               fontWeight: 500,
               color: '#1a1a1a',
               lineHeight: 1.5,
-              borderBottom: i < BULLETS.length - 1 ? '1px solid var(--color-border, #E5E7EB)' : 'none',
+              borderBottom:
+                i < BULLETS.length - 1 ? '1px solid var(--color-border, #E5E7EB)' : 'none',
             }}
           >
             <span

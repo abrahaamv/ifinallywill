@@ -2,18 +2,24 @@
  * Step 3: Spouse Information (conditional — married/common_law only)
  */
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { spouseInfoSchema } from '@platform/api-contract/schemas';
+import { useEffect } from 'react';
 import type { z } from 'zod';
-import { StepLayout } from '../shared/StepLayout';
+import { useAssistantForm } from '../../hooks/useAssistantForm';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import type { StepProps } from '../../lib/types';
+import { StepLayout } from '../shared/StepLayout';
 
 type FormData = z.infer<typeof spouseInfoSchema>;
 
-export function SpouseInfoStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function SpouseInfoStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const existing = willData.spouseInfo as FormData | undefined;
   const autoSave = useAutoSave({ estateDocId, section: 'spouseInfo' });
 
@@ -22,8 +28,8 @@ export function SpouseInfoStep({ estateDocId, willData, onNext, onPrev, isFirstS
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(spouseInfoSchema),
+  } = useAssistantForm<FormData>({
+    schema: spouseInfoSchema,
     defaultValues: {
       firstName: existing?.firstName ?? '',
       lastName: existing?.lastName ?? '',
@@ -59,43 +65,51 @@ export function SpouseInfoStep({ estateDocId, willData, onNext, onPrev, isFirstS
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="si-firstName" className="block text-sm font-medium mb-1">First Name *</label>
-            <input
-              id="si-firstName"
-              {...register('firstName')}
-              className="ifw-input"
-            />
-            {errors.firstName && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.firstName.message}</p>}
+            <label htmlFor="si-firstName" className="block text-sm font-medium mb-1">
+              First Name *
+            </label>
+            <input id="si-firstName" {...register('firstName')} className="ifw-input" />
+            {errors.firstName && (
+              <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.firstName.message}</p>
+            )}
           </div>
           <div>
-            <label htmlFor="si-lastName" className="block text-sm font-medium mb-1">Last Name *</label>
-            <input
-              id="si-lastName"
-              {...register('lastName')}
-              className="ifw-input"
-            />
-            {errors.lastName && <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.lastName.message}</p>}
+            <label htmlFor="si-lastName" className="block text-sm font-medium mb-1">
+              Last Name *
+            </label>
+            <input id="si-lastName" {...register('lastName')} className="ifw-input" />
+            {errors.lastName && (
+              <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.lastName.message}</p>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="si-email" className="block text-sm font-medium mb-1">Email</label>
+            <label htmlFor="si-email" className="block text-sm font-medium mb-1">
+              Email
+            </label>
             <input id="si-email" type="email" {...register('email')} className="ifw-input" />
           </div>
           <div>
-            <label htmlFor="si-phone" className="block text-sm font-medium mb-1">Phone</label>
+            <label htmlFor="si-phone" className="block text-sm font-medium mb-1">
+              Phone
+            </label>
             <input id="si-phone" {...register('phone')} className="ifw-input" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="si-city" className="block text-sm font-medium mb-1">City</label>
+            <label htmlFor="si-city" className="block text-sm font-medium mb-1">
+              City
+            </label>
             <input id="si-city" {...register('city')} className="ifw-input" />
           </div>
           <div>
-            <label htmlFor="si-province" className="block text-sm font-medium mb-1">Province</label>
+            <label htmlFor="si-province" className="block text-sm font-medium mb-1">
+              Province
+            </label>
             <input id="si-province" {...register('province')} className="ifw-input" />
           </div>
         </div>

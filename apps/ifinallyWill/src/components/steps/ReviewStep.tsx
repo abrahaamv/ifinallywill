@@ -1,45 +1,46 @@
 /**
  * Step 16: Review — summary of all will data before finalizing
- * Includes document preview via template renderer.
  */
 
-import { useState, useCallback } from 'react';
+import { PROVINCES } from '../../config/provinces';
+import type { StepProps } from '../../lib/types';
 import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
-import { DocumentPreview } from '../shared/DocumentPreview';
-import { PROVINCES } from '../../config/provinces';
-import { loadTemplate } from '../../templates/index';
-import { renderDocument } from '../../lib/template-renderer';
-import { mapWillToTemplateData, mapBequestsToTemplateFormat } from '../../lib/template-data-mapper';
-import type { StepProps } from '../../lib/types';
-import type { WillData, KeyName } from '../../lib/types';
-import type { DbBequest } from '../../lib/template-data-mapper';
 
-export function ReviewStep({ estateDocId, willData, onNext, onPrev, isFirstStep, isLastStep }: StepProps) {
+export function ReviewStep({
+  estateDocId,
+  willData,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: StepProps) {
   const { data: people } = trpc.keyNames.list.useQuery();
   const { data: assets } = trpc.estateAssets.list.useQuery({});
   const { data: bequestsList } = trpc.bequests.listByDoc.useQuery({ estateDocId });
 
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-
   const completedSteps = (willData.completedSteps as string[] | null) ?? [];
-  const personalInfo = willData.personalInfo as { fullName?: string; email?: string; city?: string; province?: string } | undefined;
+  const personalInfo = willData.personalInfo as
+    | { fullName?: string; email?: string; city?: string; province?: string }
+    | undefined;
   const maritalStatus = willData.maritalStatus as string | undefined;
   const spouseInfo = willData.spouseInfo as { firstName?: string; lastName?: string } | undefined;
-  const executors = willData.executors as Array<{ keyNameId: string; position: string }> | undefined;
-  const residue = willData.residue as { selected?: string; beneficiary?: Array<{ beneficiary: string }> } | undefined;
-  const additional = willData.additional as { organDonation?: boolean; finalRestingPlace?: string; otherWishes?: string[] } | undefined;
+  const executors = willData.executors as
+    | Array<{ keyNameId: string; position: string }>
+    | undefined;
+  const residue = willData.residue as
+    | { selected?: string; beneficiary?: Array<{ beneficiary: string }> }
+    | undefined;
+  const additional = willData.additional as
+    | { organDonation?: boolean; finalRestingPlace?: string; otherWishes?: string[] }
+    | undefined;
 
   const getPersonName = (id: string) => {
     const p = (people ?? []).find((x) => x.id === id);
     return p ? `${p.firstName} ${p.lastName}` : 'Unknown';
   };
 
-  const getProvinceName = (code: string) =>
-    PROVINCES.find((p) => p.code === code)?.name ?? code;
+  const getProvinceName = (code: string) => PROVINCES.find((p) => p.code === code)?.name ?? code;
 
   const sections = [
     {
@@ -116,75 +117,9 @@ export function ReviewStep({ estateDocId, willData, onNext, onPrev, isFirstStep,
   const statusMutation = trpc.estateDocuments.updateStatus.useMutation();
 
   const handleFinish = () => {
-    statusMutation.mutate(
-      { id: estateDocId, status: 'complete' },
-      { onSuccess: () => onNext() },
-    );
+    statusMutation.mutate({ id: estateDocId, status: 'complete' }, { onSuccess: () => onNext() });
   };
 
-  const handlePreview = useCallback(async () => {
-    const province = personalInfo?.province;
-    if (!province) {
-      setPreviewError('Province is required to preview your document.');
-      return;
-    }
-
-    setPreviewLoading(true);
-    setPreviewError(null);
-
-    try {
-      const templateSections = await loadTemplate(province, 'defaultWill');
-      if (!templateSections) {
-        setPreviewError('No template available for your province yet.');
-        setPreviewLoading(false);
-        return;
-      }
-
-      const templateData = mapWillToTemplateData(
-        willData as WillData,
-        (people ?? []) as KeyName[],
-        'defaultWill',
-      );
-
-      if (bequestsList && bequestsList.length > 0) {
-        const bequestData = mapBequestsToTemplateFormat(
-          bequestsList as unknown as DbBequest[],
-          (people ?? []) as KeyName[],
-        );
-        (templateData as Record<string, unknown>).bequests = bequestData;
-      }
-
-      const html = renderDocument(templateSections, templateData);
-      setPreviewHtml(html);
-      setShowPreview(true);
-    } catch (err) {
-      setPreviewError(err instanceof Error ? err.message : 'Failed to generate preview.');
-    } finally {
-      setPreviewLoading(false);
-    }
-  }, [willData, people, bequestsList, personalInfo?.province]);
-
-  // Preview mode
-  if (showPreview && previewHtml) {
-    return (
-      <StepLayout
-        title="Document Preview"
-        description="Review how your will document will look."
-        onNext={handleFinish}
-        onPrev={onPrev}
-        isFirstStep={isFirstStep}
-        isLastStep={isLastStep}
-      >
-        <DocumentPreview
-          html={previewHtml}
-          title="Last Will and Testament — Preview"
-          onClose={() => setShowPreview(false)}
-        />
-      </StepLayout>
-    );
-  }
-
-  // Checklist mode
   return (
     <StepLayout
       title="Review Your Will"
@@ -217,25 +152,6 @@ export function ReviewStep({ estateDocId, willData, onNext, onPrev, isFirstStep,
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Preview button */}
-      <div className="mt-6 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handlePreview}
-          disabled={previewLoading}
-          className="px-4 py-2 text-sm font-medium border border-[var(--ifw-primary-300)] text-[var(--ifw-primary-700)] rounded-lg hover:bg-[var(--ifw-primary-50)] disabled:opacity-40 flex items-center gap-2"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-          {previewLoading ? 'Generating Preview...' : 'Preview Document'}
-        </button>
-        {previewError && (
-          <span className="text-xs text-[var(--ifw-error)]">{previewError}</span>
-        )}
       </div>
 
       {statusMutation.isPending && (

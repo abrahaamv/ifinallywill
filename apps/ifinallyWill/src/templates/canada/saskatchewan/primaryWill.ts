@@ -1,13 +1,12 @@
 import type { TemplateSection } from '../../../lib/template-renderer';
 
-export const sections: TemplateSection[] =
-[
- {
- id: "primaryWill-titleIntro",
- title: `<p style="text-align: center"><strong> PRIMARY LAST WILL AND TESTAMENT OF {{personal.fullName}}</strong></p>`,
- order: 1,
- fallback: "",
- content: `
+export const sections: TemplateSection[] = [
+  {
+    id: 'primaryWill-titleIntro',
+    title: `<p style="text-align: center"><strong> PRIMARY LAST WILL AND TESTAMENT OF {{personal.fullName}}</strong></p>`,
+    order: 1,
+    fallback: '',
+    content: `
  <p><br /><br />
  I, {{personal.fullName}}, presently of {{personal.city}}
  {{#if personal.province}}, {{personal.province}}{{/if}}, declare that this is my Primary Last Will and Testament
@@ -24,26 +23,26 @@ export const sections: TemplateSection[] =
  <br /><br />
  </p>
  `,
- keywords: ["personal.fullName", "personal.city", "personal.province"],
- children: []
- },
- {
- id: "primaryWill-priorWillsCodicils",
- title: `<p><strong><u>Prior Wills and Codicils</u></strong></p>`,
- order: 2,
- fallback: "",
- content: `<ol>
+    keywords: ['personal.fullName', 'personal.city', 'personal.province'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-priorWillsCodicils',
+    title: `<p><strong><u>Prior Wills and Codicils</u></strong></p>`,
+    order: 2,
+    fallback: '',
+    content: `<ol>
  <li>I revoke all prior Wills and Codicils.</li>
 </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "primaryWill-maritalStatus",
- title: `<p><strong><u>Marital Status</u></strong></p>`,
- order: 3,
- fallback: "",
- content: `<ol>
+    keywords: [],
+    children: [],
+  },
+  {
+    id: 'primaryWill-maritalStatus',
+    title: `<p><strong><u>Marital Status</u></strong></p>`,
+    order: 3,
+    fallback: '',
+    content: `<ol>
  <li>
  {{#if isMarried}}
  I am married to {{spouseInfo.firstName}} {{spouseInfo.middleName}} {{spouseInfo.lastName}} (my "{{spouseInfo.relative}}").
@@ -54,15 +53,22 @@ export const sections: TemplateSection[] =
  {{/if}}
  </li>
 </ol>`,
- keywords: ["isMarried", "isCommonRelationship", "spouseInfo.firstName", "spouseInfo.middleName", "spouseInfo.lastName", "spouseInfo.relative"],
- children: []
- },
- {
- id: "primaryWill-currentChildren",
- title: `<p><strong><u>Current Children</u></strong></p>`,
- order: 4,
- fallback: "",
- content: `<ol>
+    keywords: [
+      'isMarried',
+      'isCommonRelationship',
+      'spouseInfo.firstName',
+      'spouseInfo.middleName',
+      'spouseInfo.lastName',
+      'spouseInfo.relative',
+    ],
+    children: [],
+  },
+  {
+    id: 'primaryWill-currentChildren',
+    title: `<p><strong><u>Current Children</u></strong></p>`,
+    order: 4,
+    fallback: '',
+    content: `<ol>
  {{#if hasKids}}
  <li>I have the following living children: </li>
  <ul>
@@ -75,37 +81,37 @@ export const sections: TemplateSection[] =
  <li>I do not currently have any living children</li>
  {{/if}}
 </ol>`,
- keywords: ["hasKids", "kids"],
- children: []
- },
- {
- id: "primaryWill-executor",
- title: `<p style="text-align: center"><strong>II. EXECUTOR</strong></p>`,
- order: 5,
- fallback: "",
- content: "",
- keywords: [],
- children: [
- {
- id: "primaryWill-executorDefinition",
- title: `<p><strong><u>Definition</u></strong></p>`,
- order: 1,
- fallback: "",
- content: `<ol>
+    keywords: ['hasKids', 'kids'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-executor',
+    title: `<p style="text-align: center"><strong>II. EXECUTOR</strong></p>`,
+    order: 5,
+    fallback: '',
+    content: '',
+    keywords: [],
+    children: [
+      {
+        id: 'primaryWill-executorDefinition',
+        title: `<p><strong><u>Definition</u></strong></p>`,
+        order: 1,
+        fallback: '',
+        content: `<ol>
  <li>The expression "my Executor" used throughout this Will includes either the singular or plural number,
  wherever the fact or context so requires. The term "executor" in this Will is synonymous with and includes
  the terms "personal representative" and "executrix".
  </li>
  </ol>`,
- keywords: [],
- children: []
- },
- {
- id: "primaryWill-executorAppointment",
- title: `<p><strong><u>Appointment</u></strong></p>`,
- order: 2,
- fallback: "",
- content: `<ol>
+        keywords: [],
+        children: [],
+      },
+      {
+        id: 'primaryWill-executorAppointment',
+        title: `<p><strong><u>Appointment</u></strong></p>`,
+        order: 2,
+        fallback: '',
+        content: `<ol>
  {{#if executors.length}}
  {{#groupByPriority executors}}
  {{#eachGroup}}
@@ -140,15 +146,15 @@ export const sections: TemplateSection[] =
  {{/if}}
  <li>No bond or other security of any kind will be required of any Executor appointed in this my Will.</li>
  </ol>`,
- keywords: ["executors", "relatives", "kids", "spouseInfo"],
- children: []
- },
- {
- id: "primaryWill-executorPowers",
- title: `<p><strong><u>Powers of my Executor</u></strong></p>`,
- order: 3,
- fallback: "",
- content: `<ol>
+        keywords: ['executors', 'relatives', 'kids', 'spouseInfo'],
+        children: [],
+      },
+      {
+        id: 'primaryWill-executorPowers',
+        title: `<p><strong><u>Powers of my Executor</u></strong></p>`,
+        order: 3,
+        fallback: '',
+        content: `<ol>
  <li>I give and appoint to my Executor the following duties and powers with respect to my estate:</li>
  <ul>
  <li>
@@ -220,17 +226,17 @@ export const sections: TemplateSection[] =
  as often as required, and without application to or approval by any court.
  </li>
  </ol>`,
- keywords: ["trusting", "minTrustingAge"],
- children: []
- }
- ]
- },
- {
- id: "primaryWill-dispositionOfEstate",
- title: `<p style="text-align: center"><strong>III. DISPOSITION OF ESTATE</strong></p>`,
- order: 6,
- fallback: "",
- content: `{{#if bequests}}
+        keywords: ['trusting', 'minTrustingAge'],
+        children: [],
+      },
+    ],
+  },
+  {
+    id: 'primaryWill-dispositionOfEstate',
+    title: `<p style="text-align: center"><strong>III. DISPOSITION OF ESTATE</strong></p>`,
+    order: 6,
+    fallback: '',
+    content: `{{#if bequests}}
  {{#if_gt bequests.length 0}}
  <p><strong><u>Bequests</u></strong></p>
  <ol>
@@ -328,15 +334,15 @@ export const sections: TemplateSection[] =
  <li>All property distributed under this Will is subject to any encumbrances or liens attached to the property.</li>
  {{/if_eq}}
 </ol>`,
- keywords: ["bequests", "relatives", "kids", "spouseInfo", "residueInfo"],
- children: []
- },
- {
- id: "primaryWill-wipeoutProvision",
- title: `<p><strong><u>Wipeout Provision</u></strong></p>`,
- order: 7,
- fallback: "",
- content: `<ol>
+    keywords: ['bequests', 'relatives', 'kids', 'spouseInfo', 'residueInfo'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-wipeoutProvision',
+    title: `<p><strong><u>Wipeout Provision</u></strong></p>`,
+    order: 7,
+    fallback: '',
+    content: `<ol>
  <li>Should all my named beneficiaries and alternate beneficiaries predecease me or fail to survive me for thirty
  full days, or should they all die before becoming entitled to receive the whole of their share of my estate,
  then I direct my Executor to divide any remaining residue of my estate into equal shares as outlined below
@@ -434,15 +440,15 @@ export const sections: TemplateSection[] =
  {{/if}}
  </ul>
 </ol>`,
- keywords: ["wipeoutInfo", "relatives", "kids", "spouseInfo"],
- children: []
- },
- {
- id: "primaryWill-children",
- title: `{{#if hasKids}}{{#if_gt guardians.length 0}}<p style="text-align: center"><strong>IV. CHILDREN</strong></p>{{/if_gt}}{{/if}}`,
- order: 8,
- fallback: "",
- content: `{{#if hasKids}}
+    keywords: ['wipeoutInfo', 'relatives', 'kids', 'spouseInfo'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-children',
+    title: `{{#if hasKids}}{{#if_gt guardians.length 0}}<p style="text-align: center"><strong>IV. CHILDREN</strong></p>{{/if_gt}}{{/if}}`,
+    order: 8,
+    fallback: '',
+    content: `{{#if hasKids}}
  {{#if_gt guardians.length 0}}
  <p><strong><u>Guardian for Minor and Dependent Children</u></strong></p>
  <ol>
@@ -471,29 +477,29 @@ export const sections: TemplateSection[] =
  </ol>
  {{/if_gt}}
 {{/if}}`,
- keywords: ["hasKids", "guardians", "relatives", "kids", "spouseInfo"],
- children: []
- },
- {
- id: "primaryWill-respRdsp",
- title: `{{#if hasKids}}{{#if_gt guardians.length 0}}<p style="text-align: center"><strong>V. RESP AND RDSP</strong></p>{{else}}<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>{{/if_gt}}{{else}}<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>{{/if}}`,
- order: 9,
- fallback: "",
- content: `<ol>
+    keywords: ['hasKids', 'guardians', 'relatives', 'kids', 'spouseInfo'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-respRdsp',
+    title: `{{#if hasKids}}{{#if_gt guardians.length 0}}<p style="text-align: center"><strong>V. RESP AND RDSP</strong></p>{{else}}<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>{{/if_gt}}{{else}}<p style="text-align: center"><strong>IV. RESP AND RDSP</strong></p>{{/if}}`,
+    order: 9,
+    fallback: '',
+    content: `<ol>
  <li>If my Spouse survives me, my Executor(s) shall appoint my Spouse as the Successor Subscriber of any Registered Education Savings Plan (RESP) and / or Registered Disability Savings Plan (RDSP) of which I may be the sole subscriber at the time of my death.</li>
  <li>In the event that my Spouse has predeceased me, my Executor(s) shall appoint, as Successor Subscriber, a parent of the beneficiary(ies), Guardian for Property of the beneficiary(ies), person standing in the place of a parent of the beneficiary(ies) or to any other person, including the beneficiary(ies), which my Executor(s), in their sole discretion, considers to be a proper Successor Subscriber.</li>
  <li>The appointment by my Executor of a Successor Subscriber shall constitute a full and sufficient release to my Executor who shall not be obliged to see to the maintenance of the RESP and/or RDSP.</li>
  <li>Without limiting the foregoing, it is my wish that such Successor Subscriber shall take such steps as are necessary in order for the RESP to be maintained by them as the Successor Subscriber until such time as the beneficiary(ies) of the said RESP and / or RDSP qualify or may qualify for educational assistance payments (as such term is defined in the Income Tax Act).</li>
 </ol>`,
- keywords: ["spouseInfo"],
- children: []
- },
- {
- id: "primaryWill-testamentaryTrusts",
- title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VI{{else}}V{{/if_gt}}{{else}}V{{/if}} TESTAMENTARY TRUSTS</strong></p>`,
- order: 10,
- fallback: "",
- content: `<p><strong><u>Testamentary Trust for Young Beneficiaries</u></strong></p>
+    keywords: ['spouseInfo'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-testamentaryTrusts',
+    title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VI{{else}}V{{/if_gt}}{{else}}V{{/if}} TESTAMENTARY TRUSTS</strong></p>`,
+    order: 10,
+    fallback: '',
+    content: `<p><strong><u>Testamentary Trust for Young Beneficiaries</u></strong></p>
 <ol>
  {{#if trusting}}
  {{#if trusting.0.age}}
@@ -647,15 +653,15 @@ export const sections: TemplateSection[] =
  <li>If any trust condition is held invalid, it will not affect other provisions that can be given effect without the
  invalid provision.</li>
 </ol>`,
- keywords: ["trusting", "minTrustingAge", "maxTrustingAge"],
- children: []
- },
- {
- id: "primaryWill-digitalAssets",
- title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VII{{else}}VI{{/if_gt}}{{else}}VI{{/if}}. DIGITAL ASSETS</strong></p>`,
- order: 11,
- fallback: "",
- content: `<ol>
+    keywords: ['trusting', 'minTrustingAge', 'maxTrustingAge'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-digitalAssets',
+    title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VII{{else}}VI{{/if_gt}}{{else}}VI{{/if}}. DIGITAL ASSETS</strong></p>`,
+    order: 11,
+    fallback: '',
+    content: `<ol>
  <li>My Executor(s) may access, handle, distribute, and dispose of my digital assets, and may obtain, access, modify,
  delete, and control my passwords and other electronic credentials associated with my digital devices and digital
  assets.</li>
@@ -671,15 +677,15 @@ export const sections: TemplateSection[] =
  financial accounts, banking accounts, domain registrations, DNS service accounts, web hosting accounts, tax
  items, regardless of the ownership of any physical device upon which the digital item is stored.</li>
 </ol>`,
- keywords: ["hasKids", "guardians"],
- children: []
- },
- {
- id: "primaryWill-generalProvisions",
- title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VIII{{else}}VII{{/if_gt}}{{else}}VII{{/if}}. GENERAL PROVISIONS</strong></p>`,
- order: 12,
- fallback: "",
- content: `{{#if pets}}
+    keywords: ['hasKids', 'guardians'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-generalProvisions',
+    title: `<p style="text-align: center"><strong>{{#if hasKids}}{{#if_gt guardians.length 0}}VIII{{else}}VII{{/if_gt}}{{else}}VII{{/if}}. GENERAL PROVISIONS</strong></p>`,
+    order: 12,
+    fallback: '',
+    content: `{{#if pets}}
  {{#if_gt pets.length 0}}
  <p><strong><u>Pets</u></strong></p>
  <ol>
@@ -799,15 +805,15 @@ export const sections: TemplateSection[] =
  <li>If any provisions of this Will are deemed unenforceable, the remaining provisions will remain in full force and
  effect.</li>
 </ol>`,
- keywords: ["pets", "relatives", "kids", "spouseInfo", "additionalInfo", "hasKids", "guardians"],
- children: []
- },
- {
- id: "primaryWill-signatureExecution",
- title: `<p>&nbsp;</p><p style="text-align: center"><em>The remainder of this page has intentionally been left blank.</em></p>`,
- order: 13,
- fallback: "",
-content: `<p>IN WITNESS WHEREOF, I have signed my name on this the _________ day of ______________________, 20______,
+    keywords: ['pets', 'relatives', 'kids', 'spouseInfo', 'additionalInfo', 'hasKids', 'guardians'],
+    children: [],
+  },
+  {
+    id: 'primaryWill-signatureExecution',
+    title: `<p>&nbsp;</p><p style="text-align: center"><em>The remainder of this page has intentionally been left blank.</em></p>`,
+    order: 13,
+    fallback: '',
+    content: `<p>IN WITNESS WHEREOF, I have signed my name on this the _________ day of ______________________, 20______,
  at {{personal.city}}, {{personal.province}} declaring and publishing this instrument as my Last Will, in the presence of the undersigned
  witnesses, who witnessed and subscribed this Last Will at my request, and in my presence
 <br /><br /><br /> _____________________________<br /> {{personal.fullName}} (Testator) Signature<br /> <br /><br /> SIGNED
@@ -821,8 +827,7 @@ Witness #2 ____________________________________<br /><br /> Address:<br />______
 Toronto, ON<br /> ifinallywill.com<br /> info@ifinallywill.com<br />
 <br /><br /><br /><br />
 </p>`,
- keywords: ["personal.fullName", "personal.city", "personal.province"],
- children: []
- }
-]
-;
+    keywords: ['personal.fullName', 'personal.city', 'personal.province'],
+    children: [],
+  },
+];

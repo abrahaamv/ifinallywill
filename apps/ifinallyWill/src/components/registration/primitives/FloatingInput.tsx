@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 interface FloatingInputProps {
   id: string;
@@ -48,7 +48,9 @@ export function FloatingInput({
           {label}
         </label>
         {rightElement && (
-          <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}>
+          <div
+            style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}
+          >
             {rightElement}
           </div>
         )}

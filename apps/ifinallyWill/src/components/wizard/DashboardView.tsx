@@ -5,8 +5,8 @@
  * "Continue where you left off" recommendation, and overall progress.
  */
 
-import type { WizardCategory, StepConfig } from '../../lib/wizard';
 import type { CategoryCompletion } from '../../hooks/usePersonalData';
+import type { StepConfig, WizardCategory } from '../../lib/wizard';
 
 interface Props {
   ownerName: string;
@@ -85,7 +85,8 @@ export function DashboardView({
           className="w-full mb-6 p-4 rounded-xl border border-dashed border-[var(--ifw-primary-300)] bg-[var(--ifw-primary-50)] hover:bg-[var(--ifw-primary-100)] transition-colors text-left"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg"
               style={{ background: 'linear-gradient(135deg, #FFBF00, #FFD54F)' }}
             >
               ▶
@@ -94,9 +95,7 @@ export function DashboardView({
               <div className="text-sm font-medium text-[var(--ifw-primary-700)]">
                 Continue where you left off
               </div>
-              <div className="text-xs text-[var(--ifw-neutral-500)]">
-                {recommendedStep.label}
-              </div>
+              <div className="text-xs text-[var(--ifw-neutral-500)]">{recommendedStep.label}</div>
             </div>
           </div>
         </button>
@@ -134,9 +133,7 @@ export function DashboardView({
               </div>
 
               {/* Description */}
-              <p className="text-xs text-[var(--ifw-neutral-500)] mb-3">
-                {meta.description}
-              </p>
+              <p className="text-xs text-[var(--ifw-neutral-500)] mb-3">{meta.description}</p>
 
               {/* Progress */}
               <div className="flex items-center gap-2">

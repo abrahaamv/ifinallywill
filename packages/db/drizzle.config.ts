@@ -8,7 +8,7 @@ config({ path: resolve(__dirname, '../../.env') });
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
-    'DATABASE_URL is not set. Please create .env file in project root with DATABASE_URL="postgresql://platform:platform_dev_password@localhost:5432/platform"'
+    'DATABASE_URL is not set. Please create .env.local file in project root with DATABASE_URL="postgresql://ifinallywill:ifinallywill_dev_password@localhost:5432/ifinallywill"'
   );
 }
 

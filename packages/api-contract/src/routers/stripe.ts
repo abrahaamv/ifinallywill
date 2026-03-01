@@ -1,6 +1,6 @@
 /**
- * IFinallyWill: Stripe Checkout Router
- * Creates Stripe Checkout Sessions for document orders.
+ * IFinallyWill: Stripe Router
+ * Handles Stripe Checkout Sessions and Payment Intents for document orders.
  */
 
 import { z } from 'zod';
@@ -93,5 +93,80 @@ export const stripeRouter = router({
       }
 
       return { sessionUrl: session.url };
+    }),
+
+  /**
+   * Create a Stripe PaymentIntent for inline Elements payment.
+   * Returns the client secret needed by the frontend to render PaymentElement.
+   */
+  createPaymentIntent: protectedMutation
+    .input(z.object({ orderId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      // Verify order exists, belongs to user, and is still pending
+      const order = await ctx.db.query.documentOrders.findFirst({
+        where: and(
+          eq(documentOrders.id, input.orderId),
+          eq(documentOrders.tenantId, ctx.tenantId),
+          eq(documentOrders.userId, ctx.userId),
+        ),
+      });
+
+      if (!order) throw new Error('Order not found');
+      if (order.status !== 'pending') {
+        throw new Error('Order is no longer pending');
+      }
+
+      // If a PaymentIntent was already created for this order, retrieve it
+      // instead of creating a duplicate
+      const stripe = await getStripe();
+
+      if (order.stripePaymentIntentId) {
+        const existingIntent = await stripe.paymentIntents.retrieve(
+          order.stripePaymentIntentId,
+        );
+        // Update the amount in case a discount was applied after initial creation
+        if (existingIntent.amount !== order.finalPrice) {
+          const updated = await stripe.paymentIntents.update(
+            order.stripePaymentIntentId,
+            { amount: order.finalPrice },
+          );
+          return { clientSecret: updated.client_secret! };
+        }
+        return { clientSecret: existingIntent.client_secret! };
+      }
+
+      // Get order items for the description
+      const items = await ctx.db
+        .select({
+          displayName: documentTypes.displayName,
+        })
+        .from(documentOrderItems)
+        .innerJoin(documentTypes, eq(documentOrderItems.documentTypeId, documentTypes.id))
+        .where(eq(documentOrderItems.orderId, input.orderId));
+
+      const description = items
+        .map((i) => i.displayName ?? 'Estate Document')
+        .join(', ');
+
+      // Create the PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: order.finalPrice,
+        currency: 'cad',
+        automatic_payment_methods: { enabled: true },
+        description: `IFinallyWill: ${description}`,
+        metadata: {
+          orderId: input.orderId,
+          tenantId: ctx.tenantId,
+          userId: ctx.userId,
+        },
+      });
+
+      // Store the PaymentIntent ID on the order for idempotency and webhook matching
+      await ctx.db
+        .update(documentOrders)
+        .set({ stripePaymentIntentId: paymentIntent.id })
+        .where(eq(documentOrders.id, input.orderId));
+
+      return { clientSecret: paymentIntent.client_secret! };
     }),
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface CityEntry {
   city: string;
@@ -102,7 +102,7 @@ export function CityAutocomplete({
         setIsSearching(false);
       }, 300);
     },
-    [allCities, isManualMode, onCityChange, province, country],
+    [allCities, isManualMode, onCityChange, province, country]
   );
 
   const handleSelect = (city: CityEntry) => {

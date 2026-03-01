@@ -3,13 +3,20 @@
  * Select who will be your attorney for property decisions.
  */
 
-import { useState, useEffect } from 'react';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonSelector } from '../shared/PersonSelector';
+import { useEffect, useState } from 'react';
 import { trpc } from '../../utils/trpc';
+import { PersonSelector } from '../shared/PersonSelector';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaAgentSelectionStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaAgentSelectionStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const currentAgent = existingPoa?.primaryAgent as string | undefined;
   const [primaryAgentId, setPrimaryAgentId] = useState(currentAgent ?? '');
   const updateSection = trpc.poaData.updateSection.useMutation();
@@ -32,17 +39,20 @@ export function PoaAgentSelectionStep({ estateDocId, poaData: existingPoa, onNex
 
   const handleNext = () => {
     if (!primaryAgentId) return;
-    updateSection.mutate({
-      estateDocId,
-      section: 'agents',
-      data: {
-        primaryAgent: primaryAgentId,
-        jointAgent: existingPoa?.jointAgent ?? null,
-        backupAgents: existingPoa?.backupAgents ?? [],
-        restrictions: existingPoa?.restrictions ?? null,
-        activationType: existingPoa?.activationType ?? 'immediate',
+    updateSection.mutate(
+      {
+        estateDocId,
+        section: 'agents',
+        data: {
+          primaryAgent: primaryAgentId,
+          jointAgent: existingPoa?.jointAgent ?? null,
+          backupAgents: existingPoa?.backupAgents ?? [],
+          restrictions: existingPoa?.restrictions ?? null,
+          activationType: existingPoa?.activationType ?? 'immediate',
+        },
       },
-    }, { onSuccess: () => onNext() });
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -58,9 +68,9 @@ export function PoaAgentSelectionStep({ estateDocId, poaData: existingPoa, onNex
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>What is an agent?</strong> Your agent (also called attorney) is the person you authorize to
-          make financial and property decisions on your behalf. Choose someone you trust completely — they will
-          have broad authority over your finances.
+          <strong>What is an agent?</strong> Your agent (also called attorney) is the person you
+          authorize to make financial and property decisions on your behalf. Choose someone you
+          trust completely — they will have broad authority over your finances.
         </div>
 
         <div>

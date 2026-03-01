@@ -137,19 +137,18 @@ export const PACKAGES: PackageDefinition[] = [
 export function getPackagesForProvince(provinceCode: string): PackageDefinition[] {
   const hasSecondary = provinceSupportsSecondaryWill(provinceCode);
   return PACKAGES.filter((pkg) =>
-    hasSecondary ? pkg.requiresSecondaryProvince : !pkg.requiresSecondaryProvince,
+    hasSecondary ? pkg.requiresSecondaryProvince : !pkg.requiresSecondaryProvince
   );
 }
 
 export function initializePackageDocuments(
   pkg: PackageDefinition,
   primaryEmail: string,
-  spouseEmail?: string,
+  spouseEmail?: string
 ): PackageDocument[] {
   const halfPoint = Math.ceil(pkg.documents.length / 2);
   return pkg.documents.map((docType, idx) => {
-    const isSpousalDoc =
-      docType === 'spousalWill' || (pkg.isCouples && idx >= halfPoint);
+    const isSpousalDoc = docType === 'spousalWill' || (pkg.isCouples && idx >= halfPoint);
     const owner = isSpousalDoc && spouseEmail ? spouseEmail : primaryEmail;
     const willIdentifier =
       docType === 'spousalWill'

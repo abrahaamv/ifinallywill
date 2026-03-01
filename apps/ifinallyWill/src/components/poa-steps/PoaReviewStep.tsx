@@ -7,7 +7,15 @@ import { trpc } from '../../utils/trpc';
 import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaReviewStep({ estateDocId, poaData: existingPoa, documentType, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaReviewStep({
+  estateDocId,
+  poaData: existingPoa,
+  documentType,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const { data: people } = trpc.keyNames.list.useQuery();
   const statusMutation = trpc.estateDocuments.updateStatus.useMutation();
 
@@ -17,15 +25,15 @@ export function PoaReviewStep({ estateDocId, poaData: existingPoa, documentType,
     return p ? `${p.firstName} ${p.lastName}` : 'Unknown';
   };
 
-  const personalInfo = existingPoa?.personalInfo as { fullName?: string; city?: string; province?: string } | undefined;
+  const personalInfo = existingPoa?.personalInfo as
+    | { fullName?: string; city?: string; province?: string }
+    | undefined;
   const primaryAgent = existingPoa?.primaryAgent as string | undefined;
   const jointAgent = existingPoa?.jointAgent as string | null | undefined;
   const backupAgents = (existingPoa?.backupAgents as string[] | undefined) ?? [];
   const restrictions = existingPoa?.restrictions as string | null | undefined;
   const activationType = existingPoa?.activationType as string | undefined;
-  const healthDetails = (existingPoa as Record<string, unknown>)?.healthDetails as {
-    organDonation?: boolean; dnr?: boolean; statements?: Record<string, string>;
-  } | undefined;
+  const healthDetails = existingPoa?.healthDetails;
 
   const isHealth = documentType === 'poa_health';
 
@@ -46,9 +54,8 @@ export function PoaReviewStep({ estateDocId, poaData: existingPoa, documentType,
     },
     {
       title: 'Backup Agents',
-      content: backupAgents.length > 0
-        ? backupAgents.map((id) => getPersonName(id)).join(', ')
-        : 'None',
+      content:
+        backupAgents.length > 0 ? backupAgents.map((id) => getPersonName(id)).join(', ') : 'None',
     },
     {
       title: 'Restrictions',
@@ -56,31 +63,35 @@ export function PoaReviewStep({ estateDocId, poaData: existingPoa, documentType,
     },
     {
       title: 'Activation',
-      content: activationType === 'immediate' ? 'Immediately (Continuing)' : activationType === 'incapacity' ? 'On Incapacity (Springing)' : 'Not set',
+      content:
+        activationType === 'immediate'
+          ? 'Immediately (Continuing)'
+          : activationType === 'incapacity'
+            ? 'On Incapacity (Springing)'
+            : 'Not set',
     },
-    ...(isHealth ? [
-      {
-        title: 'Health Directives',
-        content: healthDetails?.statements
-          ? Object.values(healthDetails.statements).filter(Boolean).length + ' directive(s) set'
-          : 'None set',
-      },
-      {
-        title: 'Organ Donation',
-        content: healthDetails?.organDonation ? 'Yes' : 'No',
-      },
-      {
-        title: 'Do Not Resuscitate',
-        content: healthDetails?.dnr ? 'Yes' : 'No',
-      },
-    ] : []),
+    ...(isHealth
+      ? [
+          {
+            title: 'Health Directives',
+            content: healthDetails?.statements
+              ? Object.values(healthDetails.statements).filter(Boolean).length + ' directive(s) set'
+              : 'None set',
+          },
+          {
+            title: 'Organ Donation',
+            content: healthDetails?.organDonation ? 'Yes' : 'No',
+          },
+          {
+            title: 'Do Not Resuscitate',
+            content: healthDetails?.dnr ? 'Yes' : 'No',
+          },
+        ]
+      : []),
   ];
 
   const handleFinish = () => {
-    statusMutation.mutate(
-      { id: estateDocId, status: 'complete' },
-      { onSuccess: () => onNext() },
-    );
+    statusMutation.mutate({ id: estateDocId, status: 'complete' }, { onSuccess: () => onNext() });
   };
 
   return (

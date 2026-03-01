@@ -7,10 +7,10 @@
 
 import { useCallback, useMemo } from 'react';
 import {
-  getVisibleSteps,
-  type WizardContext,
-  type WizardCategory,
   type StepConfig,
+  type WizardCategory,
+  type WizardContext,
+  getVisibleSteps,
 } from '../lib/wizard';
 
 interface UseStepNavigationOptions {
@@ -32,23 +32,17 @@ export function useStepNavigation({
   onReturnToDashboard,
   onCategoryComplete,
 }: UseStepNavigationOptions) {
-  const visibleSteps = useMemo(
-    () => getVisibleSteps(wizardContext),
-    [wizardContext],
-  );
+  const visibleSteps = useMemo(() => getVisibleSteps(wizardContext), [wizardContext]);
 
   /** Steps in the current category only */
   const categorySteps = useMemo(
-    () =>
-      currentCategory
-        ? visibleSteps.filter((s) => s.category === currentCategory)
-        : [],
-    [visibleSteps, currentCategory],
+    () => (currentCategory ? visibleSteps.filter((s) => s.category === currentCategory) : []),
+    [visibleSteps, currentCategory]
   );
 
   const currentIndex = useMemo(
     () => categorySteps.findIndex((s) => s.id === currentStepId),
-    [categorySteps, currentStepId],
+    [categorySteps, currentStepId]
   );
 
   const currentStep: StepConfig | null = categorySteps[currentIndex] ?? null;
@@ -93,7 +87,7 @@ export function useStepNavigation({
       const step = visibleSteps.find((s) => s.id === stepId);
       if (step) onNavigate(step.id);
     },
-    [visibleSteps, onNavigate],
+    [visibleSteps, onNavigate]
   );
 
   /** Get the first incomplete step in a category (for "Continue" CTA) */
@@ -102,7 +96,7 @@ export function useStepNavigation({
       const steps = visibleSteps.filter((s) => s.category === category);
       return steps.find((s) => !completedSteps.has(s.id)) ?? steps[0] ?? null;
     },
-    [visibleSteps, completedSteps],
+    [visibleSteps, completedSteps]
   );
 
   /** Get recommended next step across all categories */

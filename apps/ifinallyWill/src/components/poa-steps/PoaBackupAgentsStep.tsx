@@ -4,12 +4,19 @@
  */
 
 import { useState } from 'react';
-import { StepLayout } from '../shared/StepLayout';
-import { PersonSelector } from '../shared/PersonSelector';
 import { trpc } from '../../utils/trpc';
+import { PersonSelector } from '../shared/PersonSelector';
+import { StepLayout } from '../shared/StepLayout';
 import type { PoaStepProps } from '../wizard/PoaWizardShell';
 
-export function PoaBackupAgentsStep({ estateDocId, poaData: existingPoa, onNext, onPrev, isFirstStep, isLastStep }: PoaStepProps) {
+export function PoaBackupAgentsStep({
+  estateDocId,
+  poaData: existingPoa,
+  onNext,
+  onPrev,
+  isFirstStep,
+  isLastStep,
+}: PoaStepProps) {
   const currentBackups = (existingPoa?.backupAgents as string[] | undefined) ?? [];
   const primaryAgent = existingPoa?.primaryAgent as string | undefined;
   const jointAgent = existingPoa?.jointAgent as string | null | undefined;
@@ -19,17 +26,20 @@ export function PoaBackupAgentsStep({ estateDocId, poaData: existingPoa, onNext,
   const excludeIds = [primaryAgent, jointAgent].filter(Boolean) as string[];
 
   const handleNext = () => {
-    updateSection.mutate({
-      estateDocId,
-      section: 'agents',
-      data: {
-        primaryAgent: primaryAgent ?? '',
-        jointAgent: jointAgent ?? null,
-        backupAgents: backupIds,
-        restrictions: existingPoa?.restrictions ?? null,
-        activationType: existingPoa?.activationType ?? 'immediate',
+    updateSection.mutate(
+      {
+        estateDocId,
+        section: 'agents',
+        data: {
+          primaryAgent: primaryAgent ?? '',
+          jointAgent: jointAgent ?? null,
+          backupAgents: backupIds,
+          restrictions: existingPoa?.restrictions ?? null,
+          activationType: existingPoa?.activationType ?? 'immediate',
+        },
       },
-    }, { onSuccess: () => onNext() });
+      { onSuccess: () => onNext() }
+    );
   };
 
   return (
@@ -44,8 +54,8 @@ export function PoaBackupAgentsStep({ estateDocId, poaData: existingPoa, onNext,
     >
       <div className="space-y-6">
         <div className="ifw-info-box">
-          <strong>Backup agents</strong> are activated in order if your primary agent cannot fulfill their
-          duties. You can select multiple backups — they will serve in the order listed.
+          <strong>Backup agents</strong> are activated in order if your primary agent cannot fulfill
+          their duties. You can select multiple backups — they will serve in the order listed.
         </div>
 
         <div>
@@ -61,7 +71,8 @@ export function PoaBackupAgentsStep({ estateDocId, poaData: existingPoa, onNext,
 
         {backupIds.length === 0 && (
           <p className="text-xs text-[var(--ifw-text-muted)]">
-            No backup agents selected. You can skip this step, but it's recommended to have at least one backup.
+            No backup agents selected. You can skip this step, but it's recommended to have at least
+            one backup.
           </p>
         )}
       </div>

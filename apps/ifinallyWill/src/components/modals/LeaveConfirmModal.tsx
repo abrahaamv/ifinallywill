@@ -22,7 +22,8 @@ export function LeaveConfirmModal({ open, onConfirm, onCancel }: Props) {
           Leave this section?
         </h3>
         <p className="text-sm text-[var(--ifw-neutral-500)] mb-6">
-          Your progress has been auto-saved. You can return to this step at any time from the dashboard.
+          Your progress has been auto-saved. You can return to this step at any time from the
+          dashboard.
         </p>
         <div className="flex gap-3 justify-end">
           <button

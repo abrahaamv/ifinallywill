@@ -2,9 +2,9 @@
  * Reusable person entry/edit form (for key_names)
  */
 
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createKeyNameSchema } from '@platform/api-contract/schemas';
+import { useForm } from 'react-hook-form';
 import type { z } from 'zod';
 
 type PersonFormData = z.infer<typeof createKeyNameSchema>;
@@ -58,11 +58,7 @@ export function PersonForm({
           <label htmlFor="pf-firstName" className="block text-sm font-medium mb-1">
             First Name *
           </label>
-          <input
-            id="pf-firstName"
-            {...register('firstName')}
-            className="ifw-input"
-          />
+          <input id="pf-firstName" {...register('firstName')} className="ifw-input" />
           {errors.firstName && (
             <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.firstName.message}</p>
           )}
@@ -71,11 +67,7 @@ export function PersonForm({
           <label htmlFor="pf-lastName" className="block text-sm font-medium mb-1">
             Last Name *
           </label>
-          <input
-            id="pf-lastName"
-            {...register('lastName')}
-            className="ifw-input"
-          />
+          <input id="pf-lastName" {...register('lastName')} className="ifw-input" />
           {errors.lastName && (
             <p className="text-xs text-[var(--ifw-error)] mt-1">{errors.lastName.message}</p>
           )}
@@ -86,11 +78,7 @@ export function PersonForm({
         <label htmlFor="pf-relationship" className="block text-sm font-medium mb-1">
           Relationship *
         </label>
-        <select
-          id="pf-relationship"
-          {...register('relationship')}
-          className="ifw-input"
-        >
+        <select id="pf-relationship" {...register('relationship')} className="ifw-input">
           {RELATIONSHIPS.map((r) => (
             <option key={r.value} value={r.value}>
               {r.label}
@@ -104,22 +92,13 @@ export function PersonForm({
           <label htmlFor="pf-email" className="block text-sm font-medium mb-1">
             Email
           </label>
-          <input
-            id="pf-email"
-            type="email"
-            {...register('email')}
-            className="ifw-input"
-          />
+          <input id="pf-email" type="email" {...register('email')} className="ifw-input" />
         </div>
         <div>
           <label htmlFor="pf-phone" className="block text-sm font-medium mb-1">
             Phone
           </label>
-          <input
-            id="pf-phone"
-            {...register('phone')}
-            className="ifw-input"
-          />
+          <input id="pf-phone" {...register('phone')} className="ifw-input" />
         </div>
       </div>
 
@@ -128,21 +107,13 @@ export function PersonForm({
           <label htmlFor="pf-city" className="block text-sm font-medium mb-1">
             City
           </label>
-          <input
-            id="pf-city"
-            {...register('city')}
-            className="ifw-input"
-          />
+          <input id="pf-city" {...register('city')} className="ifw-input" />
         </div>
         <div>
           <label htmlFor="pf-province" className="block text-sm font-medium mb-1">
             Province
           </label>
-          <input
-            id="pf-province"
-            {...register('province')}
-            className="ifw-input"
-          />
+          <input id="pf-province" {...register('province')} className="ifw-input" />
         </div>
       </div>
 

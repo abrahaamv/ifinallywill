@@ -65,10 +65,7 @@ export function createCachedSessionAdapter(
         // Cache hit - return cached session
         const data: CachedSession = JSON.parse(cached);
         return {
-          session: {
-            ...data.session,
-            expires: new Date(data.session.expires),
-          },
+          session: data.session,
           user: data.user,
         };
       }

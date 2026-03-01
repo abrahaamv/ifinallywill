@@ -12,11 +12,7 @@ import type { WillData } from './types';
 // Types
 // ---------------------------------------------------------------------------
 
-export type WizardCategory =
-  | 'aboutYou'
-  | 'yourFamily'
-  | 'yourEstate'
-  | 'yourArrangements';
+export type WizardCategory = 'aboutYou' | 'yourFamily' | 'yourEstate' | 'yourArrangements';
 
 export type MaritalStatus = 'married' | 'single' | 'common_law';
 
@@ -100,8 +96,7 @@ export const STEPS: StepConfig[] = [
     section: 'spouseInfo',
     isShared: false,
     skipForSecondary: false,
-    condition: (ctx) =>
-      ctx.maritalStatus === 'married' || ctx.maritalStatus === 'common_law',
+    condition: (ctx) => ctx.maritalStatus === 'married' || ctx.maritalStatus === 'common_law',
   },
 
   // ═══ YOUR FAMILY ═══
@@ -248,7 +243,7 @@ export function getVisibleSteps(ctx: WizardContext): StepConfig[] {
  * Get steps grouped by category (for sidebar navigation).
  */
 export function getStepsByCategory(
-  ctx: WizardContext,
+  ctx: WizardContext
 ): { category: WizardCategory; label: string; steps: StepConfig[] }[] {
   const visible = getVisibleSteps(ctx);
   return CATEGORIES.map((cat) => ({
@@ -268,10 +263,7 @@ export function getStepById(id: string): StepConfig | undefined {
 /**
  * Find the next step after the given step ID.
  */
-export function findNextStep(
-  currentId: string,
-  ctx: WizardContext,
-): StepConfig | null {
+export function findNextStep(currentId: string, ctx: WizardContext): StepConfig | null {
   const visible = getVisibleSteps(ctx);
   const currentIndex = visible.findIndex((s) => s.id === currentId);
   if (currentIndex === -1 || currentIndex >= visible.length - 1) return null;
@@ -281,10 +273,7 @@ export function findNextStep(
 /**
  * Calculate completion percentage based on completedSteps array.
  */
-export function calculateProgress(
-  ctx: WizardContext,
-  completedSteps: Set<string>,
-): number {
+export function calculateProgress(ctx: WizardContext, completedSteps: Set<string>): number {
   const visible = getVisibleSteps(ctx);
   if (visible.length === 0) return 0;
   const completed = visible.filter((s) => completedSteps.has(s.id)).length;
@@ -311,7 +300,7 @@ export function getStepCategory(stepId: string): WizardCategory | null {
 export function isCategoryComplete(
   category: WizardCategory,
   ctx: WizardContext,
-  completedSteps: Set<string>,
+  completedSteps: Set<string>
 ): boolean {
   const visible = getVisibleSteps(ctx);
   const categorySteps = visible.filter((s) => s.category === category);
@@ -330,9 +319,7 @@ export function buildWizardContext(opts: {
 }): WizardContext {
   const minorChildren = opts.children.filter((c) => {
     if (!c.dateOfBirth) return true; // assume minor if no DOB
-    const age =
-      (Date.now() - new Date(c.dateOfBirth).getTime()) /
-      (365.25 * 24 * 60 * 60 * 1000);
+    const age = (Date.now() - new Date(c.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
     return age < 18;
   });
 
@@ -340,9 +327,7 @@ export function buildWizardContext(opts: {
     maritalStatus: (opts.willData?.maritalStatus as MaritalStatus) ?? null,
     hasChildren: opts.children.length > 0,
     hasMinorChildren: minorChildren.length > 0,
-    hasPets:
-      Array.isArray(opts.willData?.pets) &&
-      (opts.willData!.pets as unknown[]).length > 0,
+    hasPets: Array.isArray(opts.willData?.pets) && (opts.willData!.pets as unknown[]).length > 0,
     hasAssets: opts.assetCount > 0,
     isSecondaryWill: opts.isSecondaryWill ?? false,
     isCouples: opts.isCouples ?? false,

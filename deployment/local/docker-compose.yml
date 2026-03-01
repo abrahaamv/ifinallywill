@@ -1,7 +1,7 @@
 version: '3.8'
 
 # =============================================================================
-# AI Assistant Platform - Local Server Deployment
+# IFinallyWill - Local Server Deployment
 # =============================================================================
 # Usage:
 #   docker compose up -d          # Start all services
@@ -10,7 +10,7 @@ version: '3.8'
 #   docker compose ps             # Check status
 # =============================================================================
 
-name: ai-platform
+name: ifinallywill
 
 services:
   # ===========================================================================
@@ -19,27 +19,27 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: platform-postgres
+    container_name: ifinallywill-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-platform}
+      POSTGRES_USER: ${POSTGRES_USER:-ifinallywill}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
-      POSTGRES_DB: ${POSTGRES_DB:-platform}
+      POSTGRES_DB: ${POSTGRES_DB:-ifinallywill}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-platform} -d ${POSTGRES_DB:-platform}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ifinallywill} -d ${POSTGRES_DB:-ifinallywill}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
-      - platform-network
+      - ifinallywill-network
 
   redis:
     image: redis:7.4-alpine
-    container_name: platform-redis
+    container_name: ifinallywill-redis
     restart: unless-stopped
     command: >
       redis-server
@@ -55,7 +55,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # LIVEKIT (WebRTC Server)
@@ -63,7 +63,7 @@ services:
 
   livekit:
     image: livekit/livekit-server:v1.7
-    container_name: platform-livekit
+    container_name: ifinallywill-livekit
     restart: unless-stopped
     command: --config /etc/livekit.yaml
     volumes:
@@ -76,7 +76,7 @@ services:
     environment:
       LIVEKIT_KEYS: "${LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET}"
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # BACKEND SERVICES
@@ -86,12 +86,12 @@ services:
     build:
       context: ../..
       dockerfile: deployment/local/dockerfiles/api.Dockerfile
-    container_name: platform-api
+    container_name: ifinallywill-api
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-platform}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-platform}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ifinallywill}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ifinallywill}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       SESSION_SECRET: ${SESSION_SECRET:?Session secret required}
       # AI Provider Keys
@@ -117,13 +117,13 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - platform-network
+      - ifinallywill-network
 
   realtime:
     build:
       context: ../..
       dockerfile: deployment/local/dockerfiles/realtime.Dockerfile
-    container_name: platform-realtime
+    container_name: ifinallywill-realtime
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -139,7 +139,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # LIVEKIT AGENT (Python)
@@ -149,7 +149,7 @@ services:
     build:
       context: ../..
       dockerfile: deployment/local/dockerfiles/livekit-agent.Dockerfile
-    container_name: platform-livekit-agent
+    container_name: ifinallywill-livekit-agent
     restart: unless-stopped
     environment:
       LIVEKIT_URL: ws://livekit:7880
@@ -162,7 +162,7 @@ services:
       - livekit
       - api
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # FRONTEND APPS
@@ -174,10 +174,10 @@ services:
       dockerfile: deployment/local/dockerfiles/landing.Dockerfile
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-https://api.yourdomain.com}
-    container_name: platform-landing
+    container_name: ifinallywill-landing
     restart: unless-stopped
     networks:
-      - platform-network
+      - ifinallywill-network
 
   dashboard:
     build:
@@ -186,10 +186,10 @@ services:
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-https://api.yourdomain.com}
         VITE_WS_URL: ${PUBLIC_WS_URL:-wss://ws.yourdomain.com}
-    container_name: platform-dashboard
+    container_name: ifinallywill-dashboard
     restart: unless-stopped
     networks:
-      - platform-network
+      - ifinallywill-network
 
   meeting:
     build:
@@ -198,10 +198,10 @@ services:
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-https://api.yourdomain.com}
         VITE_LIVEKIT_URL: ${PUBLIC_LIVEKIT_URL:-wss://livekit.yourdomain.com}
-    container_name: platform-meeting
+    container_name: ifinallywill-meeting
     restart: unless-stopped
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # REVERSE PROXY
@@ -209,7 +209,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: platform-nginx
+    container_name: ifinallywill-nginx
     restart: unless-stopped
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -227,7 +227,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - platform-network
+      - ifinallywill-network
 
   # ===========================================================================
   # CLOUDFLARE TUNNEL
@@ -235,7 +235,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: platform-tunnel
+    container_name: ifinallywill-tunnel
     restart: unless-stopped
     command: tunnel run
     environment:
@@ -243,7 +243,7 @@ services:
     depends_on:
       - nginx
     networks:
-      - platform-network
+      - ifinallywill-network
 
 # =============================================================================
 # VOLUMES
@@ -251,15 +251,15 @@ services:
 
 volumes:
   postgres_data:
-    name: platform-postgres-data
+    name: ifinallywill-postgres-data
   redis_data:
-    name: platform-redis-data
+    name: ifinallywill-redis-data
 
 # =============================================================================
 # NETWORKS
 # =============================================================================
 
 networks:
-  platform-network:
-    name: platform-network
+  ifinallywill-network:
+    name: ifinallywill-network
     driver: bridge
