@@ -3,8 +3,11 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DOCUMENT_TYPES } from '../../config/documents';
 import { PROVINCES } from '../../config/provinces';
+import type { DocumentType } from '../../lib/types';
+import * as demoStore from '../../stores/demoDocumentStore';
 import { trpc } from '../../utils/trpc';
 
 interface Props {
@@ -17,6 +20,8 @@ export function CreateDocumentDialog({ isOpen, onClose, onCreated }: Props) {
   const [selectedType, setSelectedType] = useState<string>('');
   const [province, setProvince] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const navigate = useNavigate();
 
   const createMutation = trpc.estateDocuments.create.useMutation();
 
@@ -26,7 +31,9 @@ export function CreateDocumentDialog({ isOpen, onClose, onCreated }: Props) {
     if (!selectedType || !province) return;
 
     setError(null);
+    setIsCreating(true);
     try {
+      // Try tRPC first
       await createMutation.mutateAsync({
         documentType: selectedType as
           | 'primary_will'
@@ -39,8 +46,24 @@ export function CreateDocumentDialog({ isOpen, onClose, onCreated }: Props) {
       setProvince('');
       onCreated();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create document');
+    } catch {
+      // Fallback to demo store
+      try {
+        const doc = demoStore.createDocument(selectedType as DocumentType, province);
+        setSelectedType('');
+        setProvince('');
+        onCreated();
+        onClose();
+        // Navigate to the new document
+        const route = doc.documentType === 'poa_property' || doc.documentType === 'poa_health'
+          ? `/app/poa/${doc.id}`
+          : `/app/documents/${doc.id}`;
+        navigate(route);
+      } catch (demoErr) {
+        setError(demoErr instanceof Error ? demoErr.message : 'Failed to create document');
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -109,11 +132,11 @@ export function CreateDocumentDialog({ isOpen, onClose, onCreated }: Props) {
           <button
             type="button"
             onClick={handleCreate}
-            disabled={!selectedType || !province || createMutation.isPending}
+            disabled={!selectedType || !province || isCreating}
             className="px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-40"
             style={{ backgroundColor: 'var(--ifw-primary-700)' }}
           >
-            {createMutation.isPending ? 'Creating...' : 'Create Document'}
+            {isCreating ? 'Creating...' : 'Create Document'}
           </button>
         </div>
       </div>

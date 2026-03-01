@@ -14,6 +14,7 @@ import {
   isCategoryComplete,
 } from '../lib/wizard';
 import type { WizardCategory, WizardContext } from '../lib/wizard';
+import * as demoStore from '../stores/demoDocumentStore';
 import { trpc } from '../utils/trpc';
 
 export interface CategoryCompletion {
@@ -56,31 +57,55 @@ export interface PersonalData {
 export function usePersonalData(docId: string | undefined): PersonalData {
   const { data: doc, isLoading: docLoading } = trpc.estateDocuments.get.useQuery(
     { id: docId! },
-    { enabled: !!docId }
+    { enabled: !!docId, retry: false }
   );
 
   const { data: willDataResult, isLoading: willLoading } = trpc.willData.get.useQuery(
     { estateDocId: docId! },
-    { enabled: !!docId }
+    { enabled: !!docId, retry: false }
   );
 
-  const { data: keyPeople } = trpc.keyNames.list.useQuery();
-  const { data: assets } = trpc.estateAssets.list.useQuery({});
+  const { data: keyPeople } = trpc.keyNames.list.useQuery(undefined, { retry: false });
+  const { data: assets } = trpc.estateAssets.list.useQuery({}, { retry: false });
 
-  const willData = (willDataResult as WillData) ?? {};
+  // Demo fallback — use localStorage store when tRPC returns null (no backend)
+  const demoDoc = useMemo(() => {
+    if (doc || docLoading) return null;
+    return docId ? demoStore.getDocument(docId) : null;
+  }, [doc, docLoading, docId]);
+
+  const demoWillData = useMemo(() => {
+    if (willDataResult || willLoading) return null;
+    return docId ? demoStore.getWillData(docId) : null;
+  }, [willDataResult, willLoading, docId]);
+
+  const demoKeyPeople = useMemo(() => {
+    if (keyPeople) return null;
+    return demoStore.getKeyPeople();
+  }, [keyPeople]);
+
+  const demoAssets = useMemo(() => {
+    if (assets) return null;
+    return demoStore.getAssets();
+  }, [assets]);
+
+  const effectiveDoc = doc ?? demoDoc;
+  const willData = ((willDataResult ?? demoWillData) as WillData) ?? {};
+  const effectiveKeyPeople = keyPeople ?? demoKeyPeople ?? [];
+  const effectiveAssets = assets ?? demoAssets ?? [];
 
   const wizardContext = useMemo(() => {
-    const children = (keyPeople ?? []).filter(
-      (p: { relationship: string }) => p.relationship === 'child'
+    const children = (effectiveKeyPeople as Array<{ relationship: string }>).filter(
+      (p) => p.relationship === 'child'
     );
     return buildWizardContext({
       willData: willData ?? null,
-      children,
-      assetCount: (assets ?? []).length,
-      isSecondaryWill: doc?.documentType === 'secondary_will',
-      isCouples: !!(doc as { coupleDocId?: string | null } | undefined)?.coupleDocId,
+      children: children as { dateOfBirth?: string | null }[],
+      assetCount: (effectiveAssets as unknown[]).length,
+      isSecondaryWill: effectiveDoc?.documentType === 'secondary_will',
+      isCouples: !!(effectiveDoc as { coupleDocId?: string | null } | undefined)?.coupleDocId,
     });
-  }, [willData, keyPeople, assets, doc]);
+  }, [willData, effectiveKeyPeople, effectiveAssets, effectiveDoc]);
 
   const completedStepsArray = useMemo(() => willData?.completedSteps ?? [], [willData]);
 
@@ -109,23 +134,23 @@ export function usePersonalData(docId: string | undefined): PersonalData {
 
   const personalInfo = willData?.personalInfo as { fullName?: string } | undefined;
   const ownerName = personalInfo?.fullName ?? 'You';
-  const isCouple = !!(doc as { coupleDocId?: string | null } | undefined)?.coupleDocId;
+  const isCouple = !!(effectiveDoc as { coupleDocId?: string | null } | undefined)?.coupleDocId;
 
   return {
-    doc: doc
+    doc: effectiveDoc
       ? {
-          id: doc.id,
-          documentType: doc.documentType,
-          province: doc.province,
-          country: doc.country,
-          status: doc.status,
-          completionPct: doc.completionPct,
-          coupleDocId: (doc as { coupleDocId?: string | null }).coupleDocId ?? null,
+          id: effectiveDoc.id,
+          documentType: effectiveDoc.documentType,
+          province: effectiveDoc.province,
+          country: effectiveDoc.country,
+          status: effectiveDoc.status,
+          completionPct: effectiveDoc.completionPct,
+          coupleDocId: (effectiveDoc as { coupleDocId?: string | null }).coupleDocId ?? null,
         }
       : null,
     willData,
-    keyPeople: (keyPeople ?? []) as unknown as PersonalData['keyPeople'],
-    assets: (assets ?? []) as unknown as PersonalData['assets'],
+    keyPeople: effectiveKeyPeople as unknown as PersonalData['keyPeople'],
+    assets: effectiveAssets as unknown as PersonalData['assets'],
     wizardContext,
     completedSteps,
     completedStepsArray,

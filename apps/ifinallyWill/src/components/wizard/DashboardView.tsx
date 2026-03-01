@@ -22,24 +22,44 @@ const CATEGORY_META: Record<
   { icon: string; description: string; estimate: string }
 > = {
   aboutYou: {
-    icon: '👤',
+    icon: '📝',
     description: 'Personal details, family status, and spouse information',
     estimate: '5-10 min',
   },
-  yourFamily: {
-    icon: '👨‍👩‍👧‍👦',
-    description: 'Children, key people, guardians, and pet guardians',
+  people: {
+    icon: '👥',
+    description: 'Key names, key people, and pet guardians',
     estimate: '10-15 min',
   },
-  yourEstate: {
-    icon: '🏠',
-    description: 'Assets, gifts, residue distribution, and inheritance trusts',
-    estimate: '15-20 min',
+  assets: {
+    icon: '💰',
+    description: 'List and describe your assets',
+    estimate: '10-15 min',
   },
-  yourArrangements: {
+  gifts: {
+    icon: '🎁',
+    description: 'Assign specific gifts to people or charities',
+    estimate: '5-10 min',
+  },
+  residue: {
+    icon: '📊',
+    description: 'Distribute whatever remains after specific gifts',
+    estimate: '5 min',
+  },
+  children: {
+    icon: '👶',
+    description: 'Trusting arrangements and guardians for minor children',
+    estimate: '5-10 min',
+  },
+  wipeout: {
+    icon: '🔄',
+    description: 'Backup plan if all named beneficiaries pass away',
+    estimate: '5 min',
+  },
+  finalArrangements: {
     icon: '📋',
-    description: 'Executors, wipeout clause, additional wishes, and final review',
-    estimate: '10-15 min',
+    description: 'Executors, POAs, additional wishes, and final review',
+    estimate: '15-20 min',
   },
 };
 

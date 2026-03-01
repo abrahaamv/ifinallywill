@@ -12,7 +12,15 @@ import type { WillData } from './types';
 // Types
 // ---------------------------------------------------------------------------
 
-export type WizardCategory = 'aboutYou' | 'yourFamily' | 'yourEstate' | 'yourArrangements';
+export type WizardCategory =
+  | 'aboutYou'
+  | 'people'
+  | 'assets'
+  | 'gifts'
+  | 'residue'
+  | 'children'
+  | 'wipeout'
+  | 'finalArrangements';
 
 export type MaritalStatus = 'married' | 'single' | 'common_law';
 
@@ -60,9 +68,13 @@ export interface SimpleStep {
 
 export const CATEGORIES: { key: WizardCategory; label: string }[] = [
   { key: 'aboutYou', label: 'About You' },
-  { key: 'yourFamily', label: 'Your Family' },
-  { key: 'yourEstate', label: 'Your Estate' },
-  { key: 'yourArrangements', label: 'Your Arrangements' },
+  { key: 'people', label: 'People' },
+  { key: 'assets', label: 'Assets' },
+  { key: 'gifts', label: 'Gifts' },
+  { key: 'residue', label: 'Residue' },
+  { key: 'children', label: 'Children' },
+  { key: 'wipeout', label: 'Wipeout' },
+  { key: 'finalArrangements', label: 'Final Arrangements' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -80,30 +92,12 @@ export const STEPS: StepConfig[] = [
     skipForSecondary: false,
     condition: null,
   },
-  {
-    id: 'family-status',
-    label: 'Family Status',
-    category: 'aboutYou',
-    section: 'maritalStatus',
-    isShared: false,
-    skipForSecondary: false,
-    condition: null,
-  },
-  {
-    id: 'spouse-info',
-    label: 'Spouse Information',
-    category: 'aboutYou',
-    section: 'spouseInfo',
-    isShared: false,
-    skipForSecondary: false,
-    condition: (ctx) => ctx.maritalStatus === 'married' || ctx.maritalStatus === 'common_law',
-  },
 
-  // ═══ YOUR FAMILY ═══
+  // ═══ PEOPLE ═══
   {
     id: 'children',
-    label: 'Children',
-    category: 'yourFamily',
+    label: 'Key Names',
+    category: 'people',
     section: null, // uses key_names CRUD
     isShared: true,
     skipForSecondary: false,
@@ -112,8 +106,61 @@ export const STEPS: StepConfig[] = [
   {
     id: 'key-people',
     label: 'Key People',
-    category: 'yourFamily',
+    category: 'people',
     section: null, // uses key_names CRUD
+    isShared: true,
+    skipForSecondary: false,
+    condition: null,
+  },
+  {
+    id: 'pet-guardians',
+    label: 'Pet Guardians',
+    category: 'people',
+    section: 'pets',
+    isShared: true,
+    skipForSecondary: true,
+    condition: null,
+  },
+
+  // ═══ ASSETS ═══
+  {
+    id: 'assets',
+    label: 'My Assets',
+    category: 'assets',
+    section: null, // uses estate_assets CRUD
+    isShared: true,
+    skipForSecondary: true,
+    condition: null,
+  },
+
+  // ═══ GIFTS ═══
+  {
+    id: 'bequests',
+    label: 'Gifts & Bequests',
+    category: 'gifts',
+    section: null, // uses bequests CRUD
+    isShared: false,
+    skipForSecondary: true,
+    condition: null,
+  },
+
+  // ═══ RESIDUE ═══
+  {
+    id: 'residue',
+    label: "What's Left",
+    category: 'residue',
+    section: 'residue',
+    isShared: false,
+    skipForSecondary: true,
+    condition: null,
+  },
+
+  // ═══ CHILDREN (trusting + guardians) ═══
+  {
+    id: 'inheritance',
+    label: 'Trusting',
+    category: 'children',
+    section: 'trusting',
     isShared: true,
     skipForSecondary: false,
     condition: null,
@@ -121,83 +168,56 @@ export const STEPS: StepConfig[] = [
   {
     id: 'guardians',
     label: 'Guardians',
-    category: 'yourFamily',
+    category: 'children',
     section: 'guardians',
     isShared: true,
     skipForSecondary: true,
-    condition: (ctx) => ctx.hasMinorChildren,
-  },
-  {
-    id: 'pet-guardians',
-    label: 'Pet Guardians',
-    category: 'yourFamily',
-    section: 'pets',
-    isShared: true,
-    skipForSecondary: true,
-    condition: (ctx) => ctx.hasPets,
-  },
-
-  // ═══ YOUR ESTATE ═══
-  {
-    id: 'assets',
-    label: 'My Assets',
-    category: 'yourEstate',
-    section: null, // uses estate_assets CRUD
-    isShared: true,
-    skipForSecondary: true,
     condition: null,
   },
+
+  // ═══ WIPEOUT ═══
   {
-    id: 'bequests',
-    label: 'Gifts',
-    category: 'yourEstate',
-    section: null, // uses bequests CRUD
-    isShared: false,
-    skipForSecondary: true,
-    condition: (ctx) => ctx.hasAssets,
-  },
-  {
-    id: 'residue',
-    label: "What's Left",
-    category: 'yourEstate',
-    section: 'residue',
+    id: 'wipeout',
+    label: 'Wipeout',
+    category: 'wipeout',
+    section: 'wipeout',
     isShared: false,
     skipForSecondary: true,
     condition: null,
   },
-  {
-    id: 'inheritance',
-    label: 'Inheritance for Children',
-    category: 'yourEstate',
-    section: 'trusting',
-    isShared: true,
-    skipForSecondary: false,
-    condition: (ctx) => ctx.hasMinorChildren,
-  },
 
-  // ═══ YOUR ARRANGEMENTS ═══
+  // ═══ FINAL ARRANGEMENTS ═══
   {
     id: 'executors',
-    label: 'Will Executors',
-    category: 'yourArrangements',
+    label: 'Executors',
+    category: 'finalArrangements',
     section: 'executors',
     isShared: true,
     skipForSecondary: false,
     condition: null,
   },
   {
-    id: 'wipeout',
-    label: 'Wipeout Information',
-    category: 'yourArrangements',
-    section: 'wipeout',
+    id: 'poa-property',
+    label: 'POA for Property',
+    category: 'finalArrangements',
+    section: 'poaProperty',
+    isShared: false,
+    skipForSecondary: true,
+    condition: null,
+  },
+  {
+    id: 'poa-health',
+    label: 'POA for Health',
+    category: 'finalArrangements',
+    section: 'poaHealth',
     isShared: false,
     skipForSecondary: true,
     condition: null,
   },
   {
     id: 'additional',
-    label: 'Additional Information',
-    category: 'yourArrangements',
+    label: 'Additional Requests',
+    category: 'finalArrangements',
     section: 'additional',
     isShared: false,
     skipForSecondary: true,
@@ -206,16 +226,25 @@ export const STEPS: StepConfig[] = [
   {
     id: 'final-details',
     label: 'Final Details',
-    category: 'yourArrangements',
+    category: 'finalArrangements',
     section: 'finalDetails',
     isShared: false,
     skipForSecondary: false,
     condition: null,
   },
   {
+    id: 'enhance',
+    label: 'Enhance Your Plan',
+    category: 'finalArrangements',
+    section: null,
+    isShared: false,
+    skipForSecondary: true,
+    condition: null,
+  },
+  {
     id: 'review',
-    label: 'Review & Download',
-    category: 'yourArrangements',
+    label: 'Review Documents',
+    category: 'finalArrangements',
     section: null,
     isShared: false,
     skipForSecondary: false,
@@ -240,16 +269,30 @@ export function getVisibleSteps(ctx: WizardContext): StepConfig[] {
 }
 
 /**
+ * Get ALL steps regardless of conditions.
+ * Only filters secondary will skips. Used by sidebar and breadcrumb
+ * so the navigation always shows the full estate plan structure.
+ */
+export function getAllSteps(ctx: WizardContext): StepConfig[] {
+  return STEPS.filter((step) => {
+    if (ctx.isSecondaryWill && step.skipForSecondary) return false;
+    return true;
+  });
+}
+
+/**
  * Get steps grouped by category (for sidebar navigation).
+ * Shows ALL categories and steps regardless of conditions,
+ * matching the estate-planning dashboard structure.
  */
 export function getStepsByCategory(
   ctx: WizardContext
 ): { category: WizardCategory; label: string; steps: StepConfig[] }[] {
-  const visible = getVisibleSteps(ctx);
+  const all = getAllSteps(ctx);
   return CATEGORIES.map((cat) => ({
     category: cat.key,
     label: cat.label,
-    steps: visible.filter((s) => s.category === cat.key),
+    steps: all.filter((s) => s.category === cat.key),
   })).filter((cat) => cat.steps.length > 0);
 }
 
@@ -264,20 +307,20 @@ export function getStepById(id: string): StepConfig | undefined {
  * Find the next step after the given step ID.
  */
 export function findNextStep(currentId: string, ctx: WizardContext): StepConfig | null {
-  const visible = getVisibleSteps(ctx);
-  const currentIndex = visible.findIndex((s) => s.id === currentId);
-  if (currentIndex === -1 || currentIndex >= visible.length - 1) return null;
-  return visible[currentIndex + 1] ?? null;
+  const all = getAllSteps(ctx);
+  const currentIndex = all.findIndex((s) => s.id === currentId);
+  if (currentIndex === -1 || currentIndex >= all.length - 1) return null;
+  return all[currentIndex + 1] ?? null;
 }
 
 /**
  * Calculate completion percentage based on completedSteps array.
  */
 export function calculateProgress(ctx: WizardContext, completedSteps: Set<string>): number {
-  const visible = getVisibleSteps(ctx);
-  if (visible.length === 0) return 0;
-  const completed = visible.filter((s) => completedSteps.has(s.id)).length;
-  return Math.round((completed / visible.length) * 100);
+  const all = getAllSteps(ctx);
+  if (all.length === 0) return 0;
+  const completed = all.filter((s) => completedSteps.has(s.id)).length;
+  return Math.round((completed / all.length) * 100);
 }
 
 /**
@@ -302,8 +345,8 @@ export function isCategoryComplete(
   ctx: WizardContext,
   completedSteps: Set<string>
 ): boolean {
-  const visible = getVisibleSteps(ctx);
-  const categorySteps = visible.filter((s) => s.category === category);
+  const all = getAllSteps(ctx);
+  const categorySteps = all.filter((s) => s.category === category);
   return categorySteps.every((s) => completedSteps.has(s.id));
 }
 

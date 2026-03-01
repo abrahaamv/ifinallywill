@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import * as demoStore from '../stores/demoDocumentStore';
 import { trpc } from '../utils/trpc';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -24,11 +25,17 @@ export function useAutoSave({ estateDocId, section, debounceMs = 1500 }: UseAuto
   const mutation = trpc.willData.updateSection.useMutation({
     onSuccess: () => {
       setStatus('saved');
-      // Reset to idle after 2s
       setTimeout(() => setStatus((s) => (s === 'saved' ? 'idle' : s)), 2000);
     },
     onError: () => {
-      setStatus('error');
+      // Fallback to demo store when backend is unavailable
+      try {
+        demoStore.saveWillDataSection(estateDocId, section, latestDataRef.current);
+        setStatus('saved');
+        setTimeout(() => setStatus((s) => (s === 'saved' ? 'idle' : s)), 2000);
+      } catch {
+        setStatus('error');
+      }
     },
   });
 

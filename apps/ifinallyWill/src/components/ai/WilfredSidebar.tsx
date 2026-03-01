@@ -1,12 +1,12 @@
 /**
  * WilfredSidebar — AI assistant sidebar for the main app layout
  *
- * Renders as a right sidebar on desktop and a floating button + bottom sheet on mobile.
- * Uses tRPC Wilfred endpoints for a general help session (no specific document context).
+ * Uses the local-first useWilfredChat hook for demo mode.
+ * Enhanced with animated avatar, quick actions, and welcome state.
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import { trpc } from '../../utils/trpc';
+import { useState } from 'react';
+import { useWilfredChat } from '../../hooks/useWilfredChat';
 import { WilfredInput } from '../wilfred/WilfredInput';
 import { WilfredMessages } from '../wilfred/WilfredMessages';
 import { WilfredAvatar } from './WilfredAvatar';
@@ -18,48 +18,20 @@ interface Props {
   className?: string;
 }
 
-const GENERAL_SUGGESTIONS = ['What is a will?', 'Do I need a POA?', 'How do I get started?'];
+const QUICK_ACTIONS = [
+  { label: "What's missing?", icon: '🔍' },
+  { label: 'Review progress', icon: '📊' },
+  { label: 'Help add family', icon: '👨‍👩‍👧' },
+  { label: 'Explain POA', icon: '📋' },
+];
 
 export function WilfredSidebar({ stepId, className = '' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
-  const createSession = trpc.wilfred.createSession.useMutation();
-  const sendMessage = trpc.wilfred.sendMessage.useMutation();
-  const { data: history, refetch: refetchHistory } = trpc.wilfred.getHistory.useQuery(
-    { sessionId: sessionId!, limit: 50 },
-    { enabled: !!sessionId }
-  );
+  const { messages, isLoading, send, suggestions } = useWilfredChat({ stepId });
 
-  // Create a general session when the sidebar is first opened
-  useEffect(() => {
-    if (isOpen && !sessionId && !createSession.isPending) {
-      createSession.mutate(
-        { estateDocId: 'general' },
-        {
-          onSuccess: (result) => setSessionId(result.sessionId),
-          onError: () => {
-            // If general session creation fails, still allow the sidebar to render
-          },
-        }
-      );
-    }
-  }, [isOpen, sessionId]);
-
-  const handleSend = useCallback(
-    (content: string) => {
-      if (!sessionId) return;
-      sendMessage.mutate({ sessionId, content }, { onSuccess: () => refetchHistory() });
-    },
-    [sessionId, sendMessage, refetchHistory]
-  );
-
-  const messages = (history ?? []).map((m) => ({
-    id: m.id,
-    role: m.role ?? 'user',
-    content: m.content,
-    timestamp: m.timestamp,
-  }));
+  const showWelcome = messages.length === 0 && !isLoading;
 
   return (
     <>
@@ -69,7 +41,12 @@ export function WilfredSidebar({ stepId, className = '' }: Props) {
       >
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[var(--ifw-border)] px-4 py-3">
-          <WilfredAvatar size="sm" />
+          <WilfredAvatar
+            size="sm"
+            isThinking={isLoading}
+            isTyping={isUserTyping}
+            showGlow={isLoading}
+          />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-brand-navy">Wilfred</span>
@@ -85,24 +62,44 @@ export function WilfredSidebar({ stepId, className = '' }: Props) {
           </div>
         </div>
 
-        {/* Chat area — auto-connect on mount for desktop */}
-        <DesktopAutoConnect
-          sessionId={sessionId}
-          onNeedSession={() => {
-            if (!sessionId && !createSession.isPending) {
-              createSession.mutate(
-                { estateDocId: 'general' },
-                { onSuccess: (result) => setSessionId(result.sessionId) }
-              );
-            }
-          }}
-        />
+        {/* Welcome state with animated avatar */}
+        {showWelcome && (
+          <div className="flex-1 flex flex-col items-center justify-center p-4">
+            <WilfredAvatar size="lg" showGlow className="mb-4" />
+            <p className="text-sm font-semibold text-brand-navy mb-1">Hi, I'm Wilfred!</p>
+            <p className="text-xs text-center text-[var(--ifw-text-muted)] mb-5 max-w-[220px]">
+              Your estate planning assistant. I can help you understand each section and answer any
+              questions.
+            </p>
 
-        <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
+            {/* Quick actions grid */}
+            <div className="grid grid-cols-2 gap-2 w-full px-2">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => send(action.label)}
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--ifw-neutral-200)] bg-white text-left text-[11px] font-medium text-[var(--ifw-neutral-700)] hover:border-[var(--ifw-primary-300)] hover:bg-[var(--ifw-primary-50)] disabled:opacity-40 transition-all"
+                >
+                  <span className="text-sm">{action.icon}</span>
+                  <span className="truncate">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Messages (only when there are messages) */}
+        {!showWelcome && (
+          <WilfredMessages messages={messages} isLoading={isLoading} />
+        )}
+
         <WilfredInput
-          onSend={handleSend}
-          disabled={sendMessage.isPending || !sessionId}
-          suggestions={sessionId && messages.length === 0 ? GENERAL_SUGGESTIONS : undefined}
+          onSend={send}
+          disabled={isLoading}
+          suggestions={messages.length === 0 ? suggestions : undefined}
+          onTypingChange={setIsUserTyping}
         />
       </aside>
 
@@ -133,7 +130,11 @@ export function WilfredSidebar({ stepId, className = '' }: Props) {
         <div className="fixed inset-x-0 bottom-0 z-30 flex max-h-[60vh] flex-col rounded-t-2xl border-t border-[var(--ifw-border)] bg-white shadow-xl xl:hidden">
           <div className="flex items-center justify-between border-b border-[var(--ifw-border)] px-4 py-3">
             <div className="flex items-center gap-2">
-              <WilfredAvatar size="sm" />
+              <WilfredAvatar
+                size="sm"
+                isThinking={isLoading}
+                showGlow={isLoading}
+              />
               <span className="text-sm font-semibold text-brand-navy">Wilfred</span>
               <span className="rounded-full bg-brand-gold/20 px-2 py-0.5 text-[10px] font-medium text-brand-navy">
                 AI
@@ -148,33 +149,37 @@ export function WilfredSidebar({ stepId, className = '' }: Props) {
             </button>
           </div>
 
-          <WilfredMessages messages={messages} isLoading={sendMessage.isPending} />
+          {/* Mobile quick actions when empty */}
+          {showWelcome && (
+            <div className="px-4 py-3 border-b border-[var(--ifw-neutral-100)]">
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_ACTIONS.map((action) => (
+                  <button
+                    key={action.label}
+                    type="button"
+                    onClick={() => send(action.label)}
+                    disabled={isLoading}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-[var(--ifw-neutral-200)] bg-white text-[10px] font-medium text-[var(--ifw-neutral-700)] hover:border-[var(--ifw-primary-300)] disabled:opacity-40 transition-all"
+                  >
+                    <span>{action.icon}</span>
+                    <span>{action.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!showWelcome && (
+            <WilfredMessages messages={messages} isLoading={isLoading} />
+          )}
           <WilfredInput
-            onSend={handleSend}
-            disabled={sendMessage.isPending || !sessionId}
-            suggestions={sessionId && messages.length === 0 ? GENERAL_SUGGESTIONS : undefined}
+            onSend={send}
+            disabled={isLoading}
+            suggestions={messages.length === 0 ? suggestions : undefined}
+            onTypingChange={setIsUserTyping}
           />
         </div>
       )}
     </>
   );
-}
-
-/**
- * Invisible component that auto-creates a session when the desktop sidebar mounts.
- */
-function DesktopAutoConnect({
-  sessionId,
-  onNeedSession,
-}: {
-  sessionId: string | null;
-  onNeedSession: () => void;
-}) {
-  useEffect(() => {
-    if (!sessionId) {
-      onNeedSession();
-    }
-  }, []);
-
-  return null;
 }

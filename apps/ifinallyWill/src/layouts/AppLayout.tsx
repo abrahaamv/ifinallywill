@@ -8,13 +8,16 @@ import {
   ChevronDown,
   CreditCard,
   FileText,
+  Gift,
   HeadphonesIcon,
+  Heart,
   LayoutDashboard,
   LogOut,
   Menu,
   Settings,
+  Share2,
   Sparkles,
-  TreePine,
+  Tag,
   User,
   Users,
   X,
@@ -37,13 +40,16 @@ const NAV_LINKS: ReadonlyArray<{
   readonly badge?: string;
 }> = [
   { href: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/app/documents', label: 'Documents', icon: Sparkles, badge: 'New' },
+  { href: '/app/estate-planning', label: 'Estate Planning', icon: Sparkles, badge: 'New' },
   { href: '/app/support', label: 'Support', icon: HeadphonesIcon },
 ];
 
 const SIDEBAR_ITEMS = [
   { href: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/app/family-tree', label: 'Family Tree', icon: TreePine },
+  { href: '/app/referrals', label: 'Referrals', icon: Share2 },
+  { href: '/app/discount-codes', label: 'Discount Codes', icon: Tag },
+  { href: '/app/charity', label: 'Charity', icon: Heart },
+  { href: '/app/gifts', label: 'Gift a Will', icon: Gift },
 ] as const;
 
 const ADMIN_ITEMS = [
@@ -58,9 +64,15 @@ export function AppLayout() {
   const { user, signOut } = useAuth();
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
+
+  // Hide the generic WilfredSidebar on wizard routes — those render their own
+  // context-aware WilfredPanel with step/province/document awareness
+  const isWizardRoute =
+    location.pathname.startsWith('/app/documents/') ||
+    location.pathname.startsWith('/app/poa/');
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
@@ -244,11 +256,11 @@ export function AppLayout() {
       </nav>
 
       {/* Body: Sidebar + Content + AI */}
-      <div className="flex flex-1">
-        {/* Desktop sidebar */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Desktop sidebar — always visible, collapsed on wizard routes */}
         <aside
-          className={`hidden md:flex flex-col border-r border-gray-100 bg-[var(--ifw-neutral-50)] p-4 transition-all ${
-            sidebarCollapsed ? 'w-16' : 'w-64'
+          className={`hidden md:flex flex-col border-r border-gray-100 bg-[var(--ifw-neutral-50)] transition-all flex-shrink-0 overflow-hidden ${
+            sidebarCollapsed ? 'w-16 px-2 py-4' : 'w-56 p-4'
           }`}
         >
           <nav className="flex-1 space-y-1 text-sm">
@@ -261,17 +273,20 @@ export function AppLayout() {
                     ? 'bg-[var(--ifw-primary-50)] font-medium text-[var(--ifw-primary-700)]'
                     : 'text-[var(--ifw-neutral-600)] hover:bg-[var(--ifw-neutral-200)]'
                 }`}
+                title={sidebarCollapsed ? label : undefined}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                {!sidebarCollapsed && label}
+                {!sidebarCollapsed && <span className="truncate">{label}</span>}
               </Link>
             ))}
 
             {isAdmin && (
               <>
-                <div className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-[var(--ifw-text-muted)]">
-                  Admin
-                </div>
+                {!sidebarCollapsed && (
+                  <div className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-[var(--ifw-text-muted)]">
+                    Admin
+                  </div>
+                )}
                 {ADMIN_ITEMS.map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
@@ -281,43 +296,63 @@ export function AppLayout() {
                         ? 'bg-[var(--ifw-primary-50)] font-medium text-[var(--ifw-primary-700)]'
                         : 'text-[var(--ifw-neutral-600)] hover:bg-[var(--ifw-neutral-200)]'
                     }`}
+                    title={sidebarCollapsed ? label : undefined}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
-                    {!sidebarCollapsed && label}
+                    {!sidebarCollapsed && <span className="truncate">{label}</span>}
                   </Link>
                 ))}
               </>
             )}
           </nav>
 
-          <div className="mt-3 border-t pt-3">
-            <div className="mb-2 truncate px-3 text-xs text-[var(--ifw-text-muted)]">
-              {user?.email ?? 'Unknown user'}
-            </div>
+          <div className={`mt-3 border-t pt-3 ${sidebarCollapsed ? 'flex flex-col items-center gap-1' : ''}`}>
+            {!sidebarCollapsed && (
+              <div className="mb-2 truncate px-3 text-xs text-[var(--ifw-text-muted)]">
+                {user?.email ?? 'Unknown user'}
+              </div>
+            )}
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full rounded-lg px-3 py-2 text-left text-xs text-[var(--ifw-neutral-500)] transition-colors hover:bg-[var(--ifw-neutral-200)]"
+              className={`rounded-lg text-[var(--ifw-neutral-500)] transition-colors hover:bg-[var(--ifw-neutral-200)] ${
+                sidebarCollapsed ? 'p-2' : 'w-full px-3 py-2 text-left text-xs'
+              }`}
+              title={sidebarCollapsed ? 'Sign Out' : undefined}
             >
               {sidebarCollapsed ? <LogOut className="h-4 w-4" /> : 'Sign Out'}
             </button>
             <button
               type="button"
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs text-[var(--ifw-neutral-400)] transition-colors hover:bg-[var(--ifw-neutral-200)]"
+              className={`rounded-lg text-[var(--ifw-neutral-400)] transition-colors hover:bg-[var(--ifw-neutral-200)] ${
+                sidebarCollapsed ? 'p-2' : 'mt-1 w-full px-3 py-2 text-left text-xs'
+              }`}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {sidebarCollapsed ? '>' : 'Collapse'}
+              {sidebarCollapsed ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Collapse
+                </span>
+              )}
             </button>
           </div>
         </aside>
 
-        {/* Main content */}
-        <main className="flex-1 p-6 md:p-8">
+        {/* Main content — no padding on wizard routes (they own the full layout) */}
+        <main className={`flex-1 min-w-0 ${isWizardRoute ? '' : 'p-6 md:p-8'}`}>
           <Outlet />
         </main>
 
-        {/* AI Sidebar */}
-        <WilfredSidebar />
+        {/* AI Sidebar — hidden on wizard routes which have their own WilfredPanel */}
+        {!isWizardRoute && <WilfredSidebar />}
       </div>
     </div>
   );

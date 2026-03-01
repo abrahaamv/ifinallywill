@@ -10,7 +10,7 @@ import {
   type StepConfig,
   type WizardCategory,
   type WizardContext,
-  getVisibleSteps,
+  getAllSteps,
 } from '../lib/wizard';
 
 interface UseStepNavigationOptions {
@@ -32,7 +32,7 @@ export function useStepNavigation({
   onReturnToDashboard,
   onCategoryComplete,
 }: UseStepNavigationOptions) {
-  const visibleSteps = useMemo(() => getVisibleSteps(wizardContext), [wizardContext]);
+  const visibleSteps = useMemo(() => getAllSteps(wizardContext), [wizardContext]);
 
   /** Steps in the current category only */
   const categorySteps = useMemo(

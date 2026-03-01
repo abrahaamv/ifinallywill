@@ -122,7 +122,7 @@ export function FamilyTreePage() {
           </p>
         </div>
         <Link
-          to={`/app/documents/${activeDoc.id}/yourFamily/key-people`}
+          to={`/app/documents/${activeDoc.id}/key-people`}
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white"
           style={{ backgroundColor: 'var(--ifw-primary-700)' }}
         >
@@ -139,7 +139,7 @@ export function FamilyTreePage() {
             Add people through your will wizard to see them here.
           </p>
           <Link
-            to={`/app/documents/${activeDoc.id}/yourFamily/key-people`}
+            to={`/app/documents/${activeDoc.id}/key-people`}
             className="mt-4 inline-flex items-center gap-1 text-sm font-medium"
             style={{ color: 'var(--ifw-primary-700)' }}
           >

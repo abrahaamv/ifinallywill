@@ -8,9 +8,10 @@ interface Props {
   onSend: (message: string) => void;
   disabled?: boolean;
   suggestions?: string[];
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
-export function WilfredInput({ onSend, disabled, suggestions }: Props) {
+export function WilfredInput({ onSend, disabled, suggestions, onTypingChange }: Props) {
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -19,6 +20,7 @@ export function WilfredInput({ onSend, disabled, suggestions }: Props) {
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue('');
+    onTypingChange?.(false);
     inputRef.current?.focus();
   };
 
@@ -53,7 +55,10 @@ export function WilfredInput({ onSend, disabled, suggestions }: Props) {
         <textarea
           ref={inputRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            onTypingChange?.(e.target.value.length > 0);
+          }}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           rows={1}

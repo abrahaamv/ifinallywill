@@ -17,6 +17,7 @@
     "dev:api": "pnpm --filter @platform/api dev",
     "dev:realtime": "pnpm --filter @platform/realtime dev",
     "dev:ifinallyWill": "pnpm --filter @platform/ifinallyWill dev",
+    "dev:llm": "pnpm --filter @platform/llm-gateway dev",
     "chatwoot:up": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml up -d",
     "chatwoot:down": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml down",
     "chatwoot:logs": "cd apps/chatwoot && docker compose -f docker-compose.platform.yml logs -f",

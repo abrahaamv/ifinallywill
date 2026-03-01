@@ -1,109 +1,124 @@
 /**
- * Document portfolio dashboard
- * Shows all estate documents with progress, status, and create action
+ * Dashboard — 4-card overview with quick navigation
+ *
+ * Shows four main entry points:
+ * 1. Your Estate Planning → /app/estate-planning
+ * 2. Family Tree → /app/family-tree
+ * 3. Assets → /app/estate-planning?category=assets
+ * 4. Treasure Map → /app/estate-planning?category=finalArrangements
  */
 
-import { useState } from 'react';
-import { CreateDocumentDialog } from '../../components/dashboard/CreateDocumentDialog';
-import { DocumentCard } from '../../components/dashboard/DocumentCard';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { usePersonalData } from '../../hooks/usePersonalData';
 import { useAuth } from '../../providers/AuthProvider';
-import { trpc } from '../../utils/trpc';
+import * as demoStore from '../../stores/demoDocumentStore';
+
+const DASHBOARD_CARDS = [
+  {
+    label: 'Your Estate Planning',
+    description: 'Create your will, manage steps, and track your progress',
+    icon: '📝',
+    href: '/app/estate-planning',
+  },
+  {
+    label: 'Family Tree',
+    description: 'View and manage your family members',
+    icon: '🌳',
+    href: '/app/family-tree',
+  },
+  {
+    label: 'Assets',
+    description: 'List and manage your assets and property',
+    icon: '💰',
+    href: '/app/estate-planning?category=assets',
+  },
+  {
+    label: 'Treasure Map',
+    description: 'Executors, POAs, and final arrangements',
+    icon: '🗺️',
+    href: '/app/estate-planning?category=finalArrangements',
+  },
+] as const;
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const [showCreate, setShowCreate] = useState(false);
 
-  const { data: documents, isLoading, refetch } = trpc.estateDocuments.list.useQuery();
+  // Ensure a demo document exists
+  const doc = useMemo(() => demoStore.ensureDefaultDocument(user?.id), [user?.id]);
+
+  // Load personal data for progress
+  const data = usePersonalData(doc.id);
 
   const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
-    <div>
-      {/* Gold gradient hero section */}
+    <div style={{ backgroundColor: '#FAFAFA', minHeight: '100%' }}>
+      {/* Gold gradient hero */}
       <div
-        className="py-6 sm:py-10 px-4 -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 mb-6 sm:mb-8"
+        className="py-6 sm:py-10 px-4 -mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-6"
         style={{ background: 'linear-gradient(135deg, #FFBF00 0%, #FFD54F 100%)' }}
       >
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p
-              className="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 sm:mb-2"
-              style={{ color: '#0A1E86', opacity: 0.7 }}
-            >
-              My Dashboard
-            </p>
-            <h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3"
-              style={{ color: '#0A1E86' }}
-            >
-              Welcome back, {firstName}
-            </h1>
-            <p className="text-base sm:text-lg" style={{ color: '#061254' }}>
-              Manage your estate planning documents from here.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 self-start sm:self-center"
-            style={{ backgroundColor: '#0A1E86' }}
+        <div className="max-w-4xl mx-auto">
+          <p
+            className="text-xs sm:text-sm font-bold uppercase tracking-wider mb-1 sm:mb-2"
+            style={{ color: '#0A1E86', opacity: 0.7 }}
           >
-            + New Document
-          </button>
+            My Dashboard
+          </p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2" style={{ color: '#0A1E86' }}>
+            Welcome back, {firstName}
+          </h1>
+          <p className="text-base sm:text-lg" style={{ color: '#061254' }}>
+            Track your progress and manage your estate plan.
+          </p>
         </div>
       </div>
 
-      {/* Documents grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="border rounded-xl p-5 animate-pulse">
-              <div className="h-6 w-6 bg-[var(--ifw-neutral-200)] rounded mb-3" />
-              <div className="h-4 w-32 bg-[var(--ifw-neutral-200)] rounded mb-2" />
-              <div className="h-3 w-20 bg-[var(--ifw-neutral-100)] rounded mb-4" />
-              <div className="h-2 bg-[var(--ifw-neutral-100)] rounded-full" />
-            </div>
-          ))}
+      {/* Overall progress */}
+      <div className="max-w-4xl mx-auto px-4 mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-[var(--ifw-neutral-900)]">
+            {data.ownerName}&apos;s Will
+          </h2>
+          <span className="text-sm font-medium text-[var(--ifw-neutral-500)]">
+            {data.overallProgress}% complete
+          </span>
         </div>
-      ) : documents && documents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => (
-            <DocumentCard
-              key={doc.id}
-              id={doc.id}
-              documentType={doc.documentType}
-              status={doc.status}
-              completionPct={doc.completionPct}
-              province={doc.province}
-              updatedAt={doc.updatedAt.toString()}
-              coupleDocId={(doc as { coupleDocId?: string | null }).coupleDocId ?? null}
-            />
-          ))}
+        <div className="h-3 bg-[var(--ifw-neutral-100)] rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${data.overallProgress}%`,
+              background:
+                data.overallProgress === 100
+                  ? 'var(--ifw-success)'
+                  : 'linear-gradient(90deg, #FFBF00, #FFD54F)',
+            }}
+          />
         </div>
-      ) : (
-        <div className="border-2 border-dashed rounded-xl p-12 text-center">
-          <div className="text-4xl mb-4">📄</div>
-          <h2 className="text-lg font-semibold mb-2">No documents yet</h2>
-          <p className="text-sm text-[var(--ifw-neutral-500)] mb-6">
-            Start by creating your first estate document — a will or power of attorney.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="px-6 py-2.5 text-sm font-medium text-white rounded-lg"
-            style={{ backgroundColor: 'var(--ifw-primary-700)' }}
-          >
-            Create Your First Document
-          </button>
-        </div>
-      )}
+      </div>
 
-      {/* Create dialog */}
-      <CreateDocumentDialog
-        isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreated={() => refetch()}
-      />
+      {/* 4-card grid */}
+      <div className="max-w-4xl mx-auto px-4 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {DASHBOARD_CARDS.map((card) => (
+            <Link
+              key={card.label}
+              to={card.href}
+              className="text-left p-5 rounded-xl border border-[var(--ifw-neutral-200)] bg-white hover:border-[var(--ifw-primary-300)] hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">{card.icon}</span>
+                <h3 className="text-sm font-semibold text-[var(--ifw-neutral-900)] group-hover:text-[var(--ifw-primary-700)]">
+                  {card.label}
+                </h3>
+              </div>
+              <p className="text-xs text-[var(--ifw-neutral-500)]">{card.description}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

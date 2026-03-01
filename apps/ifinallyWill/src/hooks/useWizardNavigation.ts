@@ -7,7 +7,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { type StepConfig, type WizardContext, getVisibleSteps } from '../lib/wizard';
+import { type StepConfig, type WizardContext, getAllSteps } from '../lib/wizard';
 
 interface UseWizardNavigationOptions {
   docId: string;
@@ -18,7 +18,7 @@ export function useWizardNavigation({ docId, context }: UseWizardNavigationOptio
   const navigate = useNavigate();
   const { stepId } = useParams<{ stepId: string }>();
 
-  const visibleSteps = useMemo(() => getVisibleSteps(context), [context]);
+  const visibleSteps = useMemo(() => getAllSteps(context), [context]);
 
   const currentStepIndex = useMemo(() => {
     const idx = visibleSteps.findIndex((s) => s.id === stepId);

@@ -2,6 +2,7 @@
  * Estate document card — shows type, status, completion %
  */
 
+import { Link } from 'react-router-dom';
 import { DOCUMENT_TYPES } from '../../config/documents';
 
 interface Props {
@@ -41,8 +42,8 @@ export function DocumentCard({
   const statusMeta = STATUS_LABELS[status] ?? STATUS_LABELS.draft!;
 
   return (
-    <a
-      href={getDocRoute(id, documentType)}
+    <Link
+      to={getDocRoute(id, documentType)}
       className="block border rounded-xl p-5 hover:shadow-md hover:border-[var(--ifw-primary-300)] transition-all"
     >
       <div className="flex items-start justify-between mb-3">
@@ -88,6 +89,6 @@ export function DocumentCard({
           <span className="text-xs text-[var(--ifw-primary-700)] font-medium">👥 Couple</span>
         )}
       </div>
-    </a>
+    </Link>
   );
 }

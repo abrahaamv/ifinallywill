@@ -49,6 +49,7 @@ export interface RouterConfig {
   openaiApiKey: string;
   anthropicApiKey: string;
   googleApiKey: string;
+  openaiBaseURL?: string;
   enableFallback?: boolean;
   logRouting?: boolean;
 }
@@ -68,7 +69,7 @@ export class AIRouter {
 
   constructor(config: RouterConfig) {
     this.config = config;
-    this.openai = new OpenAIProvider({ apiKey: config.openaiApiKey });
+    this.openai = new OpenAIProvider({ apiKey: config.openaiApiKey, baseURL: config.openaiBaseURL });
     this.anthropic = new AnthropicProvider({ apiKey: config.anthropicApiKey });
     this.google = new GoogleProvider({ apiKey: config.googleApiKey });
   }

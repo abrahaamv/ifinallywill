@@ -82,20 +82,38 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             return headers;
           },
           fetch: async (url, options) => {
-            const response = await fetch(url, {
-              ...options,
-              credentials: 'include',
-            } as RequestInit);
+            try {
+              const response = await fetch(url, {
+                ...options,
+                credentials: 'include',
+              } as RequestInit);
 
-            if (response.status === 401) {
-              logger.warn('401 Unauthorized - Session expired');
-              if (!window.location.pathname.startsWith('/login')) {
-                sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
-                window.location.href = '/login?expired=true';
+              if (response.status === 401) {
+                // Only redirect if we actually reached a backend (not a network error).
+                // In demo mode the fetch may succeed with a 401 from a real server,
+                // but if we're running without a backend we should NOT redirect.
+                const isDemoUser = !!localStorage.getItem('ifw_demo_user');
+                if (!isDemoUser) {
+                  logger.warn('401 Unauthorized - Session expired');
+                  if (!window.location.pathname.startsWith('/login')) {
+                    sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+                    window.location.href = '/login?expired=true';
+                  }
+                }
               }
-            }
 
-            return response;
+              return response;
+            } catch {
+              // Network error (no backend reachable) — return a synthetic empty
+              // response so tRPC treats it as a failure without redirecting.
+              if (import.meta.env.DEV) {
+                logger.warn('tRPC fetch failed (no backend?) — returning empty response');
+              }
+              return new Response(JSON.stringify([{ error: { message: 'Network error' } }]), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+              });
+            }
           },
         }),
       ],

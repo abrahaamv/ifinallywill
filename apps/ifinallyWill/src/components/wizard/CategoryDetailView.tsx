@@ -9,29 +9,29 @@ import { Suspense } from 'react';
 import type { WillData } from '../../lib/types';
 import type { StepProps } from '../../lib/types';
 import type { StepConfig, WizardCategory } from '../../lib/wizard';
+import { WizardBreadcrumb } from './WizardBreadcrumb';
 
 import { AdditionalStep } from '../steps/AdditionalStep';
 import { AssetsStep } from '../steps/AssetsStep';
 import { BequestsStep } from '../steps/BequestsStep';
 import { ChildrenStep } from '../steps/ChildrenStep';
+import { EnhanceStep } from '../steps/EnhanceStep';
 import { ExecutorsStep } from '../steps/ExecutorsStep';
-import { FamilyStatusStep } from '../steps/FamilyStatusStep';
 import { FinalDetailsStep } from '../steps/FinalDetailsStep';
 import { GuardianStep } from '../steps/GuardianStep';
 import { InheritanceStep } from '../steps/InheritanceStep';
 import { KeyPeopleStep } from '../steps/KeyPeopleStep';
-// Step components — same map as WizardShell
+// Step components — map matches wizard.ts STEPS
 import { PersonalInfoStep } from '../steps/PersonalInfoStep';
 import { PetGuardianStep } from '../steps/PetGuardianStep';
+import { PoaHealthStep } from '../steps/PoaHealthStep';
+import { PoaPropertyStep } from '../steps/PoaPropertyStep';
 import { ResidueStep } from '../steps/ResidueStep';
 import { ReviewStep } from '../steps/ReviewStep';
-import { SpouseInfoStep } from '../steps/SpouseInfoStep';
 import { WipeoutStep } from '../steps/WipeoutStep';
 
 const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   'personal-info': PersonalInfoStep,
-  'family-status': FamilyStatusStep,
-  'spouse-info': SpouseInfoStep,
   children: ChildrenStep,
   'key-people': KeyPeopleStep,
   guardians: GuardianStep,
@@ -44,6 +44,9 @@ const STEP_COMPONENTS: Record<string, React.ComponentType<StepProps>> = {
   wipeout: WipeoutStep,
   additional: AdditionalStep,
   'final-details': FinalDetailsStep,
+  'poa-property': PoaPropertyStep,
+  'poa-health': PoaHealthStep,
+  enhance: EnhanceStep,
   review: ReviewStep,
 };
 
@@ -60,6 +63,12 @@ interface Props {
   onNext: () => void;
   onPrev: () => void;
   onDashboard: () => void;
+  /** All visible steps across all categories (for breadcrumb) */
+  allSteps: StepConfig[];
+  /** Set of completed step IDs (for breadcrumb) */
+  completedSteps: Set<string>;
+  /** Called when user clicks a breadcrumb pill */
+  onBreadcrumbStepClick: (stepId: string) => void;
 }
 
 export function CategoryDetailView(props: Props) {
@@ -75,6 +84,9 @@ export function CategoryDetailView(props: Props) {
     onNext,
     onPrev,
     onDashboard,
+    allSteps,
+    completedSteps,
+    onBreadcrumbStepClick,
   } = props;
   const StepComponent = currentStep ? STEP_COMPONENTS[currentStep.id] : null;
 
@@ -107,6 +119,14 @@ export function CategoryDetailView(props: Props) {
           Step {currentIndex + 1} of {totalSteps}
         </span>
       </div>
+
+      {/* Breadcrumb — all steps as numbered pills */}
+      <WizardBreadcrumb
+        allSteps={allSteps}
+        currentStepId={currentStep?.id ?? null}
+        completedSteps={completedSteps}
+        onStepClick={onBreadcrumbStepClick}
+      />
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto p-6">

@@ -20,18 +20,34 @@ const CATEGORY_MESSAGES: Record<WizardCategory, { title: string; message: string
     message:
       "Great job! You've finished telling us about yourself. Your personal details are saved.",
   },
-  yourFamily: {
-    title: 'Family Section Complete!',
-    message: 'Wonderful! Your family information is all set. Your loved ones are accounted for.',
+  people: {
+    title: 'People Section Complete!',
+    message: 'Wonderful! Your key people are all set. Your loved ones are accounted for.',
   },
-  yourEstate: {
-    title: 'Estate Section Complete!',
-    message: 'Excellent! Your estate details are recorded. Your assets and wishes are documented.',
+  assets: {
+    title: 'Assets Complete!',
+    message: 'Excellent! Your assets are all recorded and documented.',
   },
-  yourArrangements: {
+  gifts: {
+    title: 'Gifts Complete!',
+    message: 'Well done! Your specific gifts and bequests are assigned.',
+  },
+  residue: {
+    title: 'Residue Complete!',
+    message: 'Great! Your residue distribution is set up.',
+  },
+  children: {
+    title: 'Children Section Complete!',
+    message: 'Wonderful! Trusting and guardianship arrangements are in place for your children.',
+  },
+  wipeout: {
+    title: 'Wipeout Complete!',
+    message: 'Your backup beneficiary plan is set up.',
+  },
+  finalArrangements: {
     title: 'All Arrangements Done!',
     message:
-      "Congratulations! You've completed all your arrangements. Your will is ready for review!",
+      "Congratulations! You've completed all your arrangements. Your estate plan is ready for review!",
   },
 };
 

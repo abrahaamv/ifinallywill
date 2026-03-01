@@ -8,7 +8,7 @@
  */
 
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -91,6 +91,9 @@ const ResetPasswordPage = lazy(() =>
 const DashboardPage = lazy(() =>
   import('./pages/app/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 );
+const EstatePlanningPage = lazy(() =>
+  import('./pages/app/EstatePlanningPage').then((m) => ({ default: m.EstatePlanningPage }))
+);
 const CheckoutPage = lazy(() =>
   import('./pages/app/CheckoutPage').then((m) => ({ default: m.CheckoutPage }))
 );
@@ -111,6 +114,18 @@ const SupportPage = lazy(() =>
 );
 const FamilyTreePage = lazy(() =>
   import('./pages/app/FamilyTreePage').then((m) => ({ default: m.FamilyTreePage }))
+);
+const ReferralsPage = lazy(() =>
+  import('./pages/app/ReferralsPage').then((m) => ({ default: m.ReferralsPage }))
+);
+const DiscountCodesPage = lazy(() =>
+  import('./pages/app/DiscountCodesPage').then((m) => ({ default: m.DiscountCodesPage }))
+);
+const CharityPage = lazy(() =>
+  import('./pages/app/CharityPage').then((m) => ({ default: m.CharityPage }))
+);
+const GiftAWillPage = lazy(() =>
+  import('./pages/app/GiftAWillPage').then((m) => ({ default: m.GiftAWillPage }))
 );
 
 // Lazy-loaded admin pages
@@ -199,6 +214,7 @@ export function App() {
                   >
                     <Route index element={<Navigate to="/app/dashboard" replace />} />
                     <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="estate-planning" element={<EstatePlanningPage />} />
                     <Route path="checkout" element={<CheckoutPage />} />
                     <Route path="checkout/success" element={<CheckoutSuccessPage />} />
                     <Route path="partners" element={<PartnerDashboardPage />} />
@@ -207,6 +223,19 @@ export function App() {
                     <Route path="support" element={<SupportPage />} />
                     <Route path="support/:id" element={<SupportPage />} />
                     <Route path="family-tree" element={<FamilyTreePage />} />
+                    <Route path="referrals" element={<ReferralsPage />} />
+                    <Route path="discount-codes" element={<DiscountCodesPage />} />
+                    <Route path="charity" element={<CharityPage />} />
+                    <Route path="gifts" element={<GiftAWillPage />} />
+
+                    {/* Will wizard (inside AppLayout so sidebar persists) */}
+                    <Route path="documents/:docId" element={<PersonalShell />} />
+                    <Route path="documents/:docId/:category/:stepId" element={<PersonalShell />} />
+                    <Route path="documents/:docId/:stepId" element={<PersonalShell />} />
+
+                    {/* POA wizard (inside AppLayout so sidebar persists) */}
+                    <Route path="poa/:docId" element={<PoaWizardShell />} />
+                    <Route path="poa/:docId/:stepId" element={<PoaWizardShell />} />
 
                     {/* Admin routes (role-guarded) */}
                     <Route
@@ -257,37 +286,6 @@ export function App() {
                         </ProtectedAdminRoute>
                       }
                     />
-                  </Route>
-
-                  {/* ======================== */}
-                  {/* WILL WIZARD */}
-                  {/* ======================== */}
-                  <Route
-                    path="/app/documents/:docId"
-                    element={
-                      <ProtectedRoute>
-                        <Outlet />
-                      </ProtectedRoute>
-                    }
-                  >
-                    <Route index element={<PersonalShell />} />
-                    <Route path=":category/:stepId" element={<PersonalShell />} />
-                    <Route path=":stepId" element={<PersonalShell />} />
-                  </Route>
-
-                  {/* ======================== */}
-                  {/* POA WIZARD */}
-                  {/* ======================== */}
-                  <Route
-                    path="/app/poa/:docId"
-                    element={
-                      <ProtectedRoute>
-                        <Outlet />
-                      </ProtectedRoute>
-                    }
-                  >
-                    <Route index element={<PoaWizardShell />} />
-                    <Route path=":stepId" element={<PoaWizardShell />} />
                   </Route>
 
                   {/* ======================== */}

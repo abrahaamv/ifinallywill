@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { usePersonalData } from '../../hooks/usePersonalData';
-import { useSidebarState } from '../../hooks/useSidebarState';
 import { useStepNavigation } from '../../hooks/useStepNavigation';
 import { CATEGORIES, getStepCategory } from '../../lib/wizard';
 import type { WizardCategory } from '../../lib/wizard';
@@ -19,8 +18,6 @@ import { CelebrationModal } from '../modals/CelebrationModal';
 import { LeaveConfirmModal } from '../modals/LeaveConfirmModal';
 import { WilfredPanel } from '../wilfred/WilfredPanel';
 import { CategoryDetailView } from './CategoryDetailView';
-import { DashboardView } from './DashboardView';
-import { ProfileBanner } from './ProfileBanner';
 import { WizardSidebar } from './WizardSidebar';
 
 type ViewMode = 'dashboard' | WizardCategory;
@@ -40,9 +37,6 @@ export function PersonalShell() {
   const [celebrationCategory, setCelebrationCategory] = useState<WizardCategory | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
-  // Sidebar state
-  const sidebar = useSidebarState();
-
   // Derive view from URL stepId
   useEffect(() => {
     if (stepId) {
@@ -50,13 +44,13 @@ export function PersonalShell() {
       if (category) {
         setCurrentView(category);
         setCurrentStepId(stepId);
-        sidebar.autoCollapse(stepId);
       }
     } else {
-      setCurrentView('dashboard');
-      setCurrentStepId(null);
+      // No stepId — redirect to estate planning page
+      navigate('/app/estate-planning', { replace: true });
+      return;
     }
-  }, [stepId]);
+  }, [stepId, navigate]);
 
   // Navigate to a step
   const navigateToStep = useCallback(
@@ -66,10 +60,10 @@ export function PersonalShell() {
     [navigate, docId]
   );
 
-  // Return to dashboard
+  // Return to estate planning page
   const returnToDashboard = useCallback(() => {
-    navigate(`/app/documents/${docId}`, { replace: true });
-  }, [navigate, docId]);
+    navigate('/app/estate-planning', { replace: true });
+  }, [navigate]);
 
   // Dashboard button from step view — confirm if needed
   const handleDashboardClick = useCallback(() => {
@@ -139,115 +133,26 @@ export function PersonalShell() {
     currentView !== 'dashboard' ? (CATEGORIES.find((c) => c.key === currentView)?.label ?? '') : '';
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Yellow welcome banner */}
-      <div
-        className="px-6 py-3 flex items-center justify-between"
-        style={{ background: 'linear-gradient(135deg, #FFBF00, #FFD54F)' }}
-      >
-        <div className="flex items-center gap-3">
-          {currentView !== 'dashboard' && (
-            <button
-              type="button"
-              onClick={handleDashboardClick}
-              className="text-sm font-medium text-amber-900 hover:text-amber-800 flex items-center gap-1"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Dashboard
-            </button>
-          )}
-          <span className="text-sm font-medium text-amber-900">
-            {data.ownerName}&apos;s Estate Plan
-          </span>
-        </div>
-
-        <ProfileBanner
-          ownerName={data.ownerName}
-          isCouple={data.isCouple}
-          coupleDocId={data.doc.coupleDocId}
-          onSwitch={() =>
-            data.doc?.coupleDocId && navigate(`/app/documents/${data.doc.coupleDocId}`)
-          }
-        />
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-1 min-h-0">
-        {/* Sidebar — shown in category detail view on desktop */}
-        {currentView !== 'dashboard' && (
-          <aside
-            className={`hidden lg:flex flex-col border-r bg-[var(--ifw-neutral-50)] overflow-y-auto transition-all duration-200 ${
-              sidebar.collapsed ? 'w-16' : 'w-64'
-            }`}
-          >
-            <div className="p-3 border-b border-[var(--ifw-neutral-100)] flex justify-end">
-              <button
-                type="button"
-                onClick={sidebar.toggle}
-                className="w-7 h-7 rounded flex items-center justify-center text-[var(--ifw-neutral-400)] hover:bg-[var(--ifw-neutral-100)]"
-                title={sidebar.collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    transform: sidebar.collapsed ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 200ms',
-                  }}
-                >
-                  <polyline points="11 17 6 12 11 7" />
-                  <polyline points="18 17 13 12 18 7" />
-                </svg>
-              </button>
-            </div>
-
-            {!sidebar.collapsed && (
-              <div className="p-4">
-                <WizardSidebar
-                  wizardContext={data.wizardContext}
-                  currentStepId={currentStepId ?? ''}
-                  completedSteps={data.completedStepsArray}
-                  activeCategory={currentView}
-                  onStepClick={handleSidebarStepClick}
-                  onCategoryClick={handleSidebarCategoryClick}
-                />
-              </div>
-            )}
-          </aside>
-        )}
-
-        {/* Content area */}
-        {currentView === 'dashboard' ? (
-          <main className="flex-1 p-6 overflow-y-auto">
-            <DashboardView
-              ownerName={data.ownerName}
-              categoryCompletions={data.categoryCompletions}
-              overallProgress={data.overallProgress}
-              recommendedStep={nav.getRecommendedStep()}
-              onCategoryClick={handleCategoryClick}
-              onStepClick={navigateToStep}
+    <>
+      <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+        {/* Wizard sidebar — hidden on mobile */}
+        <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r bg-[var(--ifw-neutral-50)] overflow-y-auto">
+          <div className="p-3">
+            <WizardSidebar
+              wizardContext={data.wizardContext}
+              currentStepId={currentStepId ?? ''}
+              completedSteps={data.completedStepsArray}
+              activeCategory={currentView === 'dashboard' ? null : currentView}
+              onStepClick={handleSidebarStepClick}
+              onCategoryClick={handleSidebarCategoryClick}
             />
-          </main>
-        ) : (
+          </div>
+        </aside>
+
+        {/* Content area — fills remaining space */}
+        <div className="flex-1 min-w-0 flex flex-col">
           <CategoryDetailView
-            category={currentView}
+            category={currentView === 'dashboard' ? 'aboutYou' : currentView}
             categoryLabel={categoryLabel}
             currentStep={nav.currentStep}
             currentIndex={nav.currentIndex}
@@ -259,19 +164,30 @@ export function PersonalShell() {
             onNext={nav.nextStep}
             onPrev={nav.prevStep}
             onDashboard={handleDashboardClick}
+            allSteps={nav.visibleSteps}
+            completedSteps={data.completedSteps}
+            onBreadcrumbStepClick={navigateToStep}
           />
-        )}
+        </div>
 
-        {/* Wilfred AI sidechat — only in category detail view */}
-        {currentView !== 'dashboard' && (
+        {/* Wilfred AI — always visible on lg+ */}
+        <aside className="hidden lg:flex w-72 flex-shrink-0 flex-col border-l bg-[var(--ifw-neutral-50)]">
+          <div className="px-4 py-3 border-b border-[var(--ifw-border)] flex items-center gap-2">
+            <span className="text-lg">🎩</span>
+            <span className="text-sm font-medium" style={{ color: '#0C1F3C' }}>Wilfred</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--ifw-primary-50)] text-[var(--ifw-primary-600)]">
+              AI
+            </span>
+          </div>
           <WilfredPanel
             estateDocId={docId}
             stepId={currentStepId ?? undefined}
             province={data.doc.province}
             documentType={data.doc.documentType}
             completedSteps={data.completedStepsArray}
+            embedded
           />
-        )}
+        </aside>
       </div>
 
       {/* Modals */}
@@ -292,6 +208,6 @@ export function PersonalShell() {
         }}
         onCancel={() => setShowLeaveConfirm(false)}
       />
-    </div>
+    </>
   );
 }

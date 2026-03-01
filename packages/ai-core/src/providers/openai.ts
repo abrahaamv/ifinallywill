@@ -20,6 +20,7 @@ export class OpenAIProvider implements AIProviderInterface {
   constructor(config: ProviderConfig) {
     this.client = new OpenAI({
       apiKey: config.apiKey,
+      baseURL: config.baseURL,
       organization: config.organization,
     });
   }

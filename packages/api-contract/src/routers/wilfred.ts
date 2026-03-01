@@ -170,9 +170,10 @@ export const wilfredRouter = router({
       try {
         const { AIRouter } = await import('@platform/ai-core');
         const aiRouter = new AIRouter({
-          openaiApiKey: process.env.OPENAI_API_KEY ?? '',
+          openaiApiKey: process.env.OPENAI_API_KEY ?? 'sk-placeholder',
           anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
           googleApiKey: process.env.GOOGLE_API_KEY ?? '',
+          openaiBaseURL: process.env.LLM_GATEWAY_URL ?? undefined,
           enableFallback: true,
           logRouting: false,
         });
